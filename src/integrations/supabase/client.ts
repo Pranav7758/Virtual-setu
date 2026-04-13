@@ -2,8 +2,22 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://mfycihjvtpsxixptmasa.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1meWNpaGp2dHBzeGl4cHRtYXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMDE4MjIsImV4cCI6MjA3MzY3NzgyMn0.Q6geUA0wNc8SrBTk18h3t4dxgLCwe2y8gQJQj44CjSI";
+const envUrl = import.meta.env.VITE_SUPABASE_URL;
+const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const SUPABASE_URL = envUrl ?? "https://mfycihjvtpsxixptmasa.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = envKey ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1meWNpaGp2dHBzeGl4cHRtYXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMDE4MjIsImV4cCI6MjA3MzY3NzgyMn0.Q6geUA0wNc8SrBTk18h3t4dxgLCwe2y8gQJQj44CjSI";
+
+if (!envUrl || !envKey) {
+  // Make misconfiguration obvious during development.
+  // Create a `.env` file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY and restart Vite.
+  // Example in project root:
+  // VITE_SUPABASE_URL=https://your-project.supabase.co
+  // VITE_SUPABASE_ANON_KEY=your_anon_key
+  // This warning helps avoid silent DNS failures when falling back to a hardcoded host.
+  // eslint-disable-next-line no-console
+  console.warn('[supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY not set. Using hardcoded fallback values. Create a .env and restart the dev server.');
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
