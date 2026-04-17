@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Shield, 
-  Upload, 
-  FileText, 
-
-  User, 
-  Phone, 
-  Mail, 
+import {
+  Shield,
+  Upload,
+  FileText,
+  User,
+  Phone,
+  Mail,
   LogOut,
   CheckCircle,
   AlertCircle,
   Clock,
-
-  MessageCircle
+  MessageCircle,
+  Zap,
+  Crown,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserPlan } from '@/hooks/useUserPlan';
 import DocumentUpload from '@/components/DocumentUpload';
 import DocumentList from '@/components/DocumentList';
-
 import SmartChecklist from '@/components/SmartChecklist';
 import AIChatbot from '@/components/AIChatbot';
 import DigitalIDCard from '@/components/DigitalIDCard';
@@ -48,9 +49,32 @@ interface Document {
   created_at: string;
 }
 
+function PlanBadge({ plan }: { plan: string }) {
+  if (plan === 'platinum') {
+    return (
+      <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 capitalize">
+        <Crown className="h-3 w-3 mr-1" /> Platinum
+      </Badge>
+    );
+  }
+  if (plan === 'premium') {
+    return (
+      <Badge className="bg-primary/20 text-primary border-primary/30 capitalize">
+        <Zap className="h-3 w-3 mr-1" /> Premium
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="capitalize">
+      <Shield className="h-3 w-3 mr-1" /> Free
+    </Badge>
+  );
+}
+
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { plan, limits, canUploadDocument } = useUserPlan();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +85,6 @@ export default function Dashboard() {
       navigate('/auth');
       return;
     }
-    
     fetchProfile().catch(console.error);
     fetchDocuments().catch(console.error);
   }, [user, navigate]);
@@ -73,12 +96,8 @@ export default function Dashboard() {
         .select('*')
         .eq('user_id', user?.id)
         .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
-      }
+      if (error) console.error('Error fetching profile:', error);
+      else setProfile(data);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -93,12 +112,8 @@ export default function Dashboard() {
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching documents:', error);
-      } else {
-        setDocuments(data || []);
-      }
+      if (error) console.error('Error fetching documents:', error);
+      else setDocuments(data || []);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -106,9 +121,8 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     const { error } = await signOut();
-    if (error) {
-      toast.error('Error signing out');
-    } else {
+    if (error) toast.error('Error signing out');
+    else {
       toast.success('Signed out successfully');
       navigate('/');
     }
@@ -116,25 +130,22 @@ export default function Dashboard() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'verified':
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      case 'rejected':
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-      default:
-        return <Clock className="h-4 w-4 text-warning" />;
+      case 'verified': return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'rejected': return <AlertCircle className="h-4 w-4 text-destructive" />;
+      default: return <Clock className="h-4 w-4 text-warning" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'verified':
-        return 'bg-success/10 text-success border-success/20';
-      case 'rejected':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-warning/10 text-warning border-warning/20';
+      case 'verified': return 'bg-success/10 text-success border-success/20';
+      case 'rejected': return 'bg-destructive/10 text-destructive border-destructive/20';
+      default: return 'bg-warning/10 text-warning border-warning/20';
     }
   };
+
+  const docLimit = limits.maxDocuments === Infinity ? '∞' : limits.maxDocuments;
+  const uploadAllowed = canUploadDocument(documents.length);
 
   if (loading) {
     return (
@@ -159,9 +170,17 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground">Digital Identity Dashboard</p>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
+
+            <div className="flex items-center space-x-3">
+              <PlanBadge plan={plan} />
+              {plan === 'free' && (
+                <Link to="/pricing">
+                  <Button size="sm" className="bg-gradient-primary glow-primary">
+                    <Zap className="h-4 w-4 mr-1" /> Upgrade
+                  </Button>
+                </Link>
+              )}
+              <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium">{profile?.full_name || user?.email}</p>
                 <p className="text-xs text-muted-foreground">Welcome back</p>
               </div>
@@ -190,8 +209,24 @@ export default function Dashboard() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
+            {plan === 'free' && !uploadAllowed && (
+              <Card className="border-warning/30 bg-warning/5">
+                <CardContent className="flex items-center justify-between py-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-warning" />
+                    <p className="text-sm">You've reached the 5-document limit on the Free plan.</p>
+                  </div>
+                  <Link to="/pricing">
+                    <Button size="sm" className="bg-gradient-primary glow-primary">
+                      <Zap className="h-4 w-4 mr-1" /> Upgrade
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="card-3d border-0">
                 <CardHeader className="pb-3">
@@ -201,7 +236,10 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gradient">{documents.length}</div>
+                  <div className="text-3xl font-bold text-gradient">
+                    {documents.length}
+                    <span className="text-lg font-normal text-muted-foreground ml-1">/ {docLimit}</span>
+                  </div>
                   <p className="text-sm text-muted-foreground">Total uploaded</p>
                 </CardContent>
               </Card>
@@ -225,17 +263,20 @@ export default function Dashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center space-x-2">
                     <Shield className="h-5 w-5 text-accent" />
-                    <span>Security</span>
+                    <span>Plan</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gradient">Active</div>
-                  <p className="text-sm text-muted-foreground">PIN protection enabled</p>
+                  <div className="text-3xl font-bold text-gradient capitalize">{plan}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {plan === 'free' ? (
+                      <Link to="/pricing" className="text-primary underline underline-offset-2">Upgrade for more features</Link>
+                    ) : 'Full access enabled'}
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Recent Documents */}
             <Card className="card-3d border-0">
               <CardHeader>
                 <CardTitle>Recent Documents</CardTitle>
@@ -275,19 +316,57 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {plan === 'free' && (
+              <Card className="card-3d border-0 bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
+                <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
+                  <div>
+                    <h3 className="font-bold text-lg">Unlock More with Premium</h3>
+                    <p className="text-sm text-muted-foreground">100 documents, QR sharing, full AI assistant and more — from ₹299/year</p>
+                  </div>
+                  <Link to="/pricing">
+                    <Button className="bg-gradient-primary glow-primary whitespace-nowrap">
+                      <Zap className="h-4 w-4 mr-2" /> View Plans
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
+          {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
-            <div id="document-upload">
-              <DocumentUpload onUploadComplete={fetchDocuments} />
-            </div>
+            {uploadAllowed ? (
+              <div id="document-upload">
+                <DocumentUpload onUploadComplete={fetchDocuments} />
+              </div>
+            ) : (
+              <Card className="card-3d border-0">
+                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4">
+                  <Lock className="h-10 w-10 text-warning" />
+                  <div className="text-center">
+                    <h3 className="font-semibold text-lg">Upload Limit Reached</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      You've used all {limits.maxDocuments} document slots on the Free plan.
+                    </p>
+                  </div>
+                  <Link to="/pricing">
+                    <Button className="bg-gradient-primary glow-primary">
+                      <Zap className="h-4 w-4 mr-2" /> Upgrade to Upload More
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
             <DocumentList documents={documents} />
           </TabsContent>
 
+          {/* Checklist Tab */}
           <TabsContent value="checklist" className="space-y-6">
             <SmartChecklist />
           </TabsContent>
 
+          {/* Digital ID Tab */}
           <TabsContent value="digital-id">
             <Card className="card-3d border-0">
               <CardHeader>
@@ -302,13 +381,27 @@ export default function Dashboard() {
                     phone={profile?.phone || ''}
                     userId={user?.id || 'unknown'}
                     memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
-                    shareUrl={`${window.location.origin}/i/${user?.id}`}
+                    shareUrl={
+                      limits.qrEmergencySharing
+                        ? `${window.location.origin}/i/${user?.id}`
+                        : undefined
+                    }
                   />
                 </div>
+                {!limits.qrEmergencySharing && (
+                  <div className="mt-4 flex items-center justify-center gap-3 p-4 rounded-xl bg-card-glass/30 border border-border/10">
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      QR emergency sharing requires{' '}
+                      <Link to="/pricing" className="text-primary underline underline-offset-2">Premium or Platinum</Link>
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Profile Tab */}
           <TabsContent value="profile">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="card-3d border-0">
@@ -340,10 +433,28 @@ export default function Dashboard() {
 
               <Card className="card-3d border-0">
                 <CardHeader>
-                  <CardTitle>Security Settings</CardTitle>
-                  <CardDescription>Manage your security preferences</CardDescription>
+                  <CardTitle>Security & Plan</CardTitle>
+                  <CardDescription>Your security preferences and subscription</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-card-glass/30 rounded-xl">
+                    <div>
+                      <h4 className="font-medium">Current Plan</h4>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {plan} — {plan === 'free' ? '5 documents' : plan === 'premium' ? '100 documents' : 'Unlimited'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PlanBadge plan={plan} />
+                      {plan !== 'platinum' && (
+                        <Link to="/pricing">
+                          <Button size="sm" variant="outline" className="border-primary/30 text-primary">
+                            Upgrade
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between p-4 bg-card-glass/30 rounded-xl">
                     <div>
                       <h4 className="font-medium">PIN Protection</h4>
@@ -361,15 +472,9 @@ export default function Dashboard() {
                     </div>
                     <Badge variant="outline" className={user?.email_confirmed_at ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"}>
                       {user?.email_confirmed_at ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Verified
-                        </>
+                        <><CheckCircle className="h-3 w-3 mr-1" />Verified</>
                       ) : (
-                        <>
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
-                        </>
+                        <><Clock className="h-3 w-3 mr-1" />Pending</>
                       )}
                     </Badge>
                   </div>
@@ -383,7 +488,13 @@ export default function Dashboard() {
       {/* Floating Chatbot Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          onClick={() => setShowChatbot(!showChatbot)}
+          onClick={() => {
+            if (!limits.aiChatbot) {
+              toast.error('AI Chatbot is not available on your plan');
+              return;
+            }
+            setShowChatbot(!showChatbot);
+          }}
           className="rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-primary text-white"
           size="icon"
         >
@@ -391,7 +502,6 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {/* AI Chatbot */}
       {showChatbot && (
         <div className="fixed bottom-24 right-6 z-50 w-80 h-96">
           <AIChatbot documents={documents} onClose={() => setShowChatbot(false)} />

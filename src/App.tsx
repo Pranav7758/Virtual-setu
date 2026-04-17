@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Register from "./pages/Register";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Share from "./pages/Share";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/register" element={<Register />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/i/:uid" element={<Share />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
