@@ -32,8 +32,13 @@ src/
     SmartChecklist.tsx  - Document checklist
     AIChatbot.tsx       - Gemini-powered chatbot
     ui/                 - shadcn/ui primitives
+  lib/
+    groqVerify.ts       - GROQ AI document verification (vision + text)
+    checklistService.ts - AI checklist generation with localStorage + Supabase cache
   hooks/
-    useAuth.tsx      - Auth context + helper
+    useAuth.tsx                 - Auth context + helper
+    useDocumentVerification.ts  - Document verification state hook
+    useChecklist.ts             - AI checklist fetch + user-doc comparison hook
   integrations/
     supabase/        - Supabase client + types
 ```
@@ -47,7 +52,7 @@ src/
   - Uses `useRef` to target the card element
 
 - **Document Management** — upload, list, verification status badges
-- **Smart Checklist** — dynamic requirements per application type
+- **AI Smart Checklist** — GROQ-powered dynamic checklist generation per application type, with localStorage + Supabase caching and user-document comparison
 - **AI Chatbot** — Gemini-powered, document-aware assistant
 - **QR Share** — PIN-protected public document sharing
 

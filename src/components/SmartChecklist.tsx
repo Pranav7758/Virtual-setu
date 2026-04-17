@@ -1,602 +1,358 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, CheckCircle, Circle, AlertCircle, Target, Plus } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  CheckCircle2, XCircle, Loader2, RefreshCw, Sparkles,
+  FileText, ChevronDown, ChevronUp, AlertCircle, Target,
+  ListChecks, Info,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useChecklist } from '@/hooks/useChecklist';
 
-interface Document {
+interface UserDocument {
   id: string;
   document_name: string;
   document_type: string;
   created_at: string;
 }
 
-interface ChecklistItem {
-  id: string;
-  name: string;
-  description: string;
-  required: boolean;
-  status: 'completed' | 'missing' | 'optional';
-  document_type?: string;
-}
-
-interface Purpose {
-  id: string;
-  name: string;
-  description: string;
-  requirements: ChecklistItem[];
-}
-
-const purposes: Purpose[] = [
+const PURPOSES = [
   {
-    id: 'passport',
-    name: 'Passport Application',
-    description: 'Documents required for Indian passport application',
-    requirements: [
-      {
-        id: 'aadhar',
-        name: 'Aadhar Card',
-        description: 'Valid Aadhar card with current address',
-        required: true,
-        status: 'missing',
-        document_type: 'aadhar'
-      },
-      {
-        id: 'pan',
-        name: 'PAN Card',
-        description: 'Valid PAN card',
-        required: true,
-        status: 'missing',
-        document_type: 'pan'
-      },
-      {
-        id: 'birth_certificate',
-        name: 'Birth Certificate',
-        description: 'Original birth certificate or 10th class certificate',
-        required: true,
-        status: 'missing',
-        document_type: 'birth_certificate'
-      },
-      {
-        id: 'address_proof',
-        name: 'Address Proof',
-        description: 'Utility bill, bank statement, or rental agreement (not older than 3 months)',
-        required: true,
-        status: 'missing',
-        document_type: 'address_proof'
-      },
-      {
-        id: 'photo',
-        name: 'Passport Size Photo',
-        description: 'Recent passport size photograph (35mm x 35mm)',
-        required: true,
-        status: 'missing',
-        document_type: 'photo'
-      },
-      {
-        id: 'signature',
-        name: 'Signature',
-        description: 'Digital signature or scanned signature',
-        required: true,
-        status: 'missing',
-        document_type: 'signature'
-      }
-    ]
+    id: 'passport_application',
+    label: 'Passport Application',
+    description: 'New / renewal passport via Passport Seva Kendra',
   },
   {
-    id: 'bank_account',
-    name: 'Bank Account Opening',
-    description: 'Documents required for opening a new bank account',
-    requirements: [
-      {
-        id: 'aadhar',
-        name: 'Aadhar Card',
-        description: 'Valid Aadhar card',
-        required: true,
-        status: 'missing',
-        document_type: 'aadhar'
-      },
-      {
-        id: 'pan',
-        name: 'PAN Card',
-        description: 'Valid PAN card',
-        required: true,
-        status: 'missing',
-        document_type: 'pan'
-      },
-      {
-        id: 'address_proof',
-        name: 'Address Proof',
-        description: 'Utility bill, bank statement, or rental agreement',
-        required: true,
-        status: 'missing',
-        document_type: 'address_proof'
-      },
-      {
-        id: 'income_proof',
-        name: 'Income Proof',
-        description: 'Salary slip, ITR, or income certificate',
-        required: true,
-        status: 'missing',
-        document_type: 'income_proof'
-      },
-      {
-        id: 'photo',
-        name: 'Passport Size Photo',
-        description: 'Recent passport size photograph',
-        required: true,
-        status: 'missing',
-        document_type: 'photo'
-      }
-    ]
-  },
-  {
-    id: 'job_application',
-    name: 'Job Application',
-    description: 'Documents required for job applications',
-    requirements: [
-      {
-        id: 'resume',
-        name: 'Resume/CV',
-        description: 'Updated resume with current information',
-        required: true,
-        status: 'missing',
-        document_type: 'resume'
-      },
-      {
-        id: 'aadhar',
-        name: 'Aadhar Card',
-        description: 'Valid Aadhar card',
-        required: true,
-        status: 'missing',
-        document_type: 'aadhar'
-      },
-      {
-        id: 'pan',
-        name: 'PAN Card',
-        description: 'Valid PAN card',
-        required: true,
-        status: 'missing',
-        document_type: 'pan'
-      },
-      {
-        id: 'education_certificates',
-        name: 'Education Certificates',
-        description: 'Degree certificates, mark sheets',
-        required: true,
-        status: 'missing',
-        document_type: 'education_certificates'
-      },
-      {
-        id: 'experience_letters',
-        name: 'Experience Letters',
-        description: 'Previous employment experience letters',
-        required: false,
-        status: 'missing',
-        document_type: 'experience_letters'
-      },
-      {
-        id: 'photo',
-        name: 'Passport Size Photo',
-        description: 'Recent passport size photograph',
-        required: true,
-        status: 'missing',
-        document_type: 'photo'
-      }
-    ]
+    id: 'pan_card_application',
+    label: 'PAN Card Application',
+    description: 'Apply for new PAN or correction',
   },
   {
     id: 'driving_license',
-    name: 'Driving License',
-    description: 'Documents required for driving license application',
-    requirements: [
-      {
-        id: 'aadhar',
-        name: 'Aadhar Card',
-        description: 'Valid Aadhar card',
-        required: true,
-        status: 'missing',
-        document_type: 'aadhar'
-      },
-      {
-        id: 'age_proof',
-        name: 'Age Proof',
-        description: 'Birth certificate, 10th certificate, or PAN card',
-        required: true,
-        status: 'missing',
-        document_type: 'age_proof'
-      },
-      {
-        id: 'address_proof',
-        name: 'Address Proof',
-        description: 'Utility bill or bank statement',
-        required: true,
-        status: 'missing',
-        document_type: 'address_proof'
-      },
-      {
-        id: 'medical_certificate',
-        name: 'Medical Certificate',
-        description: 'Medical fitness certificate from authorized doctor',
-        required: true,
-        status: 'missing',
-        document_type: 'medical_certificate'
-      }
-    ]
+    label: 'Driving License',
+    description: 'Fresh DL or renewal from RTO',
   },
   {
-    id: 'voter_id',
-    name: 'Voter ID Card',
-    description: 'Documents required for voter ID application',
-    requirements: [
-      {
-        id: 'aadhar',
-        name: 'Aadhar Card',
-        description: 'Valid Aadhar card',
-        required: true,
-        status: 'missing',
-        document_type: 'aadhar'
-      },
-      {
-        id: 'age_proof',
-        name: 'Age Proof',
-        description: 'Birth certificate or 10th certificate',
-        required: true,
-        status: 'missing',
-        document_type: 'age_proof'
-      },
-      {
-        id: 'address_proof',
-        name: 'Address Proof',
-        description: 'Utility bill, bank statement, or rental agreement',
-        required: true,
-        status: 'missing',
-        document_type: 'address_proof'
-      },
-      {
-        id: 'photo',
-        name: 'Passport Size Photo',
-        description: 'Recent passport size photograph',
-        required: true,
-        status: 'missing',
-        document_type: 'photo'
-      }
-    ]
-  }
+    id: 'voter_id_registration',
+    label: 'Voter ID / EPIC Card',
+    description: 'New voter registration or correction',
+  },
+  {
+    id: 'bank_account_opening',
+    label: 'Bank Account Opening',
+    description: 'Documents for opening a new bank account',
+  },
+  {
+    id: 'aadhaar_enrollment',
+    label: 'Aadhaar Enrollment / Update',
+    description: 'New Aadhaar or address/demographic update',
+  },
+  {
+    id: 'job_application',
+    label: 'Job Application',
+    description: 'Documents commonly required by Indian employers',
+  },
+  {
+    id: 'college_admission',
+    label: 'College / University Admission',
+    description: 'Documents for higher education admission',
+  },
 ];
 
 export default function SmartChecklist() {
-  const [selectedPurpose, setSelectedPurpose] = useState<string>('');
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
+  const [userDocs, setUserDocs] = useState<UserDocument[]>([]);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
 
-  // Load user's documents
+  const { status, data, error, fetch: fetchChecklist, reset } = useChecklist();
+  const prevSelectedId = useRef('');
+
   useEffect(() => {
-    loadDocuments();
+    loadUserDocuments();
   }, []);
 
-  // Update checklist whenever purpose changes (show all as missing if no docs yet)
-  useEffect(() => {
-    if (selectedPurpose) {
-      updateChecklist();
-    }
-  }, [selectedPurpose, documents]);
-
-  const loadDocuments = async () => {
+  const loadUserDocuments = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data, error } = await supabase
+      const { data: docs, error: err } = await supabase
         .from('documents')
         .select('id, document_name, document_type, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading documents:', error);
-        return;
-      }
-      setDocuments(data || []);
+      if (err) { console.error('loadUserDocuments:', err); return; }
+      setUserDocs(docs ?? []);
     } catch (err) {
-      console.error('Error loading documents:', err);
+      console.error('loadUserDocuments:', err);
     }
   };
 
-  const updateChecklist = () => {
-    const purpose = purposes.find(p => p.id === selectedPurpose);
-    if (!purpose) return;
-
-    const updatedChecklist = purpose.requirements.map(req => {
-      // Enhanced document matching logic
-      const hasDocument = documents.some(doc => {
-        const docType = doc.document_type.toLowerCase();
-        const docName = doc.document_name.toLowerCase();
-        const reqType = req.document_type?.toLowerCase() || '';
-        
-        // Direct type matching
-        if (docType.includes(reqType) || reqType.includes(docType)) return true;
-        
-        // Name-based matching for common documents
-        const nameMatches = {
-          'aadhar': ['aadhar', 'aadhaar', 'uid'],
-          'pan': ['pan', 'pan card'],
-          'birth_certificate': ['birth', 'certificate', '10th', 'ssc'],
-          'address_proof': ['address', 'utility', 'bill', 'bank statement', 'rental'],
-          'photo': ['photo', 'photograph', 'picture'],
-          'signature': ['signature', 'sign'],
-          'income_proof': ['income', 'salary', 'itr', 'tax'],
-          'education_certificates': ['education', 'degree', 'certificate', 'marksheet', 'diploma'],
-          'experience_letters': ['experience', 'employment', 'job', 'work'],
-          'resume': ['resume', 'cv', 'curriculum vitae']
-        };
-        
-        const keywords = nameMatches[reqType as keyof typeof nameMatches] || [];
-        return keywords.some(keyword => 
-          docName.includes(keyword) || docType.includes(keyword)
-        );
-      });
-
-      return {
-        ...req,
-        status: hasDocument ? 'completed' : 'missing'
-      };
-    });
-
-    setChecklist(updatedChecklist);
+  const handlePurposeChange = (id: string) => {
+    if (id === prevSelectedId.current) return;
+    prevSelectedId.current = id;
+    setSelectedId(id);
+    setStepsOpen(false);
+    setNotesOpen(false);
+    const purpose = PURPOSES.find((p) => p.id === id);
+    if (purpose) fetchChecklist(id, purpose.label, userDocs);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'missing':
-        return <Circle className="h-5 w-5 text-gray-400" />;
-      default:
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-    }
+  const handleRefresh = () => {
+    const purpose = PURPOSES.find((p) => p.id === selectedId);
+    if (purpose) fetchChecklist(selectedId, purpose.label, userDocs, true);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default" className="bg-green-500">Completed</Badge>;
-      case 'missing':
-        return <Badge variant="secondary">Missing</Badge>;
-      default:
-        return <Badge variant="outline">Optional</Badge>;
-    }
-  };
+  const available = data?.requiredDocuments.filter((d) => d.status === 'available') ?? [];
+  const missing = data?.requiredDocuments.filter((d) => d.status === 'missing') ?? [];
+  const requiredMissing = missing.filter((d) => d.required);
+  const total = data?.requiredDocuments.length ?? 0;
+  const pct = total > 0 ? Math.round((available.length / total) * 100) : 0;
 
-  const completedCount = checklist.filter(item => item.status === 'completed').length;
-  const totalCount = checklist.length;
-  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-  // Smart suggestions based on current documents
-  const getSmartSuggestions = () => {
-    const suggestions = purposes.map(purpose => {
-      const purposeChecklist = purpose.requirements.map(req => {
-        const hasDocument = documents.some(doc => {
-          const docType = doc.document_type.toLowerCase();
-          const docName = doc.document_name.toLowerCase();
-          const reqType = req.document_type?.toLowerCase() || '';
-          
-          if (docType.includes(reqType) || reqType.includes(docType)) return true;
-          
-          const nameMatches = {
-            'aadhar': ['aadhar', 'aadhaar', 'uid'],
-            'pan': ['pan', 'pan card'],
-            'birth_certificate': ['birth', 'certificate', '10th', 'ssc'],
-            'address_proof': ['address', 'utility', 'bill', 'bank statement', 'rental'],
-            'photo': ['photo', 'photograph', 'picture'],
-            'signature': ['signature', 'sign'],
-            'income_proof': ['income', 'salary', 'itr', 'tax'],
-            'education_certificates': ['education', 'degree', 'certificate', 'marksheet', 'diploma'],
-            'experience_letters': ['experience', 'employment', 'job', 'work'],
-            'resume': ['resume', 'cv', 'curriculum vitae']
-          };
-          
-          const keywords = nameMatches[reqType as keyof typeof nameMatches] || [];
-          return keywords.some(keyword => 
-            docName.includes(keyword) || docType.includes(keyword)
-          );
-        });
-        
-        return { ...req, status: hasDocument ? 'completed' : 'missing' };
-      });
-      
-      const completed = purposeChecklist.filter(item => item.status === 'completed').length;
-      const total = purposeChecklist.length;
-      const percentage = (completed / total) * 100;
-      
-      return {
-        ...purpose,
-        completionPercentage: percentage,
-        completedCount: completed,
-        totalCount: total
-      };
-    });
-    
-    return suggestions
-      .filter(s => s.completionPercentage > 0)
-      .sort((a, b) => b.completionPercentage - a.completionPercentage);
-  };
-
-  const smartSuggestions = getSmartSuggestions();
+  const barColor =
+    pct === 100 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-400';
 
   return (
     <div className="space-y-6">
-      {/* Smart Suggestions */}
-      {smartSuggestions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Smart Suggestions
-            </CardTitle>
-            <CardDescription>
-              Based on your uploaded documents, you can apply for:
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              {smartSuggestions.slice(0, 3).map((suggestion) => (
-                <div 
-                  key={suggestion.id}
-                  className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedPurpose(suggestion.id)}
-                >
-                  <div className="flex-1">
-                    <h4 className="font-medium">{suggestion.name}</h4>
-                    <p className="text-sm text-muted-foreground">{suggestion.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${suggestion.completionPercentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {suggestion.completedCount}/{suggestion.totalCount} documents
-                      </span>
-                    </div>
-                  </div>
-                  <Badge variant={suggestion.completionPercentage === 100 ? "default" : "secondary"}>
-                    {suggestion.completionPercentage === 100 ? "Ready" : `${Math.round(suggestion.completionPercentage)}%`}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Header card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Smart Document Checklist
+            AI-Powered Document Checklist
+            <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-xs font-normal">
+              <Sparkles className="h-3 w-3" />
+              Powered by AI
+            </Badge>
           </CardTitle>
           <CardDescription>
-            Get personalized document requirements based on your uploaded documents
+            Select what you want to apply for — the AI generates a personalised
+            checklist and compares it with your uploaded documents.
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-4">
+          {/* Purpose selector */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Select Purpose:</label>
-            <Select value={selectedPurpose} onValueChange={setSelectedPurpose}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose what you want to apply for..." />
-              </SelectTrigger>
-              <SelectContent>
-                {purposes.map((purpose) => (
-                  <SelectItem key={purpose.id} value={purpose.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{purpose.name}</span>
-                      <span className="text-xs text-muted-foreground">{purpose.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium">What do you want to apply for?</label>
+            <div className="flex gap-2">
+              <Select value={selectedId} onValueChange={handlePurposeChange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Choose an application type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PURPOSES.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {selectedId && status !== 'loading' && (
+                <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh from AI">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {selectedId && (
+              <p className="text-xs text-muted-foreground">
+                {PURPOSES.find((p) => p.id === selectedId)?.description}
+              </p>
+            )}
           </div>
 
-          {selectedPurpose && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  {purposes.find(p => p.id === selectedPurpose)?.name} Requirements
-                </h3>
-                <div className="text-sm text-muted-foreground">
-                  {completedCount}/{totalCount} completed
+          {/* Loading state */}
+          {status === 'loading' && (
+            <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-medium">AI is generating your checklist…</p>
+              <p className="text-xs">Fetching latest requirements for India (2024)</p>
+            </div>
+          )}
+
+          {/* Error state */}
+          {status === 'error' && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">Failed to generate checklist</p>
+                <p className="text-xs text-muted-foreground">{error}</p>
+                <Button variant="outline" size="sm" onClick={handleRefresh} className="mt-2">
+                  <RefreshCw className="h-3 w-3 mr-2" /> Try again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Results */}
+          {status === 'success' && data && (
+            <div className="space-y-5">
+              {/* Progress bar */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    {available.length} / {total} documents ready
+                  </span>
+                  <span className={`font-semibold ${pct === 100 ? 'text-green-600' : pct >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>
+                    {pct}%
+                  </span>
                 </div>
+                <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {data.fromCache && (
+                  <p className="text-xs text-muted-foreground text-right">
+                    Loaded from cache · <button onClick={handleRefresh} className="underline hover:no-underline">Refresh</button>
+                  </p>
+                )}
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-
-              {/* Checklist Items */}
-              <div className="space-y-3">
-                {checklist.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 p-3 border rounded-lg">
+              {/* Document list */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <ListChecks className="h-4 w-4" /> Required Documents
+                </h4>
+                {data.requiredDocuments.map((doc, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                      doc.status === 'available'
+                        ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30'
+                        : doc.required
+                        ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                        : 'border-border bg-muted/30'
+                    }`}
+                  >
                     <div className="flex-shrink-0 mt-0.5">
-                      {getStatusIcon(item.status)}
+                      {doc.status === 'available' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className={`h-5 w-5 ${doc.required ? 'text-red-500' : 'text-muted-foreground'}`} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">{item.name}</h4>
-                        {getStatusBadge(item.status)}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium">{doc.name}</span>
+                        <Badge
+                          variant={doc.status === 'available' ? 'default' : 'secondary'}
+                          className={`text-xs ${
+                            doc.status === 'available'
+                              ? 'bg-green-500 hover:bg-green-600'
+                              : ''
+                          }`}
+                        >
+                          {doc.status === 'available' ? '✓ Uploaded' : doc.required ? 'Missing' : 'Optional'}
+                        </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                      {item.required && (
-                        <span className="inline-block text-xs text-red-500 mt-1">* Required</span>
-                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Missing Documents Summary */}
-              {checklist.filter(item => item.status === 'missing').length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <h4 className="font-medium text-yellow-800">Missing Documents</h4>
-                  </div>
-                  <div className="space-y-2">
-                    {checklist
-                      .filter(item => item.status === 'missing')
-                      .slice(0, 3)
-                      .map((item) => (
-                        <div key={item.id} className="flex items-center gap-2 text-sm">
-                          <Circle className="h-4 w-4 text-yellow-600" />
-                          <span className="text-yellow-700">{item.name}</span>
-                          {item.required && (
-                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                          )}
-                        </div>
-                      ))}
-                    {checklist.filter(item => item.status === 'missing').length > 3 && (
-                      <p className="text-xs text-yellow-600">
-                        +{checklist.filter(item => item.status === 'missing').length - 3} more documents needed
-                      </p>
-                    )}
+              {/* Required missing alert */}
+              {requiredMissing.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 p-4">
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    {requiredMissing.length} required document{requiredMissing.length > 1 ? 's' : ''} still missing
+                  </p>
+                  <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                    {requiredMissing.map((d, i) => (
+                      <li key={i} className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                        {d.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {pct === 100 && (
+                <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 p-4 flex items-center gap-3">
+                  <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+                      You're ready to apply!
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      All required documents are uploaded.
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={loadDocuments}
-                  disabled={loading}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Refresh Documents
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    // Scroll to document upload section
-                    const uploadSection = document.getElementById('document-upload');
-                    uploadSection?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Upload Missing Documents
-                </Button>
-              </div>
+              {/* Steps (collapsible) */}
+              {data.steps.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-sm font-medium"
+                    onClick={() => setStepsOpen((v) => !v)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" /> Application Steps
+                    </span>
+                    {stepsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                  {stepsOpen && (
+                    <ol className="px-4 py-3 space-y-2">
+                      {data.steps.map((step, i) => (
+                        <li key={i} className="flex gap-3 text-sm">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mt-0.5">
+                            {i + 1}
+                          </span>
+                          <span className="text-muted-foreground">{step.replace(/^Step \d+:\s*/i, '')}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              )}
+
+              {/* Notes (collapsible) */}
+              {data.notes.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-sm font-medium"
+                    onClick={() => setNotesOpen((v) => !v)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Info className="h-4 w-4" /> Important Notes
+                    </span>
+                    {notesOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                  {notesOpen && (
+                    <ul className="px-4 py-3 space-y-2">
+                      {data.notes.map((note, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                          <span className="text-primary flex-shrink-0 mt-0.5">•</span>
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty idle state */}
+          {status === 'idle' && !selectedId && (
+            <div className="text-center py-10 text-muted-foreground space-y-2">
+              <Sparkles className="h-10 w-10 mx-auto opacity-30" />
+              <p className="text-sm">
+                Select an application type above to generate an AI-powered checklist.
+              </p>
             </div>
           )}
         </CardContent>
