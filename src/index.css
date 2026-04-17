@@ -206,3 +206,35 @@
     transform: translateY(-20px) rotate(2deg);
   }
 }
+
+/* ── Print styles: only show the ID card, nothing else ── */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #digital-id-card,
+  #digital-id-card * {
+    visibility: visible !important;
+  }
+
+  #digital-id-card {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+}

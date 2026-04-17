@@ -9,7 +9,7 @@ import {
   Shield, 
   Upload, 
   FileText, 
-  QrCode, 
+
   User, 
   Phone, 
   Mail, 
@@ -17,7 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  CreditCard,
+
   MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,9 +25,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import DocumentUpload from '@/components/DocumentUpload';
 import DocumentList from '@/components/DocumentList';
-import QRCode from '@/components/QRCode';
+
 import SmartChecklist from '@/components/SmartChecklist';
 import AIChatbot from '@/components/AIChatbot';
+import DigitalIDCard from '@/components/DigitalIDCard';
 
 interface Profile {
   id: string;
@@ -291,54 +292,18 @@ export default function Dashboard() {
             <Card className="card-3d border-0">
               <CardHeader>
                 <CardTitle>Digital ID Card</CardTitle>
-                <CardDescription>Your secure digital identity card with QR code access</CardDescription>
+                <CardDescription>Your secure digital identity card — print or download as PDF</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="max-w-md mx-auto">
-                  <div className="bg-gradient-primary p-6 rounded-2xl text-white glow-primary">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold">Virtual Setu ID</h3>
-                        <p className="text-sm opacity-90">Digital Identity Card</p>
-                      </div>
-                      <CreditCard className="h-8 w-8" />
-                    </div>
-                    
-                    <div className="space-y-2 mb-6">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4" />
-                        <span className="text-sm">{profile?.full_name || 'Loading...'}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4" />
-                        <span className="text-sm">{user?.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4" />
-                        <span className="text-sm">{profile?.phone || 'Not provided'}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-xs opacity-75">Card ID</p>
-                        <p className="text-sm font-mono">{user?.id?.slice(0, 8).toUpperCase()}</p>
-                      </div>
-                      <div className="bg-white p-2 rounded">
-                        <QRCode 
-                          data={`https://virtual-setu-hub.vercel.app/i/${user?.id}`}
-                          size={128}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 text-center">
-                    <Button variant="outline" className="bg-card-glass/50 backdrop-blur-xl border-border/20">
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Generate QR Code
-                    </Button>
-                  </div>
+                <div className="flex justify-center py-4">
+                  <DigitalIDCard
+                    name={profile?.full_name || ''}
+                    email={user?.email || ''}
+                    phone={profile?.phone || ''}
+                    userId={user?.id || 'unknown'}
+                    memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
+                    shareUrl={`${window.location.origin}/i/${user?.id}`}
+                  />
                 </div>
               </CardContent>
             </Card>
