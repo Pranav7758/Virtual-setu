@@ -1,0 +1,222 @@
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Mail, Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+type OtpStep = 'email' | 'verify';
+
+export default function OtpForm() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<OtpStep>('email');
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        setStep('verify');
+        toast.success(`OTP sent to ${email}`);
+      }
+    } catch {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^[0-9]?$/.test(value)) return;
+    const next = [...otp];
+    next[index] = value;
+    setOtp(next);
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (paste.length) {
+      const next = paste.split('').concat(Array(6).fill('')).slice(0, 6);
+      setOtp(next);
+      inputRefs.current[Math.min(paste.length, 5)]?.focus();
+    }
+    e.preventDefault();
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = otp.join('');
+    if (token.length < 6) {
+      toast.error('Please enter the full 6-digit OTP');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
+      });
+      if (error) {
+        toast.error(error.message === 'Token has expired or is invalid'
+          ? 'Invalid or expired OTP. Please request a new one.'
+          : error.message);
+      } else {
+        toast.success('Signed in successfully!');
+        navigate('/dashboard');
+      }
+    } catch {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (error) toast.error(error.message);
+      else {
+        setOtp(['', '', '', '', '', '']);
+        toast.success('New OTP sent!');
+        inputRefs.current[0]?.focus();
+      }
+    } catch {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (step === 'verify') {
+    return (
+      <form onSubmit={handleVerifyOtp} className="space-y-6">
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-fit p-3 bg-primary/10 rounded-xl">
+            <ShieldCheck className="h-6 w-6 text-primary" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Enter the 6-digit code sent to<br />
+            <span className="font-medium text-foreground">{email}</span>
+          </p>
+        </div>
+
+        {/* OTP boxes */}
+        <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={el => { inputRefs.current[i] = el; }}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={e => handleOtpChange(i, e.target.value)}
+              onKeyDown={e => handleOtpKeyDown(i, e)}
+              className="w-11 h-12 text-center text-xl font-bold rounded-lg border border-border/30 bg-input/50 backdrop-blur-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+            />
+          ))}
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-primary glow-primary"
+          size="lg"
+          disabled={isLoading || otp.join('').length < 6}
+        >
+          {isLoading
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying…</>
+            : 'Verify & Sign In'}
+        </Button>
+
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => { setStep('email'); setOtp(['', '', '', '', '', '']); }}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            ← Change email
+          </button>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={isLoading}
+            className="text-primary hover:underline underline-offset-2 disabled:opacity-50"
+          >
+            Resend OTP
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSendOtp} className="space-y-5">
+      <div className="text-center space-y-2">
+        <div className="mx-auto w-fit p-3 bg-primary/10 rounded-xl">
+          <Mail className="h-6 w-6 text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Get a one-time password sent directly to your email — no password needed.
+        </p>
+      </div>
+
+      <div>
+        <Label htmlFor="otp-email" className="flex items-center space-x-2">
+          <Mail className="h-4 w-4 text-primary" />
+          <span>Email Address</span>
+        </Label>
+        <Input
+          id="otp-email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          placeholder="your.email@example.com"
+        />
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-gradient-primary glow-primary"
+        size="lg"
+        disabled={isLoading}
+      >
+        {isLoading
+          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending OTP…</>
+          : <><ArrowRight className="h-4 w-4 mr-2" /> Send OTP</>}
+      </Button>
+    </form>
+  );
+}
