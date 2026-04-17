@@ -126,10 +126,25 @@ export default function SmartChecklist() {
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
             AI-Powered Document Checklist
-            <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-xs font-normal">
-              <Sparkles className="h-3 w-3" />
-              Powered by AI
-            </Badge>
+            {data && (
+              <Badge
+                variant="secondary"
+                className={`ml-auto flex items-center gap-1 text-xs font-normal ${
+                  data.source === 'scraped'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                    : ''
+                }`}
+              >
+                <Sparkles className="h-3 w-3" />
+                {data.source === 'scraped' ? 'Live from govt. website' : 'AI Generated'}
+              </Badge>
+            )}
+            {!data && (
+              <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-xs font-normal">
+                <Sparkles className="h-3 w-3" />
+                AI + Web Scraping
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Select what you want to apply for — the AI generates a personalised
@@ -212,7 +227,10 @@ export default function SmartChecklist() {
                 </div>
                 {data.fromCache && (
                   <p className="text-xs text-muted-foreground text-right">
-                    Loaded from cache · <button onClick={handleRefresh} className="underline hover:no-underline">Refresh</button>
+                    Cached result ·{' '}
+                    <button onClick={handleRefresh} className="underline hover:no-underline">
+                      Re-fetch from {import.meta.env.VITE_SCRAPER_API_KEY ? 'govt. website' : 'AI'}
+                    </button>
                   </p>
                 )}
               </div>
