@@ -62,8 +62,8 @@ export default function Dashboard() {
       return;
     }
     
-    fetchProfile();
-    fetchDocuments();
+    fetchProfile().catch(console.error);
+    fetchDocuments().catch(console.error);
   }, [user, navigate]);
 
   const fetchProfile = async () => {

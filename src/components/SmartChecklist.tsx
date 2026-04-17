@@ -279,9 +279,9 @@ export default function SmartChecklist() {
     loadDocuments();
   }, []);
 
-  // Update checklist when purpose or documents change
+  // Update checklist whenever purpose changes (show all as missing if no docs yet)
   useEffect(() => {
-    if (selectedPurpose && documents.length > 0) {
+    if (selectedPurpose) {
       updateChecklist();
     }
   }, [selectedPurpose, documents]);
@@ -297,10 +297,13 @@ export default function SmartChecklist() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading documents:', error);
+        return;
+      }
       setDocuments(data || []);
-    } catch (error) {
-      console.error('Error loading documents:', error);
+    } catch (err) {
+      console.error('Error loading documents:', err);
     }
   };
 
