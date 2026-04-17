@@ -32,19 +32,6 @@ const values = [
   },
 ];
 
-const milestones = [
-  { year: '2023', event: 'Virtual Setu conceptualised to address India\'s fragmented document management problem.' },
-  { year: '2024', event: 'Beta launch with core document upload, digital ID card, and smart checklist features.' },
-  { year: '2025', event: 'Emergency QR access, AI-powered document detection, and family profiles introduced.' },
-  { year: '2026', event: 'Subscription tiers launched with Razorpay integration, OTP login, and premium features.' },
-];
-
-const team = [
-  { name: 'Arjun Mehta', role: 'Founder & CEO', bio: 'Former government policy analyst passionate about simplifying citizen services through technology.' },
-  { name: 'Priya Singh', role: 'CTO', bio: 'Full-stack engineer with 10+ years building secure, scalable platforms for millions of users.' },
-  { name: 'Ravi Kumar', role: 'Head of Design', bio: 'Product designer dedicated to creating intuitive experiences for users across India\'s diverse demographics.' },
-  { name: 'Ananya Iyer', role: 'Head of Security', bio: 'Cybersecurity expert ensuring every byte of your data is protected to the highest standard.' },
-];
 
 export default function About() {
   return (
@@ -123,49 +110,6 @@ export default function About() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* Timeline */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold mb-3"><span className="text-gradient">Our Journey</span></h2>
-            <p className="text-foreground/70">From idea to India's trusted digital identity platform.</p>
-          </div>
-          <div className="relative pl-8 border-l-2 border-primary/30 space-y-10">
-            {milestones.map((m, i) => (
-              <div key={i} className="relative">
-                <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-gradient-primary border-2 border-background glow-primary" />
-                <div className="card-3d p-5">
-                  <span className="text-primary font-bold text-sm">{m.year}</span>
-                  <p className="text-foreground/80 mt-1 text-sm leading-relaxed">{m.event}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-card-glass/20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold mb-3"><span className="text-gradient">Meet the Team</span></h2>
-            <p className="text-foreground/70">The people dedicated to securing your digital identity.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member, i) => (
-              <div key={i} className="card-3d p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-primary mx-auto mb-4 flex items-center justify-center glow-primary">
-                  <span className="text-white text-xl font-bold">{member.name[0]}</span>
-                </div>
-                <h4 className="font-semibold">{member.name}</h4>
-                <p className="text-primary text-xs mb-3">{member.role}</p>
-                <p className="text-foreground/60 text-xs leading-relaxed">{member.bio}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
