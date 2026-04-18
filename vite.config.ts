@@ -216,6 +216,65 @@ function apiPlugin(env: Record<string, string>): Plugin {
           return;
         }
 
+        /* ---------- POST /api/delete-document ---------- */
+        if (req.url === '/api/delete-document') {
+          try {
+            const body = await parseJsonBody(req);
+            const { documentId, userId, filePath } = body;
+
+            if (!documentId || !userId) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Missing documentId or userId' }));
+              return;
+            }
+
+            const headers: Record<string, string> = {
+              apikey: SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            };
+
+            // Verify ownership
+            const checkRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}&select=id`,
+              { headers }
+            );
+            const rows = await checkRes.json();
+            if (!Array.isArray(rows) || rows.length === 0) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Document not found or access denied' }));
+              return;
+            }
+
+            // Delete from DB
+            const delRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}`,
+              { method: 'DELETE', headers }
+            );
+            if (!delRes.ok) {
+              const errText = await delRes.text();
+              throw new Error(`DB delete failed: ${errText}`);
+            }
+
+            // Delete from storage (best-effort)
+            if (filePath) {
+              await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${filePath}`, {
+                method: 'DELETE',
+                headers,
+              }).catch(() => {});
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } catch (err: any) {
+            console.error('delete-document error:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+          }
+          return;
+        }
+
         next();
       });
     },

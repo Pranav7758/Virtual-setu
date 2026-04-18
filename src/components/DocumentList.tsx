@@ -124,25 +124,28 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
     setConfirmDoc(null);
 
     try {
-      // Delete from DB
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', confirmDoc.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Not authenticated');
 
-      if (dbError) throw dbError;
+      const res = await fetch('/api/delete-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: confirmDoc.id,
+          userId,
+          filePath: normalizePath(confirmDoc.file_url),
+        }),
+      });
 
-      // Delete from storage (best-effort — don't block on failure)
-      if (confirmDoc.file_url) {
-        const path = normalizePath(confirmDoc.file_url);
-        await supabase.storage.from('documents').remove([path]).catch(() => {});
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Delete failed');
 
       toast.success(`"${confirmDoc.document_name}" deleted successfully`);
       onDelete?.();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Delete error:', err);
-      toast.error('Failed to delete document. Please try again.');
+      toast.error(err.message || 'Failed to delete document. Please try again.');
     } finally {
       setDeletingId(null);
     }

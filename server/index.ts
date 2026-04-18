@@ -122,6 +122,54 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 });
 
+app.post('/api/delete-document', async (req, res) => {
+  try {
+    const { documentId, userId, filePath } = req.body;
+    if (!documentId || !userId) {
+      return res.status(400).json({ error: 'Missing documentId or userId' });
+    }
+
+    const headers = {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    };
+
+    // Verify ownership then delete from DB
+    const checkRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}&select=id`,
+      { headers }
+    );
+    const rows = await checkRes.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(403).json({ error: 'Document not found or access denied' });
+    }
+
+    const delRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}`,
+      { method: 'DELETE', headers }
+    );
+    if (!delRes.ok) {
+      const err = await delRes.text();
+      throw new Error(`DB delete failed: ${err}`);
+    }
+
+    // Delete from storage (best-effort)
+    if (filePath) {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${filePath}`, {
+        method: 'DELETE',
+        headers,
+      }).catch(() => {});
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('delete-document error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 const PORT = process.env.API_PORT || 3001;
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);
