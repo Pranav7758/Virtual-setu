@@ -17,18 +17,137 @@ interface DocumentUploadProps {
   onUploadComplete: () => void;
 }
 
-const DOCUMENT_TYPES = [
-  { value: 'aadhaar', label: 'Aadhaar Card' },
-  { value: 'pan_card', label: 'PAN Card' },
-  { value: 'voter_id', label: 'Voter ID' },
-  { value: 'driving_license', label: 'Driving License' },
-  { value: 'passport', label: 'Passport' },
-  { value: 'birth_certificate', label: 'Birth Certificate' },
-  { value: 'income_certificate', label: 'Income Certificate' },
-  { value: 'caste_certificate', label: 'Caste Certificate' },
-  { value: 'domicile_certificate', label: 'Domicile Certificate' },
-  { value: 'other', label: 'Other' },
+const DOCUMENT_CATEGORIES = [
+  {
+    group: 'Identity',
+    types: [
+      { value: 'aadhaar', label: 'Aadhaar Card' },
+      { value: 'pan_card', label: 'PAN Card' },
+      { value: 'voter_id', label: 'Voter ID / EPIC Card' },
+      { value: 'passport', label: 'Passport' },
+      { value: 'driving_license', label: 'Driving License' },
+      { value: 'ration_card', label: 'Ration Card' },
+      { value: 'npr_card', label: 'NPR Card (National Population Register)' },
+      { value: 'senior_citizen_card', label: 'Senior Citizen Card' },
+      { value: 'disability_certificate', label: 'Disability Certificate' },
+      { value: 'arms_license', label: 'Arms License' },
+    ],
+  },
+  {
+    group: 'Birth & Family',
+    types: [
+      { value: 'birth_certificate', label: 'Birth Certificate' },
+      { value: 'death_certificate', label: 'Death Certificate' },
+      { value: 'marriage_certificate', label: 'Marriage Certificate' },
+      { value: 'divorce_certificate', label: 'Divorce Certificate' },
+      { value: 'adoption_certificate', label: 'Adoption Certificate' },
+      { value: 'legal_heir_certificate', label: 'Legal Heir Certificate' },
+      { value: 'family_certificate', label: 'Family Certificate' },
+    ],
+  },
+  {
+    group: 'Education',
+    types: [
+      { value: 'class_10_marksheet', label: 'Class 10 Marksheet' },
+      { value: 'class_12_marksheet', label: 'Class 12 Marksheet' },
+      { value: 'graduation_certificate', label: 'Graduation / Degree Certificate' },
+      { value: 'postgrad_certificate', label: 'Post-Graduation Certificate' },
+      { value: 'diploma_certificate', label: 'Diploma Certificate' },
+      { value: 'transfer_certificate', label: 'Transfer Certificate (TC)' },
+      { value: 'migration_certificate', label: 'Migration Certificate' },
+      { value: 'bonafide_certificate', label: 'Bonafide Certificate' },
+      { value: 'character_certificate', label: 'Character Certificate' },
+      { value: 'scholarship_certificate', label: 'Scholarship Certificate' },
+      { value: 'provisional_certificate', label: 'Provisional Certificate' },
+    ],
+  },
+  {
+    group: 'Income & Finance',
+    types: [
+      { value: 'income_certificate', label: 'Income Certificate' },
+      { value: 'salary_slip', label: 'Salary Slip' },
+      { value: 'form_16', label: 'Form 16 (TDS Certificate)' },
+      { value: 'itr', label: 'Income Tax Return (ITR)' },
+      { value: 'bank_statement', label: 'Bank Statement' },
+      { value: 'passbook', label: 'Bank Passbook' },
+      { value: 'cancelled_cheque', label: 'Cancelled Cheque' },
+      { value: 'gst_certificate', label: 'GST Registration Certificate' },
+      { value: 'pan_business', label: 'Business PAN Card' },
+      { value: 'udyam_certificate', label: 'Udyam Registration Certificate (MSME)' },
+    ],
+  },
+  {
+    group: 'Property & Land',
+    types: [
+      { value: 'property_deed', label: 'Property / Sale Deed' },
+      { value: 'land_record', label: 'Land Record / Khasra / Khatauni' },
+      { value: 'encumbrance_certificate', label: 'Encumbrance Certificate' },
+      { value: 'property_tax_receipt', label: 'Property Tax Receipt' },
+      { value: 'rental_agreement', label: 'Rental / Lease Agreement' },
+      { value: 'noc_property', label: 'NOC from Society / Landlord' },
+      { value: 'electricity_bill', label: 'Electricity Bill' },
+      { value: 'water_bill', label: 'Water Bill' },
+      { value: 'gas_connection', label: 'Gas Connection Document' },
+    ],
+  },
+  {
+    group: 'Category / Community',
+    types: [
+      { value: 'caste_certificate', label: 'Caste Certificate' },
+      { value: 'domicile_certificate', label: 'Domicile Certificate' },
+      { value: 'obc_certificate', label: 'OBC Certificate' },
+      { value: 'sc_st_certificate', label: 'SC / ST Certificate' },
+      { value: 'ews_certificate', label: 'EWS Certificate' },
+      { value: 'minority_certificate', label: 'Minority Certificate' },
+      { value: 'nationality_certificate', label: 'Nationality Certificate' },
+    ],
+  },
+  {
+    group: 'Employment',
+    types: [
+      { value: 'employment_certificate', label: 'Employment / Experience Certificate' },
+      { value: 'relieving_letter', label: 'Relieving Letter' },
+      { value: 'offer_letter', label: 'Offer Letter' },
+      { value: 'appointment_letter', label: 'Appointment Letter' },
+      { value: 'service_certificate', label: 'Service Certificate (Government)' },
+      { value: 'police_clearance', label: 'Police Clearance Certificate' },
+      { value: 'noc_employer', label: 'NOC from Employer' },
+    ],
+  },
+  {
+    group: 'Health & Medical',
+    types: [
+      { value: 'medical_certificate', label: 'Medical / Fitness Certificate' },
+      { value: 'vaccination_certificate', label: 'Vaccination Certificate' },
+      { value: 'covid_certificate', label: 'COVID-19 Vaccination Certificate' },
+      { value: 'health_card', label: 'Health / Ayushman Bharat Card' },
+      { value: 'blood_group_report', label: 'Blood Group Report' },
+      { value: 'insurance_policy', label: 'Insurance Policy Document' },
+    ],
+  },
+  {
+    group: 'Vehicle',
+    types: [
+      { value: 'vehicle_rc', label: 'Vehicle Registration Certificate (RC)' },
+      { value: 'vehicle_insurance', label: 'Vehicle Insurance' },
+      { value: 'puc_certificate', label: 'PUC Certificate' },
+      { value: 'vehicle_fitness', label: 'Vehicle Fitness Certificate' },
+    ],
+  },
+  {
+    group: 'Legal & Miscellaneous',
+    types: [
+      { value: 'affidavit', label: 'Affidavit' },
+      { value: 'power_of_attorney', label: 'Power of Attorney' },
+      { value: 'gazette_notification', label: 'Gazette Notification (Name Change)' },
+      { value: 'noc_police', label: 'NOC from Police' },
+      { value: 'court_order', label: 'Court Order / Judgement' },
+      { value: 'other', label: 'Other' },
+    ],
+  },
 ];
+
+const ALL_TYPES = DOCUMENT_CATEGORIES.flatMap((c) => c.types);
 
 export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
   const { user } = useAuth();
@@ -42,7 +161,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   const [typeOpen, setTypeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedTypeLabel = DOCUMENT_TYPES.find((t) => t.value === documentType)?.label ?? '';
+  const selectedTypeLabel = ALL_TYPES.find((t) => t.value === documentType)?.label ?? '';
 
   const resetForm = () => {
     setSelectedFile(null);
@@ -274,32 +393,34 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
+              <PopoverContent className="w-[320px] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder="Search document type…" />
-                  <CommandList>
+                  <CommandInput placeholder="Search any document type…" />
+                  <CommandList className="max-h-72">
                     <CommandEmpty>No document type found.</CommandEmpty>
-                    <CommandGroup>
-                      {DOCUMENT_TYPES.map((type) => (
-                        <CommandItem
-                          key={type.value}
-                          value={type.label}
-                          onSelect={() => {
-                            setDocumentType(type.value);
-                            resetVerify();
-                            setTypeOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              documentType === type.value ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                          {type.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                    {DOCUMENT_CATEGORIES.map((category) => (
+                      <CommandGroup key={category.group} heading={category.group}>
+                        {category.types.map((type) => (
+                          <CommandItem
+                            key={type.value}
+                            value={type.label}
+                            onSelect={() => {
+                              setDocumentType(type.value);
+                              resetVerify();
+                              setTypeOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4 flex-shrink-0',
+                                documentType === type.value ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            {type.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    ))}
                   </CommandList>
                 </Command>
               </PopoverContent>
