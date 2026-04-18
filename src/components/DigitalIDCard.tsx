@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, Download, Shield, Mail, Phone, Hash, CheckCircle } from 'lucide-react';
+import { Printer, Download, Shield, CheckCircle } from 'lucide-react';
 import QRCode from '@/components/QRCode';
 
 interface DigitalIDCardProps {
@@ -22,7 +22,9 @@ export default function DigitalIDCard({
 }: DigitalIDCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const cardId = userId ? userId.slice(0, 8).toUpperCase().match(/.{1,4}/g)?.join(' ') : 'XXXX XXXX';
+  const cardId = userId
+    ? userId.slice(0, 10).toUpperCase().match(/.{1,4}/g)?.join(' ')
+    : 'XXXX XXXX XX';
   const qrData = shareUrl || `${window.location.origin}/i/${userId}`;
 
   const handlePrint = () => window.print();
@@ -32,174 +34,246 @@ export default function DigitalIDCard({
     const html2canvas = (await import('html2canvas')).default;
     const jsPDF = (await import('jspdf')).default;
     const canvas = await html2canvas(cardRef.current, {
-      scale: 3,
+      scale: 4,
       useCORS: true,
-      backgroundColor: null,
+      backgroundColor: '#fff',
       logging: false,
     });
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [100, 60] });
-    pdf.addImage(imgData, 'PNG', 0, 0, 100, 60);
+    /* exact PAN card dimensions: 85.6 × 53.98 mm */
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 53.98] });
+    pdf.addImage(imgData, 'PNG', 0, 0, 85.6, 53.98);
     pdf.save(`VirtualSetu_ID_${userId.slice(0, 8).toUpperCase()}.pdf`);
   };
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {/* ── FRONT of card ── */}
+      {/*
+        PAN card ISO/IEC 7810 ID-1: 85.6 × 53.98 mm
+        At 96 dpi × 1.5 scale → 487 × 307 px   (use 480 × 303)
+        Aspect ratio: 85.6 / 53.98 ≈ 1.5857
+      */}
       <div
         ref={cardRef}
-        className="relative w-[380px] rounded-2xl overflow-hidden select-none"
+        className="relative select-none overflow-hidden"
         style={{
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-          background: 'linear-gradient(135deg, #fafafa 0%, #e8f4fd 60%, #d4eaf7 100%)',
-          border: '1px solid #b8d8f0',
+          width: 480,
+          height: 303,
+          borderRadius: 10,
+          background: 'linear-gradient(160deg, #f0f6ff 0%, #e4eefa 55%, #d8edf8 100%)',
+          border: '1.5px solid #93c5e8',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12)',
           fontFamily: '"Segoe UI", system-ui, sans-serif',
         }}
       >
-        {/* Top tricolor stripe */}
-        <div className="h-2 w-full flex">
-          <div className="flex-1" style={{ background: '#FF9933' }} />
-          <div className="flex-1" style={{ background: '#FFFFFF' }} />
-          <div className="flex-1" style={{ background: '#138808' }} />
+        {/* ── Top tricolor stripe (3 px) ── */}
+        <div style={{ display: 'flex', height: 4, width: '100%' }}>
+          <div style={{ flex: 1, background: '#FF9933' }} />
+          <div style={{ flex: 1, background: '#FFFFFF' }} />
+          <div style={{ flex: 1, background: '#138808' }} />
         </div>
 
-        {/* Header bar */}
+        {/* ── Header bar ── */}
         <div
-          className="flex items-center justify-between px-4 py-2.5"
-          style={{ background: 'linear-gradient(90deg, #003580 0%, #0059b3 100%)' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '5px 14px',
+            background: 'linear-gradient(90deg, #00266e 0%, #0047ab 100%)',
+          }}
         >
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-white/20 rounded-lg">
-              <Shield className="h-4 w-4 text-white" />
+          {/* Left: logo + title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                padding: 3,
+                borderRadius: 5,
+                background: 'rgba(255,255,255,0.18)',
+                display: 'flex',
+              }}
+            >
+              <Shield style={{ width: 13, height: 13, color: 'white' }} />
             </div>
             <div>
-              <p className="text-white font-bold text-[11px] tracking-widest leading-none uppercase">
+              <p style={{ color: 'white', fontWeight: 800, fontSize: 10, letterSpacing: '0.18em', lineHeight: 1, textTransform: 'uppercase', margin: 0 }}>
                 Virtual Setu
               </p>
-              <p className="text-sky-200 text-[8px] leading-none mt-0.5 tracking-wider">
+              <p style={{ color: '#93c5fd', fontSize: 7, letterSpacing: '0.06em', lineHeight: 1, marginTop: 2, margin: 0 }}>
                 Digital Identity Authority of India
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sky-300 text-[7px] uppercase tracking-widest">Government of India</p>
-            <p className="text-white text-[8px] font-semibold mt-0.5">भारत सरकार</p>
+          {/* Right: "Govt of India" */}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: '#bfdbfe', fontSize: 7, letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+              Government of India
+            </p>
+            <p style={{ color: 'white', fontSize: 8, fontWeight: 600, margin: 0, marginTop: 1 }}>
+              भारत सरकार
+            </p>
           </div>
         </div>
 
-        {/* Card body */}
-        <div className="px-5 pt-4 pb-3">
-          {/* Card type label */}
-          <div className="text-center mb-3">
-            <span
-              className="text-[9px] font-bold tracking-[0.3em] uppercase px-3 py-0.5 rounded-full"
-              style={{ background: '#003580', color: 'white' }}
-            >
-              Digital Identity Card
-            </span>
-          </div>
+        {/* ── "DIGITAL IDENTITY CARD" centre label ── */}
+        <div style={{ textAlign: 'center', paddingTop: 7 }}>
+          <span
+            style={{
+              display: 'inline-block',
+              fontSize: 7.5,
+              fontWeight: 700,
+              letterSpacing: '0.28em',
+              textTransform: 'uppercase',
+              color: 'white',
+              background: '#00266e',
+              borderRadius: 20,
+              padding: '2px 10px',
+            }}
+          >
+            Digital Identity Card
+          </span>
+        </div>
 
-          {/* Main content: info left, QR right */}
-          <div className="flex items-start gap-4">
-            {/* Left: identity info */}
-            <div className="flex-1 space-y-2.5">
-              {/* Name */}
+        {/* ── Main body: info + QR ── */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            padding: '8px 14px 0 14px',
+            gap: 10,
+          }}
+        >
+          {/* Left: field grid */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Name */}
+            <div>
+              <p style={{ fontSize: 7, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Name / नाम
+              </p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0, marginTop: 1, lineHeight: 1.1 }}>
+                {name || 'Name Not Provided'}
+              </p>
+            </div>
+
+            {/* Email */}
+            <div>
+              <p style={{ fontSize: 7, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Email Address
+              </p>
+              <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, marginTop: 1 }}>
+                {email || '—'}
+              </p>
+            </div>
+
+            {/* Mobile */}
+            <div>
+              <p style={{ fontSize: 7, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Mobile / मोबाइल
+              </p>
+              <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, marginTop: 1 }}>
+                {phone || 'Not provided'}
+              </p>
+            </div>
+
+            {/* Enrolled since */}
+            {memberSince && (
               <div>
-                <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold">Name / नाम</p>
-                <p className="text-gray-900 font-bold text-sm leading-tight mt-0.5">
-                  {name || 'Name Not Provided'}
+                <p style={{ fontSize: 7, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                  Enrolled Since
+                </p>
+                <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, marginTop: 1 }}>
+                  {memberSince}
                 </p>
               </div>
-
-              {/* Email */}
-              <div>
-                <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold">Email Address</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Mail className="h-2.5 w-2.5 text-blue-600 flex-shrink-0" />
-                  <p className="text-gray-700 text-[10px] truncate">{email || '—'}</p>
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div>
-                <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold">Mobile / मोबाइल</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Phone className="h-2.5 w-2.5 text-blue-600 flex-shrink-0" />
-                  <p className="text-gray-700 text-[10px]">{phone || 'Not provided'}</p>
-                </div>
-              </div>
-
-              {/* Member since */}
-              {memberSince && (
-                <div>
-                  <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold">Enrolled Since</p>
-                  <p className="text-gray-700 text-[10px] mt-0.5">{memberSince}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Right: QR Code */}
-            <div className="flex-shrink-0 flex flex-col items-center gap-1">
-              <div
-                className="p-1.5 rounded-xl"
-                style={{
-                  background: 'white',
-                  border: '1.5px solid #b8d8f0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }}
-              >
-                <QRCode data={qrData} size={80} />
-              </div>
-              <p className="text-[7px] text-gray-400 text-center leading-tight">
-                Scan to verify
-              </p>
-            </div>
+            )}
           </div>
 
-          {/* ID number row */}
-          <div
-            className="mt-3 px-3 py-2 rounded-xl flex items-center justify-between"
-            style={{ background: 'rgba(0, 53, 128, 0.06)', border: '1px solid rgba(0,53,128,0.12)' }}
-          >
-            <div>
-              <p className="text-[7px] text-gray-400 uppercase tracking-wider">ID Number</p>
-              <p
-                className="font-mono font-bold text-sm tracking-[0.15em] mt-0.5"
-                style={{ color: '#003580' }}
-              >
-                {cardId}
-              </p>
+          {/* Right: QR Code */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+            <div
+              style={{
+                padding: 4,
+                background: 'white',
+                borderRadius: 6,
+                border: '1.5px solid #93c5e8',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.1)',
+              }}
+            >
+              <QRCode data={qrData} size={72} />
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-green-600" />
-              <span className="text-[8px] text-green-700 font-semibold">Verified</span>
-            </div>
+            <p style={{ fontSize: 6.5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>
+              Scan to verify
+            </p>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* ── ID number row ── */}
         <div
-          className="flex items-center justify-between px-5 py-2"
-          style={{ background: 'rgba(0, 53, 128, 0.05)', borderTop: '1px solid rgba(0,53,128,0.1)' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            margin: '8px 14px 0 14px',
+            padding: '5px 10px',
+            borderRadius: 6,
+            background: 'rgba(0, 38, 110, 0.07)',
+            border: '1px solid rgba(0,38,110,0.13)',
+          }}
         >
-          <p className="text-[7px] text-gray-400 uppercase tracking-widest">
-            This is a digitally issued identity document
-          </p>
-          <div className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <p className="text-[7px] text-green-600 font-semibold">Active</p>
+          <div>
+            <p style={{ fontSize: 6.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+              ID Number
+            </p>
+            <p
+              style={{
+                fontFamily: '"Courier New", monospace',
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: '0.2em',
+                color: '#00266e',
+                margin: 0,
+                marginTop: 1,
+              }}
+            >
+              {cardId}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <CheckCircle style={{ width: 11, height: 11, color: '#16a34a' }} />
+            <span style={{ fontSize: 7.5, color: '#15803d', fontWeight: 600 }}>Verified</span>
           </div>
         </div>
 
-        {/* Bottom tricolor stripe */}
-        <div className="h-1.5 w-full flex">
-          <div className="flex-1" style={{ background: '#FF9933' }} />
-          <div className="flex-1" style={{ background: '#FFFFFF', borderTop: '1px solid #ddd' }} />
-          <div className="flex-1" style={{ background: '#138808' }} />
+        {/* ── Footer ── */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '5px 14px',
+            marginTop: 6,
+            borderTop: '1px solid rgba(0,38,110,0.1)',
+            background: 'rgba(0,38,110,0.04)',
+          }}
+        >
+          <p style={{ fontSize: 6.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+            Digitally issued identity document
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e' }} />
+            <p style={{ fontSize: 7, color: '#16a34a', fontWeight: 600, margin: 0 }}>Active</p>
+          </div>
+        </div>
+
+        {/* ── Bottom tricolor stripe (3 px) ── */}
+        <div style={{ display: 'flex', height: 4, width: '100%', position: 'absolute', bottom: 0, left: 0 }}>
+          <div style={{ flex: 1, background: '#FF9933' }} />
+          <div style={{ flex: 1, background: '#FFFFFF' }} />
+          <div style={{ flex: 1, background: '#138808' }} />
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* ── Action buttons ── */}
       <div className="flex gap-3 no-print">
         <Button
           onClick={handlePrint}
@@ -211,7 +285,7 @@ export default function DigitalIDCard({
         </Button>
         <Button
           onClick={handleDownloadPDF}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white gap-2 hover:opacity-90"
+          className="bg-gradient-to-r from-blue-700 to-blue-800 text-white gap-2 hover:opacity-90"
         >
           <Download className="h-4 w-4" />
           Download PDF
