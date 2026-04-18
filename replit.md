@@ -8,9 +8,9 @@ A comprehensive digital identity and document management system for Indian citiz
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Routing**: React Router v6
-- **Auth & DB**: Supabase (auth + postgres)
-- **AI**: Google Gemini API (chatbot)
-- **File Storage**: Firebase
+- **Auth & DB**: Supabase (auth + postgres + storage)
+- **AI**: GROQ API (document verification + smart checklist)
+- **Payments**: Razorpay (premium/platinum plans)
 - **PDF Export**: html2canvas + jsPDF
 
 ## Project Structure
@@ -22,25 +22,34 @@ src/
     Auth.tsx         - Sign in / sign up
     Register.tsx     - New user registration
     Dashboard.tsx    - Main authenticated dashboard (tabs)
+    Pricing.tsx      - Subscription plans page
     Share.tsx        - Public QR-code share page
     NotFound.tsx     - 404
   components/
     DigitalIDCard.tsx   - ID card with Print + PDF download
-    DocumentUpload.tsx  - File upload component
+    DocumentUpload.tsx  - File upload component (AI-verified)
     DocumentList.tsx    - Uploaded documents list
     QRCode.tsx          - QR code generator (uses `qrcode` lib)
     SmartChecklist.tsx  - Document checklist
-    AIChatbot.tsx       - Gemini-powered chatbot
+    AIChatbot.tsx       - GROQ-powered chatbot
     ui/                 - shadcn/ui primitives
   lib/
     groqVerify.ts       - GROQ AI document verification (vision + text)
     checklistService.ts - AI checklist generation with localStorage + Supabase cache
+    firebase.ts         - Firebase config (legacy, not primary storage)
   hooks/
-    useAuth.tsx                 - Auth context + helper
+    useAuth.tsx                 - Auth context + helper (Supabase)
     useDocumentVerification.ts  - Document verification state hook
     useChecklist.ts             - AI checklist fetch + user-doc comparison hook
+    useUserPlan.ts              - User plan/limits management
   integrations/
-    supabase/        - Supabase client + types
+    supabase/        - Supabase client + generated types
+server/
+  index.ts     - Express API server (Razorpay order creation + payment verification)
+  db.ts        - PostgreSQL pool (DATABASE_URL)
+supabase/
+  migrations/  - SQL schema migrations (profiles, documents, subscriptions)
+  functions/   - Edge function: share-docs (PIN-protected document sharing)
 ```
 
 ## Key Features
@@ -49,12 +58,18 @@ src/
   - Real ID-card-style UI with photo, name, email, phone, card ID, QR code
   - **Print** — `window.print()` with `@media print` CSS that isolates only the card
   - **Download PDF** — `html2canvas` captures the card, `jsPDF` generates landscape PDF
-  - Uses `useRef` to target the card element
 
-- **Document Management** — upload, list, verification status badges
-- **AI Smart Checklist** — GROQ-powered dynamic checklist generation per application type, with localStorage + Supabase caching and user-document comparison
-- **AI Chatbot** — Gemini-powered, document-aware assistant
-- **QR Share** — PIN-protected public document sharing
+- **Document Management** — AI-verified upload, list, verification status badges
+- **AI Smart Checklist** — GROQ-powered dynamic checklist generation per application type, with localStorage + Supabase caching
+- **AI Chatbot** — GROQ-powered, document-aware assistant
+- **QR Share** — PIN-protected public document sharing via Supabase Edge Function
+- **Subscriptions** — Free / Premium / Platinum plans via Razorpay
+
+## Running Services
+
+- **Vite dev server** — port `5000` (frontend)
+- **Express API server** — port `3001` (Razorpay payment endpoints: `/api/create-order`, `/api/verify-payment`)
+- Vite proxies `/api/*` requests to port 3001
 
 ## Environment Variables Required
 
@@ -62,19 +77,16 @@ src/
 |---|---|
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `VITE_FIREBASE_API_KEY` | Firebase API key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID |
-| `VITE_FIREBASE_APP_ID` | Firebase app ID |
-| `VITE_FIREBASE_MEASUREMENT_ID` | Firebase measurement ID |
-| `VITE_GEMINI_API_KEY` | Google Gemini API key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side) |
+| `RAZORPAY_KEY_ID` | Razorpay key ID (server-side) |
+| `RAZORPAY_KEY_SECRET` | Razorpay secret key (server-side) |
+| `VITE_RAZORPAY_KEY_ID` | Razorpay key ID (frontend, for checkout) |
+| `VITE_GROQ_API_KEY` | GROQ API key (document verification + AI features) |
+| `VITE_SCRAPER_API_KEY` | ScraperAPI key (optional, for smart checklist) |
 
-## Dev Server
-
-Runs on port `5000`, host `0.0.0.0` — configured for Replit's preview pane.
+## Dev Commands
 
 ```bash
-npm run dev
+npm run dev      # Start Vite frontend (port 5000)
+npm run server   # Start Express API server (port 3001)
 ```
