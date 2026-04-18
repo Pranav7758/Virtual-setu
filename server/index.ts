@@ -43,15 +43,28 @@ async function updateSupabasePlan(userId: string, plan: string, orderId: string,
     Prefer: 'return=minimal',
   };
 
+  // Update profiles table plan column (works once migration has been run)
   await fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}`, {
     method: 'PATCH',
     headers,
     body: JSON.stringify({ plan }),
   });
 
+  // Also update user metadata so plan is readable before/without DB migration
+  await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+    method: 'PUT',
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ user_metadata: { plan } }),
+  });
+
   const endDate = new Date();
   endDate.setFullYear(endDate.getFullYear() + 1);
 
+  // Insert subscription record (works once migration has been run)
   await fetch(`${SUPABASE_URL}/rest/v1/subscriptions`, {
     method: 'POST',
     headers: { ...headers, Prefer: 'return=minimal' },

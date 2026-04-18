@@ -77,9 +77,21 @@ export function useUserPlan(): UseUserPlanReturn {
 
       if (!error && data?.plan) {
         setPlan(data.plan as Plan);
+      } else {
+        // Fallback: read plan from user metadata (used before DB migration runs)
+        const metaPlan = (user.user_metadata as any)?.plan as Plan | undefined;
+        if (metaPlan && ['free', 'premium', 'platinum'].includes(metaPlan)) {
+          setPlan(metaPlan);
+        }
       }
     } catch {
-      setPlan('free');
+      // Fallback to user metadata on any error
+      const metaPlan = (user.user_metadata as any)?.plan as Plan | undefined;
+      if (metaPlan && ['free', 'premium', 'platinum'].includes(metaPlan)) {
+        setPlan(metaPlan);
+      } else {
+        setPlan('free');
+      }
     } finally {
       setLoading(false);
     }
