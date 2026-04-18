@@ -245,34 +245,48 @@ export default function SmartChecklist() {
                     key={i}
                     className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                       doc.status === 'available'
-                        ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30'
+                        ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/40'
                         : doc.required
-                        ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                        ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
                         : 'border-border bg-muted/30'
                     }`}
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {doc.status === 'available' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                       ) : (
-                        <XCircle className={`h-5 w-5 ${doc.required ? 'text-red-500' : 'text-muted-foreground'}`} />
+                        <XCircle className={`h-5 w-5 ${doc.required ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium">{doc.name}</span>
+                        <span className={`text-sm font-semibold ${
+                          doc.status === 'available'
+                            ? 'text-green-900 dark:text-green-100'
+                            : doc.required
+                            ? 'text-red-900 dark:text-red-100'
+                            : 'text-foreground'
+                        }`}>{doc.name}</span>
                         <Badge
                           variant={doc.status === 'available' ? 'default' : 'secondary'}
                           className={`text-xs ${
                             doc.status === 'available'
-                              ? 'bg-green-500 hover:bg-green-600'
+                              ? 'bg-green-500 hover:bg-green-600 text-white'
+                              : doc.required
+                              ? 'bg-red-500 hover:bg-red-600 text-white'
                               : ''
                           }`}
                         >
                           {doc.status === 'available' ? '✓ Uploaded' : doc.required ? 'Missing' : 'Optional'}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
+                      <p className={`text-xs mt-0.5 ${
+                        doc.status === 'available'
+                          ? 'text-green-700 dark:text-green-300'
+                          : doc.required
+                          ? 'text-red-700 dark:text-red-300'
+                          : 'text-muted-foreground'
+                      }`}>{doc.description}</p>
                     </div>
                   </div>
                 ))}
