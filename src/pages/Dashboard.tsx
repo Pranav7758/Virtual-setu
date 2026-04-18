@@ -358,7 +358,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
-            <DocumentList documents={documents} />
+            <DocumentList documents={documents} onDelete={fetchDocuments} />
           </TabsContent>
 
           {/* Checklist Tab */}
