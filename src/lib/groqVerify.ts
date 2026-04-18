@@ -125,7 +125,7 @@ export async function verifyDocument(
       },
     ];
   } else if (isPdf) {
-    model = 'llama3-70b-8192';
+    model = 'llama-3.3-70b-versatile';
     let pdfText = '';
     try {
       pdfText = await extractPdfText(file);
