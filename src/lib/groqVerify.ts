@@ -53,6 +53,8 @@ async function extractPdfText(file: File): Promise<string> {
 }
 
 function buildPrompt(selectedTypeLabel: string): string {
+  const isOther = selectedTypeLabel.toLowerCase() === 'other';
+
   return `You are a document verification AI for an Indian government document portal called Virtual Setu.
 
 The user claims to be uploading a: "${selectedTypeLabel}"
@@ -73,15 +75,18 @@ Supported document types:
 
 Respond with ONLY valid JSON in this exact format:
 {
-  "detectedType": "<one of the supported types above>",
-  "isValid": <true if detectedType matches the claimed type, false otherwise>,
+  "detectedType": "<one of the supported types above, or your best guess>",
+  "isValid": <true or false>,
   "message": "<a helpful 1-2 sentence message for the user>"
 }
 
 Rules:
-- If the document clearly matches the claimed type, set isValid to true
+${isOther
+  ? `- The user has selected "Other", meaning this is a miscellaneous document. Always set isValid to true and detectedType to "Other".
+- In your message, briefly describe what the document appears to be.`
+  : `- If the document clearly matches the claimed type, set isValid to true
 - If it does not match, set isValid to false and explain what was found
-- If you cannot determine the type confidently, set detectedType to "Other" and isValid to false
+- If you cannot determine the type confidently, set detectedType to "Other" and isValid to false`}
 - Keep messages friendly and actionable`;
 }
 
@@ -167,6 +172,10 @@ export async function verifyDocument(
 
   try {
     const parsed = JSON.parse(content) as VerificationResult;
+    // Safety net: "Other" type should always be accepted regardless of AI response
+    if (selectedType === 'other') {
+      return { ...parsed, isValid: true, detectedType: parsed.detectedType || 'Other' };
+    }
     return parsed;
   } catch {
     throw new Error('Unexpected response format from AI. Please try again.');
