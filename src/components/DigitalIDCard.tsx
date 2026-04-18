@@ -31,19 +31,20 @@ export default function DigitalIDCard({
 
   const handleDownloadPDF = async () => {
     if (!cardRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-    const jsPDF = (await import('jspdf')).default;
-    const canvas = await html2canvas(cardRef.current, {
-      scale: 4,
-      useCORS: true,
-      backgroundColor: '#fff',
-      logging: false,
-    });
-    const imgData = canvas.toDataURL('image/png');
-    /* exact PAN card dimensions: 85.6 × 53.98 mm */
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 53.98] });
-    pdf.addImage(imgData, 'PNG', 0, 0, 85.6, 53.98);
-    pdf.save(`VirtualSetu_ID_${userId.slice(0, 8).toUpperCase()}.pdf`);
+    try {
+      const { toPng } = await import('html-to-image');
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 4,
+        cacheBust: true,
+        backgroundColor: '#f0f6ff',
+      });
+      const link = document.createElement('a');
+      link.download = `VirtualSetu_ID_${userId.slice(0, 8).toUpperCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Download error:', err);
+    }
   };
 
   return (
@@ -288,7 +289,7 @@ export default function DigitalIDCard({
           className="bg-gradient-to-r from-blue-700 to-blue-800 text-white gap-2 hover:opacity-90"
         >
           <Download className="h-4 w-4" />
-          Download PDF
+          Download Card
         </Button>
       </div>
     </div>
