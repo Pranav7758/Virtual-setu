@@ -4,13 +4,11 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import {
   CheckCircle2, XCircle, Loader2, RefreshCw, Sparkles,
   FileText, ChevronDown, ChevronUp, AlertCircle, Target,
-  ListChecks, Info,
+  ListChecks, Info, Search, X,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useChecklist } from '@/hooks/useChecklist';
@@ -22,57 +20,26 @@ interface UserDocument {
   created_at: string;
 }
 
-const PURPOSES = [
-  {
-    id: 'passport_application',
-    label: 'Passport Application',
-    description: 'New / renewal passport via Passport Seva Kendra',
-  },
-  {
-    id: 'pan_card_application',
-    label: 'PAN Card Application',
-    description: 'Apply for new PAN or correction',
-  },
-  {
-    id: 'driving_license',
-    label: 'Driving License',
-    description: 'Fresh DL or renewal from RTO',
-  },
-  {
-    id: 'voter_id_registration',
-    label: 'Voter ID / EPIC Card',
-    description: 'New voter registration or correction',
-  },
-  {
-    id: 'bank_account_opening',
-    label: 'Bank Account Opening',
-    description: 'Documents for opening a new bank account',
-  },
-  {
-    id: 'aadhaar_enrollment',
-    label: 'Aadhaar Enrollment / Update',
-    description: 'New Aadhaar or address/demographic update',
-  },
-  {
-    id: 'job_application',
-    label: 'Job Application',
-    description: 'Documents commonly required by Indian employers',
-  },
-  {
-    id: 'college_admission',
-    label: 'College / University Admission',
-    description: 'Documents for higher education admission',
-  },
+const QUICK_PURPOSES = [
+  { id: 'passport_application',   label: 'Passport' },
+  { id: 'pan_card_application',   label: 'PAN Card' },
+  { id: 'driving_license',        label: 'Driving License' },
+  { id: 'voter_id_registration',  label: 'Voter ID' },
+  { id: 'bank_account_opening',   label: 'Bank Account' },
+  { id: 'aadhaar_enrollment',     label: 'Aadhaar' },
+  { id: 'job_application',        label: 'Job Application' },
+  { id: 'college_admission',      label: 'College Admission' },
 ];
 
 export default function SmartChecklist() {
-  const [selectedId, setSelectedId] = useState('');
+  const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
   const [userDocs, setUserDocs] = useState<UserDocument[]>([]);
   const [stepsOpen, setStepsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
 
   const { status, data, error, fetch: fetchChecklist, reset } = useChecklist();
-  const prevSelectedId = useRef('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadUserDocuments();
@@ -94,19 +61,37 @@ export default function SmartChecklist() {
     }
   };
 
-  const handlePurposeChange = (id: string) => {
-    if (id === prevSelectedId.current) return;
-    prevSelectedId.current = id;
-    setSelectedId(id);
+  const handleSearch = (purposeLabel: string) => {
+    const trimmed = purposeLabel.trim();
+    if (!trimmed) return;
+    setSubmittedQuery(trimmed);
     setStepsOpen(false);
     setNotesOpen(false);
-    const purpose = PURPOSES.find((p) => p.id === id);
-    if (purpose) fetchChecklist(id, purpose.label, userDocs);
+    const id = trimmed.toLowerCase().replace(/\s+/g, '_');
+    fetchChecklist(id, trimmed, userDocs);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(query);
+  };
+
+  const handleQuickSelect = (label: string) => {
+    setQuery(label);
+    handleSearch(label);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setSubmittedQuery('');
+    reset();
+    inputRef.current?.focus();
   };
 
   const handleRefresh = () => {
-    const purpose = PURPOSES.find((p) => p.id === selectedId);
-    if (purpose) fetchChecklist(selectedId, purpose.label, userDocs, true);
+    if (!submittedQuery) return;
+    const id = submittedQuery.toLowerCase().replace(/\s+/g, '_');
+    fetchChecklist(id, submittedQuery, userDocs, true);
   };
 
   const available = data?.requiredDocuments.filter((d) => d.status === 'available') ?? [];
@@ -120,7 +105,6 @@ export default function SmartChecklist() {
 
   return (
     <div className="space-y-6">
-      {/* Header card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -147,40 +131,72 @@ export default function SmartChecklist() {
             )}
           </CardTitle>
           <CardDescription>
-            Select what you want to apply for — the AI generates a personalised
-            checklist and compares it with your uploaded documents.
+            Search for any application or service — the AI builds a personalised checklist
+            and checks which documents you already have uploaded.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Purpose selector */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">What do you want to apply for?</label>
-            <div className="flex gap-2">
-              <Select value={selectedId} onValueChange={handlePurposeChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Choose an application type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PURPOSES.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {selectedId && status !== 'loading' && (
-                <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh from AI">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+          {/* Search bar */}
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search any purpose — passport, ration card, GST registration…"
+                className="pl-9 pr-9"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               )}
             </div>
-            {selectedId && (
-              <p className="text-xs text-muted-foreground">
-                {PURPOSES.find((p) => p.id === selectedId)?.description}
-              </p>
+            <Button
+              type="submit"
+              disabled={!query.trim() || status === 'loading'}
+              className="bg-gradient-primary glow-primary"
+            >
+              {status === 'loading' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              <span className="ml-2 hidden sm:inline">Search</span>
+            </Button>
+            {submittedQuery && status !== 'loading' && (
+              <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh from AI">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             )}
+          </form>
+
+          {/* Quick-select chips */}
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground font-medium">Quick select:</p>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_PURPOSES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleQuickSelect(p.label)}
+                  disabled={status === 'loading'}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 ${
+                    submittedQuery.toLowerCase() === p.label.toLowerCase()
+                      ? 'border-primary bg-primary/15 text-primary'
+                      : 'border-border bg-muted/40 text-muted-foreground'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Loading state */}
@@ -188,7 +204,7 @@ export default function SmartChecklist() {
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm font-medium">AI is generating your checklist…</p>
-              <p className="text-xs">Fetching latest requirements for India (2024)</p>
+              <p className="text-xs">Building requirements for: <span className="font-semibold text-foreground">{submittedQuery}</span></p>
             </div>
           )}
 
@@ -209,6 +225,18 @@ export default function SmartChecklist() {
           {/* Results */}
           {status === 'success' && data && (
             <div className="space-y-5">
+              {/* Active query pill */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Results for:</span>
+                <Badge variant="outline" className="flex items-center gap-1 text-xs font-medium capitalize">
+                  <Search className="h-3 w-3" />
+                  {submittedQuery}
+                  <button onClick={handleClear} className="ml-1 hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              </div>
+
               {/* Progress bar */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
@@ -229,7 +257,7 @@ export default function SmartChecklist() {
                   <p className="text-xs text-muted-foreground text-right">
                     Cached result ·{' '}
                     <button onClick={handleRefresh} className="underline hover:no-underline">
-                      Re-fetch from {import.meta.env.VITE_SCRAPER_API_KEY ? 'govt. website' : 'AI'}
+                      Re-fetch from AI
                     </button>
                   </p>
                 )}
@@ -379,11 +407,14 @@ export default function SmartChecklist() {
           )}
 
           {/* Empty idle state */}
-          {status === 'idle' && !selectedId && (
+          {status === 'idle' && !submittedQuery && (
             <div className="text-center py-10 text-muted-foreground space-y-2">
-              <Sparkles className="h-10 w-10 mx-auto opacity-30" />
+              <Search className="h-10 w-10 mx-auto opacity-30" />
               <p className="text-sm">
-                Select an application type above to generate an AI-powered checklist.
+                Type any application or service above — or pick a quick option.
+              </p>
+              <p className="text-xs opacity-70">
+                Examples: ration card, GST registration, marriage certificate, scholarship…
               </p>
             </div>
           )}
