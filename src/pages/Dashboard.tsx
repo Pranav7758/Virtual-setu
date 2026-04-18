@@ -381,11 +381,7 @@ export default function Dashboard() {
                     phone={profile?.phone || ''}
                     userId={user?.id || 'unknown'}
                     memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
-                    shareUrl={
-                      limits.qrEmergencySharing
-                        ? `${window.location.origin}/i/${user?.id}`
-                        : undefined
-                    }
+                    shareUrl={`${window.location.origin}/i/${user?.id}`}
                   />
                 </div>
                 {!limits.qrEmergencySharing && (
