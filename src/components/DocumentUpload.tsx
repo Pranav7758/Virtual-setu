@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Progress } from '@/components/ui/progress';
-import { Upload, FileText, X, CheckCircle, AlertCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import { Upload, FileText, X, CheckCircle, AlertCircle, ShieldCheck, Loader2, ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,7 +39,10 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   const [documentName, setDocumentName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [typeOpen, setTypeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedTypeLabel = DOCUMENT_TYPES.find((t) => t.value === documentType)?.label ?? '';
 
   const resetForm = () => {
     setSelectedFile(null);
@@ -249,24 +254,56 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Searchable Document Type */}
           <div className="space-y-2">
             <Label htmlFor="document-type">Document Type *</Label>
-            <Select
-              value={documentType}
-              onValueChange={(v) => { setDocumentType(v); resetVerify(); }}
-              disabled={isBusy}
-            >
-              <SelectTrigger id="document-type">
-                <SelectValue placeholder="Select document type" />
-              </SelectTrigger>
-              <SelectContent>
-                {DOCUMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={typeOpen} onOpenChange={setTypeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="document-type"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={typeOpen}
+                  disabled={isBusy}
+                  className="w-full justify-between font-normal"
+                >
+                  <span className={cn(!selectedTypeLabel && 'text-muted-foreground')}>
+                    {selectedTypeLabel || 'Search document type…'}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search document type…" />
+                  <CommandList>
+                    <CommandEmpty>No document type found.</CommandEmpty>
+                    <CommandGroup>
+                      {DOCUMENT_TYPES.map((type) => (
+                        <CommandItem
+                          key={type.value}
+                          value={type.label}
+                          onSelect={() => {
+                            setDocumentType(type.value);
+                            resetVerify();
+                            setTypeOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              documentType === type.value ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          {type.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
