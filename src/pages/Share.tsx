@@ -44,12 +44,22 @@ export default function Share() {
       const { data, error } = await supabase.functions.invoke('share-docs', {
         body: { uid, pin },
       });
+
       if (error) {
-        let msg =
-          (error as any)?.context?.error ||
-          (error as any)?.message ||
-          'Unable to reach document service';
-          
+        let msg = error.message;
+        
+        // Attempt to parse JSON body from the error response
+        if (error.context && typeof error.context.json === 'function') {
+          try {
+            const errData = await error.context.json();
+            if (errData?.error) {
+              msg = errData.error;
+            }
+          } catch (e) {
+            // Context wasn't JSON
+          }
+        }
+        
         if (msg.includes('non-2xx status code')) {
           msg = 'Document not found or invalid PIN provided.';
         }
