@@ -52,6 +52,14 @@ supabase/
   functions/   - Edge function: share-docs (PIN-protected document sharing)
 ```
 
+## Design System (Government-Portal Style)
+- Site-wide design uses a flat government-portal aesthetic (white + navy `#0B3D91` + tricolor `#FF9933`/white/`#138808` stripes).
+- Shared chrome lives in `src/components/GovLayout.tsx`, exporting `GovLayout`, `GovPageHeader`, and `GovCard` helpers used by every public/private page.
+- Public pages: `Index`, `Auth`, `Register`, `Pricing`, `Features`, `About`, `Scan` (QR scanner), `Help` — all wrap children in `GovLayout`.
+- Dashboard shares the same chrome via `GovLayout`; tabs and cards re-skinned to match.
+- Auth subforms (`LoginForm`, `SignupForm`, `OtpForm`) restyled to use the gov palette (no gradients/glow).
+- Secure document viewer at `/i/:uid` (`Share.tsx`) keeps its own minimal full-screen UI for security.
+
 ## Key Features
 
 - **Digital ID Card** (`src/components/DigitalIDCard.tsx`)

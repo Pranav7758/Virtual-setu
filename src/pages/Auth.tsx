@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import LoginForm from '@/components/Auth/LoginForm';
 import SignupForm from '@/components/Auth/SignupForm';
 import OtpForm from '@/components/Auth/OtpForm';
+import { Lock, ShieldCheck, Info } from 'lucide-react';
 
 export default function Auth() {
   const { user, loading } = useAuth();
@@ -14,74 +14,94 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'login';
 
-  // Auto-redirect logged-in users
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard', { replace: true });
-    }
+    if (!loading && user) navigate('/dashboard', { replace: true });
   }, [user, loading, navigate]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-mesh flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-      </div>
+      <GovLayout minimal>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#0B3D91] border-t-transparent" />
+        </div>
+      </GovLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-mesh">
-      <div className="max-w-md w-full space-y-6">
-        {/* Back Button */}
-        <div className="text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center text-foreground/70 hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-        </div>
+    <GovLayout>
+      <GovPageHeader
+        breadcrumb="Citizen Portal · Login"
+        title="Citizen Account Access"
+        subtitle="Sign in or register to manage your secure digital documents."
+      />
 
-        {/* Auth Card */}
-        <Card className="card-3d border-0 shadow-3d">
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto mb-4 p-3 bg-gradient-primary rounded-2xl w-fit glow-primary">
-              <Shield className="h-8 w-8 text-white" />
+      <section className="container mx-auto max-w-7xl px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <GovCard className="lg:col-span-2 p-6">
+          <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+            <Lock className="h-4 w-4 text-[#0B3D91]" />
+            <p className="text-sm font-semibold text-slate-800">
+              Secure Authentication
+            </p>
+          </div>
+
+          <Tabs defaultValue={defaultTab} className="w-full mt-4">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">New Registration</TabsTrigger>
+              <TabsTrigger value="otp">OTP Login</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login" className="pt-6">
+              <LoginForm />
+            </TabsContent>
+            <TabsContent value="signup" className="pt-6">
+              <SignupForm />
+            </TabsContent>
+            <TabsContent value="otp" className="pt-6">
+              <OtpForm />
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-xs text-slate-500 mt-6 leading-relaxed">
+            By continuing, you agree to Virtual Setu's Terms of Service and
+            Privacy Policy. Do not share your password or PIN with anyone.
+          </p>
+        </GovCard>
+
+        <div className="space-y-4">
+          <GovCard className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="h-4 w-4 text-[#138808]" />
+              <p className="font-semibold text-slate-900 text-sm">
+                Your Security
+              </p>
             </div>
-            <CardTitle className="text-2xl font-bold text-gradient">Virtual Setu</CardTitle>
-            <CardDescription className="text-foreground/70">
-              Secure your digital identity
-            </CardDescription>
-          </CardHeader>
+            <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+              <li>End-to-end 256-bit encryption</li>
+              <li>4-digit PIN protected document access</li>
+              <li>Device-aware login activity logs</li>
+              <li>OTP-based passwordless option</li>
+            </ul>
+          </GovCard>
 
-          <CardContent>
-            <Tabs defaultValue={defaultTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                <TabsTrigger value="otp">OTP Login</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                <LoginForm />
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <SignupForm />
-              </TabsContent>
-
-              <TabsContent value="otp">
-                <OtpForm />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-xs text-muted-foreground">
-          By continuing, you agree to Virtual Setu's Terms of Service and Privacy Policy.
-        </p>
-      </div>
-    </div>
+          <GovCard className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-4 w-4 text-[#0B3D91]" />
+              <p className="font-semibold text-slate-900 text-sm">
+                Need help?
+              </p>
+            </div>
+            <p className="text-xs text-slate-600">
+              Forgot your password or unable to log in? Visit our{' '}
+              <a href="/help" className="text-[#0B3D91] underline">
+                Help &amp; Support
+              </a>{' '}
+              section, or contact citizen support at 1800-XXX-XXXX.
+            </p>
+          </GovCard>
+        </div>
+      </section>
+    </GovLayout>
   );
 }

@@ -75,8 +75,8 @@ export default function LoginForm() {
     return (
       <div className="space-y-5">
         <div className="text-center space-y-1">
-          <div className="mx-auto w-fit p-3 bg-primary/10 rounded-xl mb-3">
-            <KeyRound className="h-6 w-6 text-primary" />
+          <div className="mx-auto w-fit p-3 bg-blue-50 rounded-xl mb-3">
+            <KeyRound className="h-6 w-6 text-[#0B3D91]" />
           </div>
           <h3 className="font-semibold text-lg">Reset your password</h3>
           <p className="text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export default function LoginForm() {
 
         {resetSent ? (
           <div className="text-center space-y-4">
-            <div className="p-4 rounded-xl bg-success/10 border border-success/20 text-success text-sm">
+            <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-[#138808] text-sm">
               Check your inbox — a password reset link has been sent to <strong>{resetEmail}</strong>
             </div>
             <Button
@@ -101,7 +101,7 @@ export default function LoginForm() {
           <form onSubmit={handleForgotPassword} className="space-y-4">
             <div>
               <Label htmlFor="reset-email" className="flex items-center space-x-2">
-                <Mail className="h-4 w-4 text-primary" />
+                <Mail className="h-4 w-4 text-[#0B3D91]" />
                 <span>Email Address</span>
               </Label>
               <Input
@@ -110,13 +110,13 @@ export default function LoginForm() {
                 required
                 value={resetEmail}
                 onChange={e => setResetEmail(e.target.value)}
-                className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
                 placeholder="your.email@example.com"
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-primary glow-primary"
+              className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white"
               size="lg"
               disabled={isLoading}
             >
@@ -125,7 +125,7 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setView('login')}
-              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="w-full text-sm text-muted-foreground hover:text-[#0B3D91] transition-colors"
             >
               ← Back to Sign In
             </button>
@@ -139,7 +139,7 @@ export default function LoginForm() {
     <form onSubmit={handleLogin} className="space-y-4">
       <div>
         <Label htmlFor="login-email" className="flex items-center space-x-2">
-          <Mail className="h-4 w-4 text-primary" />
+          <Mail className="h-4 w-4 text-[#0B3D91]" />
           <span>Email Address</span>
         </Label>
         <Input
@@ -149,7 +149,7 @@ export default function LoginForm() {
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="your.email@example.com"
         />
       </div>
@@ -157,13 +157,13 @@ export default function LoginForm() {
       <div>
         <div className="flex items-center justify-between">
           <Label htmlFor="login-password" className="flex items-center space-x-2">
-            <Lock className="h-4 w-4 text-primary" />
+            <Lock className="h-4 w-4 text-[#0B3D91]" />
             <span>Password</span>
           </Label>
           <button
             type="button"
             onClick={() => setView('forgot')}
-            className="text-xs text-primary hover:underline underline-offset-2"
+            className="text-xs text-[#0B3D91] hover:underline underline-offset-2"
           >
             Forgot password?
           </button>
@@ -176,7 +176,7 @@ export default function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="bg-input/50 backdrop-blur-xl border-border/20 pr-10"
+            className="bg-white border-slate-300 focus:border-[#0B3D91] pr-10"
             placeholder="Enter your password"
           />
           <button
@@ -191,7 +191,7 @@ export default function LoginForm() {
 
       <Button
         type="submit"
-        className="w-full bg-gradient-primary hover:scale-[1.02] transition-transform glow-primary"
+        className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white"
         size="lg"
         disabled={isLoading}
       >

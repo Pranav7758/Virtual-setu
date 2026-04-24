@@ -74,8 +74,9 @@ serve(async (req) => {
     const { uid: bodyUid, pin } = await req.json();
     const targetUid = bodyUid || uid;
     
-    if (!targetUid || !pin) {
-      return new Response(JSON.stringify({ error: 'uid and pin are required' }), { 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!targetUid || !pin || !uuidRegex.test(targetUid)) {
+      return new Response(JSON.stringify({ error: 'Valid uid and pin are required' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -92,7 +93,12 @@ serve(async (req) => {
       .eq('user_id', targetUid)
       .maybeSingle();
 
-    if (profileErr) throw profileErr;
+    if (profileErr) {
+      return new Response(JSON.stringify({ error: 'Internal error or invalid input' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
 
     let valid = false;
 
@@ -101,8 +107,13 @@ serve(async (req) => {
     } else {
       // Fallback to user_metadata.pin if pin_hash not set
       const { data: userData, error: userErr } = await admin.auth.admin.getUserById(targetUid);
-      if (userErr) throw userErr;
-      const metaPin = (userData?.user?.user_metadata as any)?.pin;
+      if (userErr || !userData?.user) {
+        return new Response(JSON.stringify({ error: 'User not found' }), { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      const metaPin = (userData.user.user_metadata as any)?.pin;
       valid = !!metaPin && String(metaPin) === String(pin);
     }
 

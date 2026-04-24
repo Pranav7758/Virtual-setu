@@ -200,7 +200,7 @@ export default function DigitalIDCard({
                 boxShadow: '0 1px 6px rgba(0,0,0,0.1)',
               }}
             >
-              <QRCode data={qrData} size={72} />
+              <QRCode data={qrData} size={92} errorCorrectionLevel="M" />
             </div>
             <p style={{ fontSize: 6.5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>
               Scan to verify

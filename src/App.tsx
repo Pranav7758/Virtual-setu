@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 import Share from "./pages/Share";
 import Features from "./pages/Features";
 import About from "./pages/About";
+import Scan from "./pages/Scan";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/features" element={<Features />} />
               <Route path="/about" element={<About />} />
+              <Route path="/scan" element={<Scan />} />
+              <Route path="/help" element={<Help />} />
               <Route path="/i/:uid" element={<Share />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

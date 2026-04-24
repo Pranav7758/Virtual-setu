@@ -71,8 +71,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   if (registered) {
     return (
       <div className="text-center space-y-4 py-4">
-        <div className="mx-auto w-fit p-3 bg-success/10 rounded-xl">
-          <Shield className="h-8 w-8 text-success" />
+        <div className="mx-auto w-fit p-3 bg-green-50 rounded-xl">
+          <Shield className="h-8 w-8 text-[#138808]" />
         </div>
         <div>
           <h3 className="font-semibold text-lg">Check your email</h3>
@@ -90,7 +90,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Full Name */}
       <div>
         <Label htmlFor="signup-name" className="flex items-center space-x-2">
-          <User className="h-4 w-4 text-primary" />
+          <User className="h-4 w-4 text-[#0B3D91]" />
           <span>Full Name</span>
         </Label>
         <Input
@@ -101,7 +101,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           autoComplete="name"
           value={form.fullName}
           onChange={handleChange}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="Rahul Sharma"
         />
       </div>
@@ -109,7 +109,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Email */}
       <div>
         <Label htmlFor="signup-email" className="flex items-center space-x-2">
-          <Mail className="h-4 w-4 text-primary" />
+          <Mail className="h-4 w-4 text-[#0B3D91]" />
           <span>Email Address</span>
         </Label>
         <Input
@@ -120,7 +120,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           autoComplete="email"
           value={form.email}
           onChange={handleChange}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="your.email@example.com"
         />
       </div>
@@ -128,7 +128,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Phone */}
       <div>
         <Label htmlFor="signup-phone" className="flex items-center space-x-2">
-          <Phone className="h-4 w-4 text-primary" />
+          <Phone className="h-4 w-4 text-[#0B3D91]" />
           <span>Phone Number</span>
         </Label>
         <Input
@@ -139,7 +139,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           autoComplete="tel"
           value={form.phone}
           onChange={handleChange}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="+91 98765 43210"
         />
       </div>
@@ -147,7 +147,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Password */}
       <div>
         <Label htmlFor="signup-password" className="flex items-center space-x-2">
-          <Lock className="h-4 w-4 text-primary" />
+          <Lock className="h-4 w-4 text-[#0B3D91]" />
           <span>Password</span>
         </Label>
         <div className="relative mt-1">
@@ -159,7 +159,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             autoComplete="new-password"
             value={form.password}
             onChange={handleChange}
-            className="bg-input/50 backdrop-blur-xl border-border/20 pr-10"
+            className="bg-white border-slate-300 focus:border-[#0B3D91] pr-10"
             placeholder="Min. 8 characters"
           />
           <button
@@ -175,7 +175,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Confirm Password */}
       <div>
         <Label htmlFor="signup-confirm" className="flex items-center space-x-2">
-          <Lock className="h-4 w-4 text-primary" />
+          <Lock className="h-4 w-4 text-[#0B3D91]" />
           <span>Confirm Password</span>
         </Label>
         <Input
@@ -186,7 +186,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           autoComplete="new-password"
           value={form.confirmPassword}
           onChange={handleChange}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="Re-enter password"
         />
       </div>
@@ -194,7 +194,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* 4-digit PIN */}
       <div>
         <Label htmlFor="signup-pin" className="flex items-center space-x-2">
-          <Shield className="h-4 w-4 text-primary" />
+          <Shield className="h-4 w-4 text-[#0B3D91]" />
           <span>4-Digit Security PIN</span>
         </Label>
         <Input
@@ -207,7 +207,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           maxLength={4}
           value={form.pin}
           onChange={handleChange}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20 tracking-widest text-center text-lg"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91] tracking-widest text-center text-lg"
           placeholder="••••"
         />
         <p className="text-xs text-muted-foreground mt-1">
@@ -217,7 +217,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       <Button
         type="submit"
-        className="w-full bg-gradient-primary hover:scale-[1.02] transition-transform glow-primary"
+        className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white"
         size="lg"
         disabled={isLoading}
       >

@@ -121,8 +121,8 @@ export default function OtpForm() {
     return (
       <form onSubmit={handleVerifyOtp} className="space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto w-fit p-3 bg-primary/10 rounded-xl">
-            <ShieldCheck className="h-6 w-6 text-primary" />
+          <div className="mx-auto w-fit p-3 bg-blue-50 rounded-xl">
+            <ShieldCheck className="h-6 w-6 text-[#0B3D91]" />
           </div>
           <p className="text-sm text-muted-foreground">
             Enter the 6-digit code sent to<br />
@@ -149,7 +149,7 @@ export default function OtpForm() {
 
         <Button
           type="submit"
-          className="w-full bg-gradient-primary glow-primary"
+          className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white"
           size="lg"
           disabled={isLoading || otp.join('').length < 6}
         >
@@ -162,7 +162,7 @@ export default function OtpForm() {
           <button
             type="button"
             onClick={() => { setStep('email'); setOtp(['', '', '', '', '', '']); }}
-            className="text-muted-foreground hover:text-primary transition-colors"
+            className="text-muted-foreground hover:text-[#0B3D91] transition-colors"
           >
             ← Change email
           </button>
@@ -170,7 +170,7 @@ export default function OtpForm() {
             type="button"
             onClick={handleResend}
             disabled={isLoading}
-            className="text-primary hover:underline underline-offset-2 disabled:opacity-50"
+            className="text-[#0B3D91] hover:underline underline-offset-2 disabled:opacity-50"
           >
             Resend OTP
           </button>
@@ -182,8 +182,8 @@ export default function OtpForm() {
   return (
     <form onSubmit={handleSendOtp} className="space-y-5">
       <div className="text-center space-y-2">
-        <div className="mx-auto w-fit p-3 bg-primary/10 rounded-xl">
-          <Mail className="h-6 w-6 text-primary" />
+        <div className="mx-auto w-fit p-3 bg-blue-50 rounded-xl">
+          <Mail className="h-6 w-6 text-[#0B3D91]" />
         </div>
         <p className="text-sm text-muted-foreground">
           Get a one-time password sent directly to your email — no password needed.
@@ -192,7 +192,7 @@ export default function OtpForm() {
 
       <div>
         <Label htmlFor="otp-email" className="flex items-center space-x-2">
-          <Mail className="h-4 w-4 text-primary" />
+          <Mail className="h-4 w-4 text-[#0B3D91]" />
           <span>Email Address</span>
         </Label>
         <Input
@@ -202,14 +202,14 @@ export default function OtpForm() {
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="mt-1 bg-input/50 backdrop-blur-xl border-border/20"
+          className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]"
           placeholder="your.email@example.com"
         />
       </div>
 
       <Button
         type="submit"
-        className="w-full bg-gradient-primary glow-primary"
+        className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white"
         size="lg"
         disabled={isLoading}
       >
