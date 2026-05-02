@@ -40,14 +40,11 @@ export default function SmartChecklist() {
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [userDocs, setUserDocs] = useState<UserDocument[]>([]);
   const [notesOpen, setNotesOpen] = useState(false);
-  const [videoError, setVideoError] = useState(false);
 
   const { status, data, error, fetch: fetchChecklist, reset } = useChecklist();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadUserDocuments(); }, []);
-  // Reset video error when new data arrives
-  useEffect(() => { setVideoError(false); }, [data?.videoId]);
 
   const loadUserDocuments = async () => {
     try {
@@ -101,13 +98,10 @@ export default function SmartChecklist() {
   const pct   = total > 0 ? Math.round((available.length / total) * 100) : 0;
   const barColor = pct === 100 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-400';
 
-  // YouTube helpers
+  // YouTube helpers — always use search (no embed, avoids "Video unavailable")
   const ytSearchUrl = data?.videoSearchQuery
     ? `https://www.youtube.com/results?search_query=${encodeURIComponent(data.videoSearchQuery)}`
-    : null;
-  const ytEmbedUrl = data?.videoId && !videoError
-    ? `https://www.youtube-nocookie.com/embed/${data.videoId}?rel=0&modestbranding=1`
-    : null;
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(submittedQuery + ' India how to apply 2024')}`;
 
   // Official URL helpers
   const officialUrl = data?.officialUrl;
@@ -315,54 +309,32 @@ export default function SmartChecklist() {
               )}
 
               {/* ── 3. YouTube Tutorial ── */}
-              <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
-                  <div className="flex items-center gap-2">
-                    <Youtube className="h-5 w-5 text-red-600" />
-                    <span className="text-sm font-semibold">{t('checklist.watch_tutorial')}</span>
+              <a
+                href={ytSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl border overflow-hidden hover:shadow-md transition-shadow group"
+              >
+                <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
+                  <Youtube className="h-5 w-5 text-red-600" />
+                  <span className="text-sm font-semibold">{t('checklist.watch_tutorial')}</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-red-500 ml-auto" />
+                </div>
+                <div className="flex items-center gap-5 px-5 py-4 bg-card">
+                  <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                    <Youtube className="h-7 w-7 text-white" />
                   </div>
-                  {ytSearchUrl && (
-                    <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 font-medium">
-                      {t('checklist.find_video')} <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground mb-0.5">{t('checklist.video_subtitle')}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {data.videoSearchQuery ?? submittedQuery}
+                    </p>
+                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-red-600 dark:text-red-400">
+                      {t('checklist.find_video')} →
+                    </span>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <p className="text-xs text-muted-foreground mb-3">{t('checklist.video_subtitle')}</p>
-                  {ytEmbedUrl ? (
-                    <div className="relative w-full rounded-lg overflow-hidden bg-black"
-                      style={{ paddingBottom: '56.25%' }}>
-                      <iframe
-                        src={ytEmbedUrl}
-                        title={data.videoTitle ?? t('checklist.watch_tutorial')}
-                        className="absolute inset-0 w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        onError={() => setVideoError(true)}
-                      />
-                    </div>
-                  ) : (
-                    <a href={ytSearchUrl ?? '#'} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-3 w-full rounded-lg border-2 border-dashed border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 py-8 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors group">
-                      <div className="flex flex-col items-center gap-2 text-center">
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                          <Youtube className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-                          {t('checklist.find_video')}
-                        </span>
-                        <span className="text-xs text-muted-foreground max-w-[200px]">
-                          {data.videoSearchQuery ?? submittedQuery}
-                        </span>
-                      </div>
-                    </a>
-                  )}
-                  {data.videoTitle && ytEmbedUrl && (
-                    <p className="text-xs text-muted-foreground mt-2 text-center truncate">{data.videoTitle}</p>
-                  )}
-                </div>
-              </div>
+              </a>
 
               {/* ── 4. Application Steps ── */}
               {data.steps.length > 0 && (

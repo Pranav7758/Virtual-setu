@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SCRAPER_URL = 'https://api.scraperapi.com';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const LS_PREFIX = 'vs_checklist_';
+const LS_PREFIX = 'vs_checklist_v2_';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English',
@@ -68,8 +68,6 @@ export interface ChecklistData {
   requiredDocuments: RequiredDocument[];
   steps: string[];
   notes: string[];
-  videoId?: string;
-  videoTitle?: string;
   videoSearchQuery?: string;
   officialUrl?: string;
   generatedAt: number;
@@ -167,47 +165,6 @@ async function scrapeGovPage(url: string): Promise<string> {
     .replace(/\s{2,}/g, ' ')
     .trim()
     .slice(0, 9000);
-}
-
-// ─── GROQ: fetch video ID for a purpose ──────────────────────────────────────
-
-async function fetchVideoId(purposeLabel: string): Promise<{ videoId?: string; videoTitle?: string }> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (!apiKey) return {};
-  try {
-    const prompt = `You are a YouTube search expert. A user in India wants help with: "${purposeLabel}".
-
-Name ONE specific, popular, real YouTube tutorial video about this Indian government process.
-Return ONLY valid JSON:
-{"videoId": "11-char-YouTube-ID", "videoTitle": "exact video title"}
-
-Rules:
-- The videoId MUST be exactly 11 characters: letters, numbers, hyphens, underscores only
-- If you are not confident about a real video ID, return {"videoId": "", "videoTitle": ""}
-- Prefer well-known channels: Government channels, Abhiraj Knowledge, Technical Sagar, etc.`;
-
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0,
-        max_tokens: 80,
-        response_format: { type: 'json_object' },
-      }),
-    });
-    if (!res.ok) return {};
-    const raw = await res.json();
-    const parsed = JSON.parse(raw.choices?.[0]?.message?.content ?? '{}');
-    const id = (parsed.videoId ?? '').trim();
-    if (/^[A-Za-z0-9_-]{11}$/.test(id)) {
-      return { videoId: id, videoTitle: parsed.videoTitle ?? '' };
-    }
-    return {};
-  } catch {
-    return {};
-  }
 }
 
 // ─── GROQ extraction from scraped content ────────────────────────────────────
@@ -335,18 +292,13 @@ Rules:
   const content: string = raw.choices?.[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(content);
 
-  const rawVideoId = (parsed.videoId ?? '').trim();
-  const videoId = /^[A-Za-z0-9_-]{11}$/.test(rawVideoId) ? rawVideoId : undefined;
-
   return {
     documentType: purposeId,
     requiredDocuments: (parsed.requiredDocuments ?? []) as RequiredDocument[],
     steps: (parsed.steps ?? []) as string[],
     notes: (parsed.notes ?? []) as string[],
-    videoId,
-    videoTitle: videoId ? (parsed.videoTitle ?? '') : undefined,
-    videoSearchQuery: VIDEO_QUERIES[purposeId] ?? `${purposeLabel} India 2024 how to apply`,
-    officialUrl: parsed.officialUrl ?? GOVT_URLS[purposeId],
+    videoSearchQuery: VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`,
+    officialUrl: parsed.officialUrl || GOVT_URLS[purposeId] || '',
     generatedAt: Date.now(),
     fromCache: false,
     source: 'ai',
@@ -364,9 +316,6 @@ async function generateChecklist(
   const govUrl = GOVT_URLS[purposeId];
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-
-  // Always fetch video in parallel with scraping
-  const videoPromise = fetchVideoId(purposeLabel);
 
   if (scraperKey && govUrl) {
     try {
@@ -418,17 +367,13 @@ Make the steps detailed — include fees, timelines, and what to bring.`;
             }
           } catch { /* enrichment failure */ }
 
-          const { videoId, videoTitle } = await videoPromise;
-
           return {
             documentType: purposeId,
             requiredDocuments: extracted,
             steps,
             notes,
-            videoId,
-            videoTitle,
-            videoSearchQuery: VIDEO_QUERIES[purposeId] ?? `${purposeLabel} India 2024 how to apply`,
-            officialUrl: GOVT_URLS[purposeId],
+            videoSearchQuery: VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`,
+            officialUrl: GOVT_URLS[purposeId] || '',
             generatedAt: Date.now(),
             fromCache: false,
             source: 'scraped',
@@ -653,20 +598,14 @@ export async function getChecklist(
       return dbCached;
     }
 
-    // Built-in (English only) — enrich with video + url via GROQ in background
+    // Built-in (English only)
     if (lang === 'en' && BUILTIN[purposeId]) {
       const b = BUILTIN[purposeId];
-
-      // Fetch video ID in parallel (non-blocking feel — fire and store)
-      const videoResult = await fetchVideoId(purposeLabel);
-
       const data: ChecklistData = {
         documentType: purposeId,
         requiredDocuments: b.docs,
         steps: b.steps,
         notes: b.notes,
-        videoId: videoResult.videoId,
-        videoTitle: videoResult.videoTitle,
         videoSearchQuery: VIDEO_QUERIES[purposeId],
         officialUrl: GOVT_URLS[purposeId],
         generatedAt: Date.now(),
