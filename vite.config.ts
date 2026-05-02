@@ -115,12 +115,95 @@ function apiPlugin(_env: Record<string, string>): Plugin {
     });
   }
 
+    /* ---- In-memory doc-share store (dev only) ---- */
+  interface ShareEntry {
+    documentId: string; userId: string; pinHash: string;
+    documentName: string; documentType: string;
+    signedUrl: string; expiresAt: number;
+  }
+  const shareStore = new Map<string, ShareEntry>();
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of shareStore) { if (v.expiresAt < now) shareStore.delete(k); }
+  }, 60_000);
+
+  async function getSignedUrlForDoc(userId: string, docId: string): Promise<{ name: string; type: string; url: string } | null> {
+    const docRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/documents?id=eq.${docId}&user_id=eq.${userId}&select=document_name,document_type,file_url`,
+      { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    const docs = await docRes.json();
+    if (!Array.isArray(docs) || docs.length === 0) return null;
+    const doc = docs[0];
+    // Create a 30-day signed URL
+    const signRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/sign/documents/${doc.file_url}`,
+      {
+        method: 'POST',
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 86400 * 2 }),
+      }
+    );
+    const signData = await signRes.json();
+    const signedUrl = signData.signedURL
+      ? `${SUPABASE_URL}/storage/v1${signData.signedURL}`
+      : signData.signedUrl
+        ? `${SUPABASE_URL}/storage/v1${signData.signedUrl}`
+        : null;
+    if (!signedUrl) return null;
+    return { name: doc.document_name, type: doc.document_type, url: signedUrl };
+  }
+
   /* ---- Vite plugin hooks ---- */
   return {
     name: "api-server",
     configureServer(server) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
-        if (req.method !== "POST") return next();
+        const isPost = req.method === "POST";
+        const isGet  = req.method === "GET";
+
+        /* ---------- POST /api/create-doc-share ---------- */
+        if (isPost && req.url === '/api/create-doc-share') {
+          try {
+            const { documentId, userId, pin, durationHours } = await parseJsonBody(req);
+            if (!documentId || !userId || !pin || !durationHours) throw new Error('Missing fields');
+            const docInfo = await getSignedUrlForDoc(userId, documentId);
+            if (!docInfo) { res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Document not found or access denied' })); return; }
+            const token = crypto.randomBytes(24).toString('hex');
+            const pinHash = crypto.createHash('sha256').update(pin).digest('hex');
+            shareStore.set(token, {
+              documentId, userId, pinHash,
+              documentName: docInfo.name, documentType: docInfo.type,
+              signedUrl: docInfo.url,
+              expiresAt: Date.now() + durationHours * 3_600_000,
+            });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ token }));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        /* ---------- POST /api/get-doc-share ---------- */
+        if (isPost && req.url === '/api/get-doc-share') {
+          try {
+            const { token, pin } = await parseJsonBody(req);
+            const entry = token ? shareStore.get(token) : null;
+            if (!entry || entry.expiresAt < Date.now()) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Share link not found or expired' })); return; }
+            const pinHash = crypto.createHash('sha256').update(pin || '').digest('hex');
+            if (pinHash !== entry.pinHash) { res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Invalid PIN' })); return; }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ documentName: entry.documentName, documentType: entry.documentType, signedUrl: entry.signedUrl, expiresAt: entry.expiresAt }));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        if (!isPost) return next();
 
         /* ---------- POST /api/create-order ---------- */
         if (req.url === "/api/create-order") {

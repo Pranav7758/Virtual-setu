@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Share from "./pages/Share";
+import ShareSingle from "./pages/ShareSingle";
 import Features from "./pages/Features";
 import About from "./pages/About";
 import Scan from "./pages/Scan";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/scan" element={<Scan />} />
               <Route path="/help" element={<Help />} />
               <Route path="/i/:uid" element={<Share />} />
+              <Route path="/s/:token" element={<ShareSingle />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

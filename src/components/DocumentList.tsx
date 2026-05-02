@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +24,7 @@ import {
   Loader2,
   Search,
   X,
+  QrCode,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +37,7 @@ import {
   formatExpiryDate,
   daysUntilExpiry,
 } from '@/lib/documentExpiry';
+import ShareDocModal from '@/components/ShareDocModal';
 
 interface Document {
   id: string;
@@ -61,6 +62,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [shareDoc, setShareDoc] = useState<Document | null>(null);
 
   const filtered = useMemo(() => {
     let list = documents;
@@ -80,17 +82,17 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'verified': return <CheckCircle className="h-4 w-4 text-success" />;
-      case 'rejected': return <AlertCircle className="h-4 w-4 text-destructive" />;
-      default: return <Clock className="h-4 w-4 text-warning" />;
+      case 'verified': return <CheckCircle className="h-3.5 w-3.5 text-[#138808]" />;
+      case 'rejected': return <AlertCircle className="h-3.5 w-3.5 text-red-600" />;
+      default:         return <Clock className="h-3.5 w-3.5 text-amber-600" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusPill = (status: string) => {
     switch (status) {
-      case 'verified': return 'bg-success/10 text-success border-success/20';
-      case 'rejected': return 'bg-destructive/10 text-destructive border-destructive/20';
-      default: return 'bg-warning/10 text-warning border-warning/20';
+      case 'verified': return 'status-pill status-verified';
+      case 'rejected': return 'status-pill status-rejected';
+      default:         return 'status-pill status-pending';
     }
   };
 
@@ -193,201 +195,239 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
 
   if (documents.length === 0) {
     return (
-      <Card className="card-3d border-0">
-        <CardHeader>
-          <CardTitle>Your Documents</CardTitle>
-          <CardDescription>No documents uploaded yet</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No documents found</h3>
-            <p className="text-muted-foreground">Upload your first document using the form above</p>
+      <div className="bg-white border border-[#cdd3da] rounded-sm shadow-sm">
+        <div className="px-5 py-3 border-b border-slate-100 bg-[#f0f4fa]">
+          <div className="border-l-4 border-[#003580] pl-2">
+            <p className="font-bold text-slate-900 text-sm">Document Vault</p>
+            <p className="text-[11px] text-slate-500">No documents uploaded yet</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="text-center py-12 px-4">
+          <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-slate-700 mb-1">No documents found</h3>
+          <p className="text-sm text-slate-500">Upload your first document using the form above</p>
+        </div>
+      </div>
     );
   }
 
   const statusColors: Record<StatusFilter, string> = {
-    all: 'bg-slate-100 text-slate-700 border-slate-300',
+    all:      'bg-slate-100 text-slate-700 border-slate-300',
     verified: 'bg-green-50 text-[#138808] border-green-300',
-    pending: 'bg-amber-50 text-amber-700 border-amber-300',
+    pending:  'bg-amber-50 text-amber-700 border-amber-300',
     rejected: 'bg-red-50 text-red-700 border-red-300',
   };
 
   return (
     <>
-      <Card className="card-3d border-0">
-        <CardHeader>
-          <CardTitle>Your Documents</CardTitle>
-          <CardDescription>
-            {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
-          </CardDescription>
-        </CardHeader>
+      <div className="bg-white border border-[#cdd3da] rounded-sm shadow-sm overflow-hidden">
 
-        {/* ── Search & Filter bar ── */}
-        <div className="px-6 pb-4 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+        {/* Header */}
+        <div className="px-5 py-3 border-b border-slate-100 bg-[#f0f4fa] flex items-center justify-between flex-wrap gap-2">
+          <div className="border-l-4 border-[#003580] pl-2">
+            <p className="font-bold text-slate-900 text-sm">Document Vault</p>
+            <p className="text-[11px] text-slate-500">
+              {documents.length} document{documents.length !== 1 ? 's' : ''} on record
+            </p>
+          </div>
+          <div className="text-[11px] text-slate-500 uppercase tracking-wide">
+            Records as of {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </div>
+        </div>
+
+        {/* Search + Filter */}
+        <div className="px-5 py-3 border-b border-slate-100 bg-white space-y-2">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or document type…"
-              className="pl-9 pr-9 bg-slate-50 border-slate-200 focus:bg-white"
+              placeholder="Search documents…"
+              className="pl-8 pr-8 h-8 text-sm bg-slate-50 border-slate-200 rounded-sm focus-visible:ring-[#003580]"
             />
             {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-4 w-4" />
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-slate-500 shrink-0">Filter:</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide shrink-0">Status:</span>
             {STATUS_FILTERS.map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors capitalize ${
+                className={`text-[11px] px-2.5 py-0.5 border font-semibold transition-colors capitalize rounded-sm ${
                   statusFilter === s
                     ? statusColors[s] + ' ring-1 ring-offset-1 ring-current'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                 }`}
               >
-                {s === 'all' ? `All (${documents.length})` : `${s} (${documents.filter((d) => d.verification_status === s).length})`}
+                {s === 'all'
+                  ? `All (${documents.length})`
+                  : `${s} (${documents.filter((d) => d.verification_status === s).length})`
+                }
               </button>
             ))}
           </div>
-
-          {filtered.length === 0 && (
-            <p className="text-sm text-slate-500 text-center py-4">
-              No documents match your search. <button className="text-[#0B3D91] underline" onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</button>
-            </p>
-          )}
         </div>
 
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            {filtered.map((doc) => (
-              <div
-                key={doc.id}
-                className="p-4 bg-card-glass/30 rounded-xl border border-border/10 hover:border-border/20 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1 min-w-0">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <FileText className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-lg truncate">{doc.document_name}</h4>
-                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                        <span className="capitalize">{getDocumentTypeLabel(doc.document_type)}</span>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                        </div>
-                        {/* ── Expiry badge ── */}
-                        {(() => {
-                          if (!user) return null;
-                          const rec = getExpiry(user.id, doc.id);
-                          if (!rec) return null;
-                          if (!rec.expiryDate) return (
-                            <span className="text-xs text-slate-400 italic">No expiry</span>
-                          );
-                          const st = getExpiryStatus(rec.expiryDate);
-                          const days = daysUntilExpiry(rec.expiryDate);
-                          const styleMap = {
-                            expired: 'bg-red-100 text-red-700 border-red-300',
-                            critical: 'bg-red-50 text-red-600 border-red-200',
-                            warning: 'bg-amber-50 text-amber-700 border-amber-200',
-                            ok: 'bg-green-50 text-[#138808] border-green-200',
-                            none: '',
-                          };
-                          const label =
-                            st === 'expired' ? `Expired ${formatExpiryDate(rec.expiryDate)}` :
-                            st === 'critical' ? `Expires in ${days}d` :
-                            st === 'warning' ? `Expires in ${days}d` :
-                            `Valid till ${formatExpiryDate(rec.expiryDate)}`;
-                          return (
-                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${styleMap[st]}`}>
-                              {label}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="outline" className={getStatusColor(doc.verification_status)}>
-                      {getStatusIcon(doc.verification_status)}
-                      <span className="ml-1 capitalize">{doc.verification_status}</span>
-                    </Badge>
-
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleView(doc)}
-                        className="hover:bg-primary/10"
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(doc)}
-                        className="hover:bg-primary/10"
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setConfirmDoc(doc)}
-                        disabled={deletingId === doc.id}
-                        className="hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
-                        title="Delete"
-                      >
-                        {deletingId === doc.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            No documents match your search.{' '}
+            <button className="text-[#003580] underline" onClick={() => { setSearch(''); setStatusFilter('all'); }}>
+              Clear filters
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          <table className="gov-table">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th className="hidden sm:table-cell">Type</th>
+                <th className="hidden md:table-cell">Uploaded</th>
+                <th>Status</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((doc) => {
+                const rec = user ? getExpiry(user.id, doc.id) : null;
+                const expiryStatus = rec?.expiryDate ? getExpiryStatus(rec.expiryDate) : 'none';
+                const days = rec?.expiryDate ? daysUntilExpiry(rec.expiryDate) : null;
 
-      {/* Confirmation Dialog */}
+                return (
+                  <tr key={doc.id}>
+                    {/* Document name + expiry badge */}
+                    <td>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-1.5 bg-[#e8eef8] rounded-sm shrink-0">
+                          <FileText className="h-4 w-4 text-[#003580]" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 text-sm truncate max-w-[140px] sm:max-w-[200px]">
+                            {doc.document_name}
+                          </p>
+                          {rec && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-px rounded-sm border ${
+                              expiryStatus === 'expired'  ? 'bg-red-50 text-red-700 border-red-200' :
+                              expiryStatus === 'critical' ? 'bg-red-50 text-red-600 border-red-200' :
+                              expiryStatus === 'warning'  ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              expiryStatus === 'ok'       ? 'bg-green-50 text-[#138808] border-green-200' :
+                              'bg-slate-50 text-slate-500 border-slate-200'
+                            }`}>
+                              {expiryStatus === 'expired'  ? `Expired ${formatExpiryDate(rec.expiryDate!)}` :
+                               expiryStatus === 'critical' ? `Exp. in ${days}d` :
+                               expiryStatus === 'warning'  ? `Exp. in ${days}d` :
+                               rec.expiryDate              ? `Valid to ${formatExpiryDate(rec.expiryDate)}` :
+                               'No expiry'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Type */}
+                    <td className="hidden sm:table-cell">
+                      <span className="text-xs text-slate-600">{getDocumentTypeLabel(doc.document_type)}</span>
+                    </td>
+
+                    {/* Date */}
+                    <td className="hidden md:table-cell">
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(doc.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      <span className={getStatusPill(doc.verification_status)}>
+                        {getStatusIcon(doc.verification_status)}
+                        <span className="hidden xs:inline capitalize">{doc.verification_status}</span>
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td>
+                      <div className="flex items-center justify-end gap-0.5">
+                        <button
+                          title="View document"
+                          onClick={() => handleView(doc)}
+                          className="p-1.5 rounded-sm text-slate-500 hover:text-[#003580] hover:bg-blue-50 transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          title="Download"
+                          onClick={() => handleDownload(doc)}
+                          className="p-1.5 rounded-sm text-slate-500 hover:text-[#003580] hover:bg-blue-50 transition-colors"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          title="Emergency QR Share"
+                          onClick={() => setShareDoc(doc)}
+                          className="p-1.5 rounded-sm text-slate-500 hover:text-[#FF6200] hover:bg-orange-50 transition-colors"
+                        >
+                          <QrCode className="h-4 w-4" />
+                        </button>
+                        <button
+                          title="Delete"
+                          onClick={() => setConfirmDoc(doc)}
+                          disabled={deletingId === doc.id}
+                          className="p-1.5 rounded-sm text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                        >
+                          {deletingId === doc.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        <div className="px-5 py-2 border-t border-slate-100 bg-[#f8f9fb] text-[11px] text-slate-400 flex items-center gap-1">
+          <QrCode className="h-3 w-3 text-[#FF6200]" /> QR icon = Emergency share · View-only, time-limited, PIN protected
+        </div>
+      </div>
+
+      {/* Share modal */}
+      {shareDoc && user && (
+        <ShareDocModal
+          open={!!shareDoc}
+          onClose={() => setShareDoc(null)}
+          documentId={shareDoc.id}
+          documentName={shareDoc.document_name}
+          userId={user.id}
+        />
+      )}
+
+      {/* Delete confirmation */}
       <AlertDialog open={!!confirmDoc} onOpenChange={(open) => !open && setConfirmDoc(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-sm border border-[#cdd3da]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogTitle className="text-[#003580]">Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{' '}
-              <span className="font-semibold text-foreground">"{confirmDoc?.document_name}"</span>?
-              This will permanently remove the file and cannot be undone.
+              Are you sure you want to permanently delete{' '}
+              <span className="font-semibold text-slate-900">"{confirmDoc?.document_name}"</span>?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-sm">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirmed}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-sm"
             >
-              Delete
+              Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -4,6 +4,18 @@ import crypto from 'crypto';
 const app = express();
 app.use(express.json());
 
+/* ── In-memory share store ── */
+interface ShareEntry {
+  documentId: string; userId: string; pinHash: string;
+  documentName: string; documentType: string;
+  signedUrl: string; expiresAt: number;
+}
+const shareStore = new Map<string, ShareEntry>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of shareStore) { if (v.expiresAt < now) shareStore.delete(k); }
+}, 60_000);
+
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
@@ -168,6 +180,83 @@ app.post('/api/delete-document', async (req, res) => {
     res.json({ success: true });
   } catch (err: any) {
     console.error('delete-document error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+/* ── Helper: get doc info + signed URL ── */
+async function getDocSignedUrl(userId: string, docId: string) {
+  const baseHeaders = {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    'Content-Type': 'application/json',
+  };
+  const docRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/documents?id=eq.${docId}&user_id=eq.${userId}&select=document_name,document_type,file_url`,
+    { headers: baseHeaders }
+  );
+  const docs = await docRes.json();
+  if (!Array.isArray(docs) || docs.length === 0) return null;
+  const doc = docs[0];
+  const signRes = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/sign/documents/${doc.file_url}`,
+    { method: 'POST', headers: baseHeaders, body: JSON.stringify({ expiresIn: 86400 * 2 }) }
+  );
+  const signData = await signRes.json();
+  const signedUrl = signData.signedURL
+    ? `${SUPABASE_URL}/storage/v1${signData.signedURL}`
+    : signData.signedUrl
+      ? `${SUPABASE_URL}/storage/v1${signData.signedUrl}`
+      : null;
+  if (!signedUrl) return null;
+  return { name: doc.document_name, type: doc.document_type, url: signedUrl };
+}
+
+/* ── POST /api/create-doc-share ── */
+app.post('/api/create-doc-share', async (req, res) => {
+  try {
+    const { documentId, userId, pin, durationHours } = req.body;
+    if (!documentId || !userId || !pin || !durationHours) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const docInfo = await getDocSignedUrl(userId, documentId);
+    if (!docInfo) return res.status(403).json({ error: 'Document not found or access denied' });
+
+    const token = crypto.randomBytes(24).toString('hex');
+    const pinHash = crypto.createHash('sha256').update(String(pin)).digest('hex');
+    shareStore.set(token, {
+      documentId, userId, pinHash,
+      documentName: docInfo.name, documentType: docInfo.type,
+      signedUrl: docInfo.url,
+      expiresAt: Date.now() + Number(durationHours) * 3_600_000,
+    });
+    res.json({ token });
+  } catch (err: any) {
+    console.error('create-doc-share error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+/* ── POST /api/get-doc-share ── */
+app.post('/api/get-doc-share', async (req, res) => {
+  try {
+    const { token, pin } = req.body;
+    const entry = token ? shareStore.get(token) : null;
+    if (!entry || entry.expiresAt < Date.now()) {
+      return res.status(404).json({ error: 'Share link not found or expired' });
+    }
+    const pinHash = crypto.createHash('sha256').update(String(pin || '')).digest('hex');
+    if (pinHash !== entry.pinHash) {
+      return res.status(403).json({ error: 'Invalid PIN' });
+    }
+    res.json({
+      documentName: entry.documentName,
+      documentType: entry.documentType,
+      signedUrl: entry.signedUrl,
+      expiresAt: entry.expiresAt,
+    });
+  } catch (err: any) {
+    console.error('get-doc-share error:', err);
     res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
