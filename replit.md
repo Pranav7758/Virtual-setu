@@ -1,100 +1,77 @@
-# Virtual Setu — Digital Document Management Platform
+# Virtual Setu — Digital Document Management System
 
-A comprehensive digital identity and document management system for Indian citizens. Built with React + Vite + TypeScript + Tailwind CSS + Supabase.
+## Overview
+Virtual Setu is a government-style secure document management portal for Indian citizens. Users can register, upload documents, get AI verification, manage their digital identity, and share documents via PIN-protected QR links.
 
 ## Architecture
 
-- **Framework**: React 18 + Vite 5 (SPA, no SSR)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui components
-- **Routing**: React Router v6
-- **Auth & DB**: Supabase (auth + postgres + storage)
-- **AI**: GROQ API (document verification + smart checklist)
-- **Payments**: Razorpay (premium/platinum plans)
-- **PDF Export**: html2canvas + jsPDF
+### Frontend (Vite + React 18 + TypeScript)
+- **Framework**: React 18 with Vite (port 5000)
+- **Styling**: Tailwind CSS + Shadcn/UI (Radix primitives)
+- **Routing**: React Router DOM v6
+- **State**: TanStack Query v5 + React Context for auth
+- **Forms**: React Hook Form + Zod
 
-## Project Structure
+### Backend (Express + TypeScript)
+- **API Server**: Express on port 3001 (`server/index.ts`)
+- **Routes**:
+  - `POST /api/create-order` — Creates Razorpay payment orders
+  - `POST /api/verify-payment` — Verifies Razorpay signatures, updates Supabase plan
+  - `POST /api/delete-document` — Secure server-side document deletion
 
-```
-src/
-  pages/
-    Index.tsx        - Landing page
-    Auth.tsx         - Sign in / sign up
-    Register.tsx     - New user registration
-    Dashboard.tsx    - Main authenticated dashboard (tabs)
-    Pricing.tsx      - Subscription plans page
-    Share.tsx        - Public QR-code share page
-    NotFound.tsx     - 404
-  components/
-    DigitalIDCard.tsx   - ID card with Print + PDF download
-    DocumentUpload.tsx  - File upload component (AI-verified)
-    DocumentList.tsx    - Uploaded documents list
-    QRCode.tsx          - QR code generator (uses `qrcode` lib)
-    SmartChecklist.tsx  - Document checklist
-    AIChatbot.tsx       - GROQ-powered chatbot
-    ui/                 - shadcn/ui primitives
-  lib/
-    groqVerify.ts       - GROQ AI document verification (vision + text)
-    checklistService.ts - AI checklist generation with localStorage + Supabase cache
-    firebase.ts         - Firebase config (legacy, not primary storage)
-  hooks/
-    useAuth.tsx                 - Auth context + helper (Supabase)
-    useDocumentVerification.ts  - Document verification state hook
-    useChecklist.ts             - AI checklist fetch + user-doc comparison hook
-    useUserPlan.ts              - User plan/limits management
-  integrations/
-    supabase/        - Supabase client + generated types
-server/
-  index.ts     - Express API server (Razorpay order creation + payment verification)
-  db.ts        - PostgreSQL pool (DATABASE_URL)
-supabase/
-  migrations/  - SQL schema migrations (profiles, documents, subscriptions)
-  functions/   - Edge function: share-docs (PIN-protected document sharing)
-```
+### Database & Auth
+- **Supabase**: Auth (email/password + OTP), PostgreSQL DB, File Storage
+- **Tables**: `profiles`, `documents`, `subscriptions`, `checklists`
+- **Storage Bucket**: `documents` (private, user-scoped RLS)
 
-## Design System (Government-Portal Style)
-- Site-wide design uses a flat government-portal aesthetic (white + navy `#0B3D91` + tricolor `#FF9933`/white/`#138808` stripes).
-- Shared chrome lives in `src/components/GovLayout.tsx`, exporting `GovLayout`, `GovPageHeader`, and `GovCard` helpers used by every public/private page.
-- Public pages: `Index`, `Auth`, `Register`, `Pricing`, `Features`, `About`, `Scan` (QR scanner), `Help` — all wrap children in `GovLayout`.
-- Dashboard shares the same chrome via `GovLayout`; tabs and cards re-skinned to match.
-- Auth subforms (`LoginForm`, `SignupForm`, `OtpForm`) restyled to use the gov palette (no gradients/glow).
-- Secure document viewer at `/i/:uid` (`Share.tsx`) keeps its own minimal full-screen UI for security.
+### Integrations
+- **Groq AI**: Document verification via vision/text models (`VITE_GROQ_API_KEY`)
+- **Gemini AI**: AI chatbot (`VITE_GEMINI_API_KEY` — hardcoded fallback exists)
+- **Razorpay**: Payment processing for Premium/Platinum plans
+- **Firebase**: Secondary integration in `src/lib/firebase.ts` (auth, realtime DB, storage)
+- **ScraperAPI**: Government page scraping for smart checklist (`VITE_SCRAPER_API_KEY`)
 
-## Key Features
+## Key Files
+- `src/App.tsx` — Root with providers and routes
+- `src/hooks/useAuth.tsx` — Supabase auth context
+- `src/hooks/useUserPlan.ts` — Plan limits (free/premium/platinum)
+- `src/integrations/supabase/client.ts` — Supabase client
+- `src/integrations/supabase/types.ts` — DB type definitions
+- `src/lib/groqVerify.ts` — AI document verification
+- `src/lib/checklistService.ts` — Smart checklist with scraping + AI
+- `src/components/DocumentUpload.tsx` — File upload with AI verify
+- `src/components/DocumentList.tsx` — Document list with delete
+- `src/components/AIChatbot.tsx` — Gemini-powered chatbot
+- `server/index.ts` — Express API server
+- `vite.config.ts` — Vite config with API middleware plugin
 
-- **Digital ID Card** (`src/components/DigitalIDCard.tsx`)
-  - Real ID-card-style UI with photo, name, email, phone, card ID, QR code
-  - **Print** — `window.print()` with `@media print` CSS that isolates only the card
-  - **Download PDF** — `html2canvas` captures the card, `jsPDF` generates landscape PDF
+## Workflows
+- **Start application**: `npm run dev` → port 5000 (Vite frontend)
+- **API server**: `npm run server` → port 3001 (Express backend)
 
-- **Document Management** — AI-verified upload, list, verification status badges
-- **AI Smart Checklist** — GROQ-powered dynamic checklist generation per application type, with localStorage + Supabase caching
-- **AI Chatbot** — GROQ-powered, document-aware assistant
-- **QR Share** — PIN-protected public document sharing via Supabase Edge Function
-- **Subscriptions** — Free / Premium / Platinum plans via Razorpay
+## Environment Secrets Required
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anon key
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-side only)
+- `VITE_GROQ_API_KEY` — Groq API key for document AI verification
+- `RAZORPAY_KEY_ID` — Razorpay key ID
+- `RAZORPAY_KEY_SECRET` — Razorpay secret key
+- `VITE_RAZORPAY_KEY_ID` — Razorpay key ID (frontend)
+- `VITE_SCRAPER_API_KEY` — ScraperAPI key for government page scraping
 
-## Running Services
+## Plans & Limits
+- **Free**: 5 documents, basic AI chatbot
+- **Premium** (₹299/yr): 100 documents, full AI, QR sharing
+- **Platinum** (₹599/yr): Unlimited docs, all features, no PIN delay
 
-- **Vite dev server** — port `5000` (frontend)
-- **Express API server** — port `3001` (Razorpay payment endpoints: `/api/create-order`, `/api/verify-payment`)
-- Vite proxies `/api/*` requests to port 3001
+## Supabase Schema
+Migrations in `supabase/migrations/`:
+1. `20250917...` — profiles, documents tables + RLS + storage
+2. `20260417...` — subscriptions table + plan column on profiles
 
-## Environment Variables Required
-
-| Variable | Description |
-|---|---|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side) |
-| `RAZORPAY_KEY_ID` | Razorpay key ID (server-side) |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret key (server-side) |
-| `VITE_RAZORPAY_KEY_ID` | Razorpay key ID (frontend, for checkout) |
-| `VITE_GROQ_API_KEY` | GROQ API key (document verification + AI features) |
-| `VITE_SCRAPER_API_KEY` | ScraperAPI key (optional, for smart checklist) |
-
-## Dev Commands
-
-```bash
-npm run dev      # Start Vite frontend (port 5000)
-npm run server   # Start Express API server (port 3001)
-```
+## Security Notes
+- Supabase service role key is only used server-side (Express API)
+- Document deletion goes through server to verify ownership
+- Payment verification uses HMAC signature check server-side
+- Documents served via signed URLs (10 min expiry)
+- Secure viewer blocks copy/print/screenshot via keyboard + focus events
