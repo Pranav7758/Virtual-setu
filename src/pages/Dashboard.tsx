@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,14 +59,28 @@ function PlanBadge({ plan }: { plan: string }) {
   );
 }
 
+const VALID_TABS = ['overview', 'documents', 'checklist', 'digital-id', 'profile'];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { plan, limits, canUploadDocument } = useUserPlan();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChatbot, setShowChatbot] = useState(false);
+
+  const tabParam = searchParams.get('tab');
+  const activeTab = VALID_TABS.includes(tabParam ?? '') ? tabParam! : 'overview';
+
+  const handleTabChange = (value: string) => {
+    if (value === 'overview') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab: value });
+    }
+  };
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
@@ -129,7 +143,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-5">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-5">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-white border border-slate-200 rounded h-auto p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
