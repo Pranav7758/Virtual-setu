@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,8 @@ import {
   Calendar,
   Trash2,
   Loader2,
+  Search,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,9 +44,30 @@ interface DocumentListProps {
   onDelete?: () => void;
 }
 
+const STATUS_FILTERS = ['all', 'verified', 'pending', 'rejected'] as const;
+type StatusFilter = typeof STATUS_FILTERS[number];
+
 export default function DocumentList({ documents, onDelete }: DocumentListProps) {
   const [confirmDoc, setConfirmDoc] = useState<Document | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  const filtered = useMemo(() => {
+    let list = documents;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (d) =>
+          d.document_name.toLowerCase().includes(q) ||
+          getDocumentTypeLabel(d.document_type).toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter !== 'all') {
+      list = list.filter((d) => d.verification_status === statusFilter);
+    }
+    return list;
+  }, [documents, search, statusFilter]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -175,6 +199,13 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
     );
   }
 
+  const statusColors: Record<StatusFilter, string> = {
+    all: 'bg-slate-100 text-slate-700 border-slate-300',
+    verified: 'bg-green-50 text-[#138808] border-green-300',
+    pending: 'bg-amber-50 text-amber-700 border-amber-300',
+    rejected: 'bg-red-50 text-red-700 border-red-300',
+  };
+
   return (
     <>
       <Card className="card-3d border-0">
@@ -184,9 +215,54 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
             {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
           </CardDescription>
         </CardHeader>
-        <CardContent>
+
+        {/* ── Search & Filter bar ── */}
+        <div className="px-6 pb-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or document type…"
+              className="pl-9 pr-9 bg-slate-50 border-slate-200 focus:bg-white"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-slate-500 shrink-0">Filter:</span>
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors capitalize ${
+                  statusFilter === s
+                    ? statusColors[s] + ' ring-1 ring-offset-1 ring-current'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {s === 'all' ? `All (${documents.length})` : `${s} (${documents.filter((d) => d.verification_status === s).length})`}
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <p className="text-sm text-slate-500 text-center py-4">
+              No documents match your search. <button className="text-[#0B3D91] underline" onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</button>
+            </p>
+          )}
+        </div>
+
+        <CardContent className="pt-0">
           <div className="space-y-4">
-            {documents.map((doc) => (
+            {filtered.map((doc) => (
               <div
                 key={doc.id}
                 className="p-4 bg-card-glass/30 rounded-xl border border-border/10 hover:border-border/20 transition-colors"

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Menu, X, LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
@@ -45,10 +45,64 @@ function PlanChip({ plan }: { plan: string }) {
   return null;
 }
 
+// CitizenNavItem — wraps a single nav link so the hook runs at component level,
+// not inside a .map() call (which would violate Rules of Hooks).
+function CitizenNavItem({
+  to, label, icon: Icon, mobile, onClick,
+}: {
+  to: string; label: string; icon: React.ElementType; mobile?: boolean; onClick?: () => void;
+}) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const currentTab = params.get('tab') || 'overview';
+
+  let isActive: boolean;
+  if (to === '/help') {
+    isActive = location.pathname === '/help';
+  } else if (to.startsWith('/dashboard')) {
+    const toParams = new URLSearchParams(to.includes('?') ? to.split('?')[1] : '');
+    const toTab = toParams.get('tab') || 'overview';
+    isActive = location.pathname === '/dashboard' && currentTab === toTab;
+  } else {
+    isActive = location.pathname === to;
+  }
+
+  if (mobile) {
+    return (
+      <Link
+        to={to}
+        onClick={onClick}
+        className={`flex items-center gap-2 py-2.5 px-2 text-sm border-b border-slate-100 ${
+          isActive ? 'text-[#0B3D91] font-semibold' : 'text-slate-700'
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+        {label}
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
+        isActive
+          ? 'text-[#0B3D91] font-semibold bg-blue-50'
+          : 'text-slate-700 hover:text-[#0B3D91] hover:bg-slate-50'
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </Link>
+  );
+}
+
 export default function GovLayout({ children, minimal = false }: GovLayoutProps) {
   const { user, signOut } = useAuth();
   const { plan } = useUserPlan();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = React.useState(false);
 
   const handleSignOut = async () => {
@@ -96,21 +150,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                 /* ── LOGGED-IN NAV ── */
                 <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
                   {CITIZEN_NAV.map((n) => (
-                    <NavLink
-                      key={n.to}
-                      to={n.to}
-                      end={n.to === '/dashboard'}
-                      className={({ isActive }) =>
-                        `flex items-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
-                          isActive
-                            ? 'text-[#0B3D91] font-semibold bg-blue-50'
-                            : 'text-slate-700 hover:text-[#0B3D91] hover:bg-slate-50'
-                        }`
-                      }
-                    >
-                      <n.icon className="h-3.5 w-3.5" />
-                      {n.label}
-                    </NavLink>
+                    <CitizenNavItem key={n.to} to={n.to} label={n.label} icon={n.icon} />
                   ))}
                 </nav>
               ) : (
@@ -193,20 +233,14 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
               {isLoggedIn ? (
                 <>
                   {CITIZEN_NAV.map((n) => (
-                    <NavLink
+                    <CitizenNavItem
                       key={n.to}
                       to={n.to}
-                      end={n.to === '/dashboard'}
+                      label={n.label}
+                      icon={n.icon}
+                      mobile
                       onClick={() => setOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-2 py-2.5 px-2 text-sm border-b border-slate-100 ${
-                          isActive ? 'text-[#0B3D91] font-semibold' : 'text-slate-700'
-                        }`
-                      }
-                    >
-                      <n.icon className="h-4 w-4" />
-                      {n.label}
-                    </NavLink>
+                    />
                   ))}
                   <div className="flex gap-2 py-3">
                     {plan === 'free' ? (
