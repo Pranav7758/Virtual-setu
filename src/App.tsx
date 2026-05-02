@@ -18,6 +18,7 @@ import Features from "./pages/Features";
 import About from "./pages/About";
 import Scan from "./pages/Scan";
 import Help from "./pages/Help";
+import GovSchemes from "./pages/GovSchemes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/scan" element={<Scan />} />
               <Route path="/help" element={<Help />} />
+              <Route path="/schemes" element={<GovSchemes />} />
               <Route path="/i/:uid" element={<Share />} />
               <Route path="/s/:token" element={<ShareSingle />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

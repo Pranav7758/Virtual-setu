@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X } from 'lucide-react';
+import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X, Landmark } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -99,6 +99,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
   const PUBLIC_NAV = [
     { to: '/', label: t('nav.home') },
     { to: '/features', label: t('nav.features') },
+    { to: '/schemes', label: 'Schemes' },
     { to: '/pricing', label: t('nav.pricing') },
     { to: '/about', label: t('nav.about') },
     { to: '/scan', label: t('nav.verify') },
@@ -110,6 +111,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
     { to: '/dashboard?tab=documents', label: t('nav.my_documents'), icon: FileText },
     { to: '/dashboard?tab=checklist', label: t('nav.checklist'), icon: ListChecks },
     { to: '/dashboard?tab=digital-id', label: t('nav.digital_id'), icon: CreditCard },
+    { to: '/schemes', label: 'Schemes', icon: Landmark },
     { to: '/dashboard?tab=profile', label: t('nav.profile'), icon: UserCircle },
     { to: '/help', label: t('nav.help'), icon: HelpCircle },
   ];
