@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -10,14 +10,14 @@ async function getDocSignedUrl(userId, docId) {
   if (!Array.isArray(docs) || docs.length === 0) return null;
   const doc = docs[0];
   const sr = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/documents/${doc.file_url}`,
-    { method: 'POST', headers: h, body: JSON.stringify({ expiresIn: 86400 * 2 }) });
+    { method: 'POST', headers: h, body: JSON.stringify({ expiresIn: 172800 }) });
   const sd = await sr.json();
   const signedUrl = sd.signedURL ? `${SUPABASE_URL}/storage/v1${sd.signedURL}` : sd.signedUrl ? `${SUPABASE_URL}/storage/v1${sd.signedUrl}` : null;
   if (!signedUrl) return null;
   return { name: doc.document_name, type: doc.document_type, url: signedUrl };
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const { documentId, userId, pin, durationHours } = req.body;
@@ -37,4 +37,4 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     res.status(500).json({ error: err.message || 'Internal server error' });
   }
-};
+}
