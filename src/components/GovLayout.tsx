@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Shield, Menu, X, LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard } from 'lucide-react';
+import { Shield, Menu, X, LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
 
@@ -23,6 +23,7 @@ const CITIZEN_NAV = [
   { to: '/dashboard?tab=documents', label: 'My Documents', icon: FileText },
   { to: '/dashboard?tab=checklist', label: 'Checklist', icon: ListChecks },
   { to: '/dashboard?tab=digital-id', label: 'Digital ID', icon: CreditCard },
+  { to: '/dashboard?tab=profile', label: 'Profile', icon: UserCircle },
   { to: '/help', label: 'Help', icon: HelpCircle },
 ];
 

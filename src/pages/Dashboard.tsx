@@ -4,7 +4,6 @@ import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield, Upload, FileText, CheckCircle, AlertCircle, Clock,
   MessageCircle, Zap, Crown, Lock,
@@ -74,14 +73,6 @@ export default function Dashboard() {
   const tabParam = searchParams.get('tab');
   const activeTab = VALID_TABS.includes(tabParam ?? '') ? tabParam! : 'overview';
 
-  const handleTabChange = (value: string) => {
-    if (value === 'overview') {
-      setSearchParams({});
-    } else {
-      setSearchParams({ tab: value });
-    }
-  };
-
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
     fetchProfile().catch(console.error);
@@ -113,6 +104,14 @@ export default function Dashboard() {
   const docLimit = limits.maxDocuments === Infinity ? '∞' : limits.maxDocuments;
   const uploadAllowed = canUploadDocument(documents.length);
 
+  const sectionTitle: Record<string, string> = {
+    overview: 'Dashboard Overview',
+    documents: 'My Documents',
+    checklist: 'Document Checklist',
+    'digital-id': 'Digital ID Card',
+    profile: 'My Profile',
+  };
+
   if (loading) {
     return (
       <GovLayout>
@@ -127,12 +126,14 @@ export default function Dashboard() {
     <GovLayout>
       <GovPageHeader
         breadcrumb={`Citizen ID · ${user?.id?.slice(0, 8) || ''}`}
-        title={`Welcome, ${profile?.full_name || user?.email}`}
-        subtitle="Manage your documents, smart checklist and digital identity card."
+        title={`${profile?.full_name || user?.email}`}
+        subtitle={sectionTitle[activeTab]}
       />
 
-      <section className="container mx-auto max-w-7xl px-4 py-6">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+      <section className="container mx-auto max-w-7xl px-4 py-6 space-y-5">
+
+        {/* Plan badge row */}
+        <div className="flex flex-wrap items-center gap-3">
           <PlanBadge plan={plan} />
           {plan === 'free' && (
             <Link to="/pricing">
@@ -143,17 +144,9 @@ export default function Dashboard() {
           )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-5">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-white border border-slate-200 rounded h-auto p-1">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="checklist">Checklist</TabsTrigger>
-            <TabsTrigger value="digital-id">Digital ID</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-          </TabsList>
-
-          {/* Overview */}
-          <TabsContent value="overview" className="space-y-5">
+        {/* ── OVERVIEW ── */}
+        {activeTab === 'overview' && (
+          <>
             {plan === 'free' && !uploadAllowed && (
               <GovCard className="border-amber-200 bg-amber-50">
                 <div className="flex items-center justify-between p-4">
@@ -197,7 +190,10 @@ export default function Dashboard() {
                   <FileText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
                   <p className="font-medium text-slate-700">No documents yet</p>
                   <p className="text-sm text-slate-500 mb-4">Upload your first document to get started.</p>
-                  <Button className="bg-[#0B3D91] hover:bg-[#082c6c] text-white">
+                  <Button
+                    className="bg-[#0B3D91] hover:bg-[#082c6c] text-white"
+                    onClick={() => setSearchParams({ tab: 'documents' })}
+                  >
                     <Upload className="h-4 w-4 mr-2" /> Upload Document
                   </Button>
                 </div>
@@ -235,10 +231,12 @@ export default function Dashboard() {
                 </Link>
               </GovCard>
             )}
-          </TabsContent>
+          </>
+        )}
 
-          {/* Documents */}
-          <TabsContent value="documents" className="space-y-5">
+        {/* ── DOCUMENTS ── */}
+        {activeTab === 'documents' && (
+          <>
             {uploadAllowed ? (
               <div id="document-upload"><DocumentUpload onUploadComplete={fetchDocuments} /></div>
             ) : (
@@ -254,105 +252,109 @@ export default function Dashboard() {
               </GovCard>
             )}
             <DocumentList documents={documents} onDelete={fetchDocuments} />
-          </TabsContent>
+          </>
+        )}
 
-          <TabsContent value="checklist"><SmartChecklist /></TabsContent>
+        {/* ── CHECKLIST ── */}
+        {activeTab === 'checklist' && <SmartChecklist />}
 
-          <TabsContent value="digital-id">
+        {/* ── DIGITAL ID ── */}
+        {activeTab === 'digital-id' && (
+          <GovCard>
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+              <p className="font-semibold text-slate-900 text-sm">Digital ID Card</p>
+              <p className="text-xs text-slate-500">Your secure digital identity card — print or download as PDF</p>
+            </div>
+            <div className="flex justify-center py-6 px-4">
+              <DigitalIDCard
+                name={profile?.full_name || ''}
+                email={user?.email || ''}
+                phone={profile?.phone || ''}
+                userId={user?.id || 'unknown'}
+                memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
+                shareUrl={`${window.location.origin}/i/${user?.id}`}
+              />
+            </div>
+            {!limits.qrEmergencySharing && (
+              <div className="mx-5 mb-5 p-3 rounded border border-slate-200 bg-slate-50 flex items-center gap-2">
+                <Lock className="h-4 w-4 text-slate-500" />
+                <p className="text-sm text-slate-600">
+                  QR emergency sharing requires{' '}
+                  <Link to="/pricing" className="text-[#0B3D91] underline">Premium or Platinum</Link>
+                </p>
+              </div>
+            )}
+          </GovCard>
+        )}
+
+        {/* ── PROFILE ── */}
+        {activeTab === 'profile' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <GovCard>
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                <p className="font-semibold text-slate-900 text-sm">Digital ID Card</p>
-                <p className="text-xs text-slate-500">Your secure digital identity card — print or download as PDF</p>
+                <p className="font-semibold text-slate-900 text-sm">Personal Information</p>
+                <p className="text-xs text-slate-500">Your account details and contact information</p>
               </div>
-              <div className="flex justify-center py-6 px-4">
-                <DigitalIDCard
-                  name={profile?.full_name || ''}
-                  email={user?.email || ''}
-                  phone={profile?.phone || ''}
-                  userId={user?.id || 'unknown'}
-                  memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
-                  shareUrl={`${window.location.origin}/i/${user?.id}`}
-                />
+              <div className="p-5 space-y-4">
+                {[
+                  { label: 'Full Name', value: profile?.full_name || 'Not provided' },
+                  { label: 'Email Address', value: user?.email },
+                  { label: 'Phone Number', value: profile?.phone || 'Not provided' },
+                  { label: 'Member Since', value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown' },
+                ].map((f) => (
+                  <div key={f.label}>
+                    <Label className="text-xs uppercase tracking-wider text-slate-500">{f.label}</Label>
+                    <p className="text-slate-900">{f.value}</p>
+                  </div>
+                ))}
               </div>
-              {!limits.qrEmergencySharing && (
-                <div className="mx-5 mb-5 p-3 rounded border border-slate-200 bg-slate-50 flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-slate-500" />
-                  <p className="text-sm text-slate-600">
-                    QR emergency sharing requires{' '}
-                    <Link to="/pricing" className="text-[#0B3D91] underline">Premium or Platinum</Link>
-                  </p>
-                </div>
-              )}
             </GovCard>
-          </TabsContent>
 
-          <TabsContent value="profile">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <GovCard>
-                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                  <p className="font-semibold text-slate-900 text-sm">Personal Information</p>
-                  <p className="text-xs text-slate-500">Your account details and contact information</p>
+            <GovCard>
+              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+                <p className="font-semibold text-slate-900 text-sm">Security &amp; Plan</p>
+                <p className="text-xs text-slate-500">Your security preferences and subscription</p>
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">Current Plan</p>
+                    <p className="text-xs text-slate-500 capitalize">
+                      {plan} — {plan === 'free' ? '5 documents' : plan === 'premium' ? '100 documents' : 'Unlimited'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PlanBadge plan={plan} />
+                    {plan !== 'platinum' && (
+                      <Link to="/pricing">
+                        <Button size="sm" variant="outline" className="border-[#0B3D91] text-[#0B3D91]">Upgrade</Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <div className="p-5 space-y-4">
-                  {[
-                    { label: 'Full Name', value: profile?.full_name || 'Not provided' },
-                    { label: 'Email Address', value: user?.email },
-                    { label: 'Phone Number', value: profile?.phone || 'Not provided' },
-                    { label: 'Member Since', value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown' },
-                  ].map((f) => (
-                    <div key={f.label}>
-                      <Label className="text-xs uppercase tracking-wider text-slate-500">{f.label}</Label>
-                      <p className="text-slate-900">{f.value}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">PIN Protection</p>
+                    <p className="text-xs text-slate-500">4-digit PIN for card access</p>
+                  </div>
+                  <Badge variant="outline" className="bg-green-50 text-[#138808] border-green-200">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Active
+                  </Badge>
                 </div>
-              </GovCard>
+                <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">Email Verification</p>
+                    <p className="text-xs text-slate-500">Email address verification status</p>
+                  </div>
+                  <Badge variant="outline" className={user?.email_confirmed_at ? 'bg-green-50 text-[#138808] border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}>
+                    {user?.email_confirmed_at ? <><CheckCircle className="h-3 w-3 mr-1" /> Verified</> : <><Clock className="h-3 w-3 mr-1" /> Pending</>}
+                  </Badge>
+                </div>
+              </div>
+            </GovCard>
+          </div>
+        )}
 
-              <GovCard>
-                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                  <p className="font-semibold text-slate-900 text-sm">Security &amp; Plan</p>
-                  <p className="text-xs text-slate-500">Your security preferences and subscription</p>
-                </div>
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
-                    <div>
-                      <p className="font-medium text-slate-900 text-sm">Current Plan</p>
-                      <p className="text-xs text-slate-500 capitalize">
-                        {plan} — {plan === 'free' ? '5 documents' : plan === 'premium' ? '100 documents' : 'Unlimited'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PlanBadge plan={plan} />
-                      {plan !== 'platinum' && (
-                        <Link to="/pricing">
-                          <Button size="sm" variant="outline" className="border-[#0B3D91] text-[#0B3D91]">Upgrade</Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
-                    <div>
-                      <p className="font-medium text-slate-900 text-sm">PIN Protection</p>
-                      <p className="text-xs text-slate-500">4-digit PIN for card access</p>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-[#138808] border-green-200">
-                      <CheckCircle className="h-3 w-3 mr-1" /> Active
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
-                    <div>
-                      <p className="font-medium text-slate-900 text-sm">Email Verification</p>
-                      <p className="text-xs text-slate-500">Email address verification status</p>
-                    </div>
-                    <Badge variant="outline" className={user?.email_confirmed_at ? 'bg-green-50 text-[#138808] border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}>
-                      {user?.email_confirmed_at ? <><CheckCircle className="h-3 w-3 mr-1" /> Verified</> : <><Clock className="h-3 w-3 mr-1" /> Pending</>}
-                    </Badge>
-                  </div>
-                </div>
-              </GovCard>
-            </div>
-          </TabsContent>
-        </Tabs>
       </section>
 
       {/* Floating Chatbot */}
