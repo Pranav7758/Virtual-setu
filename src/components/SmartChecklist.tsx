@@ -100,11 +100,6 @@ export default function SmartChecklist() {
   const pct   = total > 0 ? Math.round((available.length / total) * 100) : 0;
   const barColor = pct === 100 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-400';
 
-  // YouTube helpers — always use search (no embed, avoids "Video unavailable")
-  const ytSearchUrl = data?.videoSearchQuery
-    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(data.videoSearchQuery)}`
-    : `https://www.youtube.com/results?search_query=${encodeURIComponent(submittedQuery + ' India how to apply 2024')}`;
-
   // Official URL helpers
   const officialUrl = data?.officialUrl;
   let officialDomain = '';
@@ -310,20 +305,13 @@ export default function SmartChecklist() {
                 </div>
               )}
 
-              {/* ── 3. YouTube Tutorial ── */}
-              <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
-                  <div className="flex items-center gap-2">
+              {/* ── 3. YouTube Tutorial — only shown when a real video ID was found ── */}
+              {data.videoId && !videoError && (
+                <div className="rounded-xl border bg-card overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
                     <Youtube className="h-5 w-5 text-red-600" />
                     <span className="text-sm font-semibold">{t('checklist.watch_tutorial')}</span>
                   </div>
-                  <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 font-medium">
-                    {t('checklist.find_video')} <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-
-                {data.videoId && !videoError ? (
                   <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
                     <iframe
                       key={data.videoId}
@@ -335,20 +323,8 @@ export default function SmartChecklist() {
                       onError={() => setVideoError(true)}
                     />
                   </div>
-                ) : (
-                  <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-5 px-5 py-5 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors group">
-                    <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center flex-shrink-0 shadow group-hover:scale-105 transition-transform">
-                      <Youtube className="h-7 w-7 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground mb-1">{t('checklist.video_subtitle')}</p>
-                      <p className="text-xs text-muted-foreground truncate mb-2">{data.videoSearchQuery ?? submittedQuery}</p>
-                      <span className="text-xs font-medium text-red-600 dark:text-red-400">{t('checklist.find_video')} →</span>
-                    </div>
-                  </a>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* ── 4. Application Steps ── */}
               {data.steps.length > 0 && (

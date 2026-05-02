@@ -168,6 +168,34 @@ async function scrapeGovPage(url: string): Promise<string> {
     .slice(0, 9000);
 }
 
+// ─── Google search: find current official URL live ────────────────────────────
+
+async function searchOfficialUrl(purposeLabel: string): Promise<string | undefined> {
+  const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
+  if (!scraperKey) return undefined;
+  try {
+    const query = `${purposeLabel} official government website India apply online site:.gov.in OR site:.nic.in OR site:.mahaonline.gov.in`;
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&gl=in&num=5`;
+    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(googleUrl)}&render=false&country_code=in`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return undefined;
+    const html = await res.text();
+    // Google encodes real result URLs as /url?q=ACTUAL_URL&...
+    const matches = html.match(/\/url\?q=(https?:\/\/[^&"]+)/g);
+    if (!matches?.length) return undefined;
+    const candidates = matches
+      .map((m) => {
+        try { return decodeURIComponent(m.replace('/url?q=', '').split('&')[0]); } catch { return ''; }
+      })
+      .filter((u) => u.startsWith('http') && !u.includes('google.') && !u.includes('webcache') && !u.includes('translate.'));
+    // Prefer .gov.in / .nic.in domains
+    const govUrl = candidates.find((u) => /\.(gov\.in|nic\.in|mahaonline\.gov\.in|digitalsatbara|mahabhumi)/.test(u));
+    return govUrl ?? candidates[0] ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // ─── YouTube: scrape real video ID from YouTube search results ────────────────
 
 async function searchYouTubeVideo(searchQuery: string): Promise<string | undefined> {
@@ -282,16 +310,11 @@ Generate a comprehensive checklist in EXACTLY this JSON format (no other text):
     }
   ],
   "steps": ["Step 1: ...", "Step 2: ..."],
-  "notes": ["Fee and timing info", "Official website or helpline"],
-  "videoId": "11-char YouTube video ID of a real popular tutorial (or empty string)",
-  "videoTitle": "Exact title of that YouTube video (or empty string)",
-  "officialUrl": "Official Indian government URL where user can apply"
+  "notes": ["Fee and timing info", "Helpline or contact info"]
 }
 
 Rules:
 - 5–8 documents (mix of required true/false), 4–7 detailed steps, 2–3 notes
-- videoId: EXACTLY 11 chars [A-Za-z0-9_-] or empty string — do not guess
-- officialUrl: real .gov.in URL relevant to this purpose
 - Focus on 2024 Indian government requirements
 - Return ONLY valid JSON`;
 
@@ -317,7 +340,14 @@ Rules:
   const parsed = JSON.parse(content);
 
   const videoQuery = VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`;
-  const videoId = await searchYouTubeVideo(videoQuery);
+
+  // Run YouTube search and Google official URL search in parallel
+  const [videoId, liveOfficialUrl] = await Promise.all([
+    searchYouTubeVideo(videoQuery),
+    GOVT_URLS[purposeId]
+      ? Promise.resolve(GOVT_URLS[purposeId])   // known purpose → use hardcoded verified URL
+      : searchOfficialUrl(purposeLabel),          // custom purpose → Google it live
+  ]);
 
   return {
     documentType: purposeId,
@@ -326,7 +356,7 @@ Rules:
     notes: (parsed.notes ?? []) as string[],
     videoId,
     videoSearchQuery: videoQuery,
-    officialUrl: parsed.officialUrl || GOVT_URLS[purposeId] || '',
+    officialUrl: liveOfficialUrl || '',
     generatedAt: Date.now(),
     fromCache: false,
     source: 'ai',
