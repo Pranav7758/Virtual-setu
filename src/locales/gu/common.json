@@ -277,6 +277,12 @@
     "p_bank": "બૅન્ક ખાતું",
     "p_aadhaar": "આધાર",
     "p_job": "નોકરી અરજી",
-    "p_college": "કૉલેજ પ્રવેશ"
+    "p_college": "કૉલેજ પ્રવેશ",
+    "watch_tutorial": "Watch Tutorial",
+    "video_subtitle": "Best video guide for this process",
+    "find_video": "Find Tutorial on YouTube",
+    "official_portal": "Official Application Portal",
+    "apply_now": "Apply Now →",
+    "portal_note": "You will be redirected to the official government website"
   }
 }

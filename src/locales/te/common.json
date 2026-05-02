@@ -277,6 +277,12 @@
     "p_bank": "బ్యాంకు ఖాతా",
     "p_aadhaar": "ఆధార్",
     "p_job": "ఉద్యోగ దరఖాస్తు",
-    "p_college": "కళాశాల ప్రవేశం"
+    "p_college": "కళాశాల ప్రవేశం",
+    "watch_tutorial": "Watch Tutorial",
+    "video_subtitle": "Best video guide for this process",
+    "find_video": "Find Tutorial on YouTube",
+    "official_portal": "Official Application Portal",
+    "apply_now": "Apply Now →",
+    "portal_note": "You will be redirected to the official government website"
   }
 }

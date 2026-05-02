@@ -277,6 +277,12 @@
     "p_bank": "ಬ್ಯಾಂಕ್ ಖಾತೆ",
     "p_aadhaar": "ಆಧಾರ್",
     "p_job": "ಉದ್ಯೋಗ ಅರ್ಜಿ",
-    "p_college": "ಕಾಲೇಜು ಪ್ರವೇಶ"
+    "p_college": "ಕಾಲೇಜು ಪ್ರವೇಶ",
+    "watch_tutorial": "Watch Tutorial",
+    "video_subtitle": "Best video guide for this process",
+    "find_video": "Find Tutorial on YouTube",
+    "official_portal": "Official Application Portal",
+    "apply_now": "Apply Now →",
+    "portal_note": "You will be redirected to the official government website"
   }
 }

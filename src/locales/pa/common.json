@@ -277,6 +277,12 @@
     "p_bank": "ਬੈਂਕ ਖਾਤਾ",
     "p_aadhaar": "ਆਧਾਰ",
     "p_job": "ਨੌਕਰੀ ਅਰਜ਼ੀ",
-    "p_college": "ਕਾਲਜ ਦਾਖਲਾ"
+    "p_college": "ਕਾਲਜ ਦਾਖਲਾ",
+    "watch_tutorial": "Watch Tutorial",
+    "video_subtitle": "Best video guide for this process",
+    "find_video": "Find Tutorial on YouTube",
+    "official_portal": "Official Application Portal",
+    "apply_now": "Apply Now →",
+    "portal_note": "You will be redirected to the official government website"
   }
 }

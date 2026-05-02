@@ -277,6 +277,12 @@
     "p_bank": "வங்கி கணக்கு",
     "p_aadhaar": "ஆதார்",
     "p_job": "வேலை விண்ணப்பம்",
-    "p_college": "கல்லூரி சேர்க்கை"
+    "p_college": "கல்லூரி சேர்க்கை",
+    "watch_tutorial": "Watch Tutorial",
+    "video_subtitle": "Best video guide for this process",
+    "find_video": "Find Tutorial on YouTube",
+    "official_portal": "Official Application Portal",
+    "apply_now": "Apply Now →",
+    "portal_note": "You will be redirected to the official government website"
   }
 }
