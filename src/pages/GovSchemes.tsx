@@ -1,15 +1,16 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import {
-  Search, X, Bookmark, BookmarkCheck, ExternalLink, ChevronDown, ChevronUp,
+  Search, X, Bookmark, BookmarkCheck, ExternalLink, ChevronDown,
   Filter, Sparkles, Globe, Calendar, CheckCircle, XCircle, BadgeInfo,
-  Building2, Layers,
+  Building2, Loader2, Zap,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   GOV_SCHEMES, CATEGORIES, CATEGORY_ICONS,
   type GovScheme, type SchemeCategory, type TargetGender, type TargetIncome,
 } from '@/data/govSchemes';
+import { searchSchemesWithAI, type AISchemeResult } from '@/lib/schemeSearchService';
 
 const BOOKMARK_KEY = 'vs_scheme_bookmarks';
 
@@ -209,6 +210,27 @@ export default function GovSchemes() {
   const [showFilters, setShowFilters] = useState(false);
   const [bookmarks, setBookmarks] = useState<Set<string>>(getBookmarks);
   const [selected, setSelected] = useState<GovScheme | null>(null);
+  const [aiSelected, setAiSelected] = useState<AISchemeResult | null>(null);
+  const [aiResults, setAiResults] = useState<AISchemeResult[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced AI search — fires 800ms after user stops typing
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!search.trim() || search.trim().length < 3) {
+      setAiResults([]);
+      setAiLoading(false);
+      return;
+    }
+    setAiLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchSchemesWithAI(search.trim());
+      setAiResults(results);
+      setAiLoading(false);
+    }, 800);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search]);
 
   const toggleBookmark = useCallback((id: string) => {
     setBookmarks((prev) => {
@@ -376,7 +398,7 @@ export default function GovSchemes() {
         </div>
 
         {/* Scheme grid */}
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && !aiLoading && aiResults.length === 0 ? (
           <GovCard className="py-16 text-center">
             <BadgeInfo className="h-10 w-10 mx-auto text-slate-300 mb-3" />
             <p className="font-semibold text-slate-700">No schemes found</p>
@@ -384,7 +406,7 @@ export default function GovSchemes() {
             <button onClick={() => { setSearch(''); setActiveCategory('All'); setFilterStatus('all'); setFilterLevel('all'); setFilterGender('all'); setFilterIncome('all'); }}
               className="mt-4 text-sm text-[#003580] font-semibold hover:underline">View all schemes</button>
           </GovCard>
-        ) : (
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((scheme) => (
               <SchemeCard
@@ -396,6 +418,57 @@ export default function GovSchemes() {
               />
             ))}
           </div>
+        ) : null}
+
+        {/* AI Live Search Results */}
+        {search.trim().length >= 3 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-gradient-to-r from-violet-200 to-transparent" />
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 border border-violet-200">
+                {aiLoading ? (
+                  <Loader2 className="h-3 w-3 text-violet-600 animate-spin" />
+                ) : (
+                  <Zap className="h-3 w-3 text-violet-600" />
+                )}
+                <span className="text-[11px] font-semibold text-violet-700 uppercase tracking-wider">
+                  {aiLoading ? 'AI searching live…' : aiResults.length > 0 ? `${aiResults.length} AI-powered results` : 'AI Live Search'}
+                </span>
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-l from-violet-200 to-transparent" />
+            </div>
+
+            {aiLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border border-violet-100 rounded-sm p-4 bg-violet-50/30 animate-pulse">
+                    <div className="h-3 bg-violet-100 rounded w-1/3 mb-3" />
+                    <div className="h-4 bg-violet-100 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-violet-100 rounded w-full mb-1" />
+                    <div className="h-3 bg-violet-100 rounded w-5/6" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!aiLoading && aiResults.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {aiResults.map((scheme) => (
+                  <AISchemeCard key={scheme.id} scheme={scheme} onClick={() => setAiSelected(scheme)} />
+                ))}
+              </div>
+            )}
+
+            {!aiLoading && aiResults.length === 0 && search.trim().length >= 3 && (
+              <div className="text-center py-5 text-sm text-slate-400">
+                No additional AI results found for this search.
+              </div>
+            )}
+
+            <p className="text-[10px] text-center text-slate-400">
+              AI results are generated by Groq LLM and may contain inaccuracies. Always verify at official government portals.
+            </p>
+          </div>
         )}
 
         {/* Footer note */}
@@ -404,7 +477,7 @@ export default function GovSchemes() {
         </div>
       </section>
 
-      {/* Detail modal */}
+      {/* Static scheme detail modal */}
       {selected && (
         <SchemeDetail
           scheme={selected}
@@ -413,6 +486,9 @@ export default function GovSchemes() {
           onToggleBookmark={toggleBookmark}
         />
       )}
+
+      {/* AI scheme detail modal */}
+      {aiSelected && <AISchemeDetail scheme={aiSelected} onClose={() => setAiSelected(null)} />}
     </GovLayout>
   );
 }
@@ -434,6 +510,153 @@ function FilterGroup({ label, value, onChange, options }: {
             <span className={`text-xs ${value === o.value ? 'font-semibold text-[#003580]' : 'text-slate-600'}`}>{o.label}</span>
           </label>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── AI Scheme Card ─────────────────────────────────────────────────────────────
+
+function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: () => void }) {
+  return (
+    <div
+      className="bg-white border border-violet-200 rounded-sm shadow-sm hover:shadow-md hover:border-violet-400 transition-all group flex flex-col cursor-pointer relative"
+      onClick={onClick}
+    >
+      {/* AI badge ribbon */}
+      <div className="absolute top-0 right-0 bg-violet-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-sm tracking-wider flex items-center gap-1">
+        <Zap className="h-2.5 w-2.5" /> AI
+      </div>
+
+      <div className="px-4 pt-4 pb-3 flex-1">
+        <div className="flex flex-wrap items-center gap-1 mb-2">
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${scheme.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
+            {scheme.status === 'active' ? '● Active' : '○ Inactive'}
+          </span>
+          <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 font-semibold px-2 py-0.5 rounded-sm">
+            {scheme.category}
+          </span>
+        </div>
+
+        <h3 className="font-bold text-slate-900 text-sm leading-snug mb-0.5 group-hover:text-violet-700 transition-colors pr-6">
+          {scheme.name}
+        </h3>
+        {scheme.nameHindi && (
+          <p className="text-[11px] text-slate-500 mb-2">{scheme.nameHindi}</p>
+        )}
+
+        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">{scheme.description}</p>
+      </div>
+
+      <div className="px-4 py-2 border-t border-violet-100 flex items-center justify-between">
+        <div className="flex items-center gap-1 text-[10px] text-slate-400">
+          <Building2 className="h-3 w-3" />
+          <span className="line-clamp-1">{scheme.ministry}</span>
+        </div>
+        <button className="inline-flex items-center gap-1 text-[10px] text-violet-600 font-semibold hover:text-violet-800">
+          View Details <ChevronDown className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── AI Scheme Detail Modal ─────────────────────────────────────────────────────
+
+function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-sm shadow-2xl max-w-2xl w-full my-6 flex flex-col max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-violet-700 to-violet-500 px-6 py-5 text-white flex-shrink-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-sm flex items-center gap-1">
+                  <Zap className="h-2.5 w-2.5" /> AI-Powered Result
+                </span>
+                <span className="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-sm">{scheme.category}</span>
+              </div>
+              <h2 className="text-lg font-bold leading-snug">{scheme.name}</h2>
+              {scheme.nameHindi && <p className="text-sm text-white/80 mt-0.5">{scheme.nameHindi}</p>}
+            </div>
+            <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-sm transition-colors flex-shrink-0">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-white/80">
+            <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{scheme.ministry}</span>
+            {scheme.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />Launched: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })}</span>}
+            <span className="flex items-center gap-1">
+              {scheme.status === 'active' ? <CheckCircle className="h-3 w-3 text-emerald-300" /> : <XCircle className="h-3 w-3 text-red-300" />}
+              {scheme.status === 'active' ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+          <div className="px-6 py-4">
+            <p className="text-sm text-slate-700 leading-relaxed">{scheme.description}</p>
+          </div>
+
+          {scheme.eligibility.length > 0 && (
+            <div className="px-6 py-4">
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">👥 Who Can Apply</h3>
+              <ul className="space-y-1">
+                {scheme.eligibility.map((e, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />{e}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {scheme.benefits.length > 0 && (
+            <div className="px-6 py-4">
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">🎁 Benefits</h3>
+              <ul className="space-y-1">
+                {scheme.benefits.map((b, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-violet-600 mt-0.5 shrink-0">▸</span>{b}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {scheme.requiredDocuments.length > 0 && (
+            <div className="px-6 py-4">
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📄 Required Documents</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {scheme.requiredDocuments.map((d, i) => (
+                  <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {scheme.applicationProcess.length > 0 && (
+            <div className="px-6 py-4">
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📝 How to Apply</h3>
+              <ol className="space-y-2">
+                {scheme.applicationProcess.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          <div className="px-6 py-4 bg-amber-50 border-t border-amber-200">
+            <p className="text-[11px] text-amber-700 flex items-start gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              This result was generated by AI and may contain inaccuracies. Please verify all information at the official government portal before applying.
+            </p>
+          </div>
+
+          <div className="px-6 py-4">
+            <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white text-sm font-semibold rounded-sm transition-colors">
+              <ExternalLink className="h-4 w-4" /> Visit Official Website
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

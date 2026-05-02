@@ -28,7 +28,7 @@ Virtual Setu is an official Indian government-style secure document management p
 - **Document expiry**: Stored in localStorage, keyed `vs_expiry_{userId}_{docId}`
 
 ### Integrations
-- **Groq AI**: Document verification via vision/text models (`VITE_GROQ_API_KEY`)
+- **Groq AI**: Document verification via vision/text models + Government Schemes AI live search (`VITE_GROQ_API_KEY`)
 - **Razorpay**: Payment processing for Premium/Platinum plans
 - **ScraperAPI**: Government page scraping for smart checklist (`VITE_SCRAPER_API_KEY`)
 
