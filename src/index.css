@@ -6,101 +6,82 @@
 
 @layer base {
   :root {
-    /* Core Background & Surface */
-    --background: 240 15% 5%;
-    --background-secondary: 240 12% 8%;
-    --foreground: 0 0% 98%;
+    /* Core Background & Surface — Light Government Theme */
+    --background: 214 32% 97%;
+    --background-secondary: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
-    /* Glassmorphism Cards */
-    --card: 240 15% 12%;
-    --card-glass: 240 20% 15%;
-    --card-foreground: 0 0% 95%;
+    /* Cards — Clean White */
+    --card: 0 0% 100%;
+    --card-glass: 210 40% 98%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 240 15% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Modern Blue Primary (Trust & Government) */
-    --primary: 200 95% 55%;
-    --primary-dark: 200 95% 45%;
-    --primary-light: 200 95% 65%;
-    --primary-foreground: 0 0% 98%;
+    /* Government Blue Primary */
+    --primary: 220 80% 30%;
+    --primary-dark: 220 80% 22%;
+    --primary-light: 220 80% 42%;
+    --primary-foreground: 0 0% 100%;
 
     /* Saffron Secondary (Indian Heritage) */
-    --secondary: 25 95% 60%;
-    --secondary-dark: 25 95% 50%;
-    --secondary-light: 25 95% 70%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 25 90% 55%;
+    --secondary-dark: 25 90% 45%;
+    --secondary-light: 25 90% 65%;
+    --secondary-foreground: 0 0% 100%;
 
     /* Emerald Accent (Progress & Success) */
-    --accent: 150 80% 50%;
-    --accent-dark: 150 80% 40%;
-    --accent-light: 150 80% 60%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 150 60% 40%;
+    --accent-dark: 150 60% 30%;
+    --accent-light: 150 60% 50%;
+    --accent-foreground: 0 0% 100%;
 
     /* Muted Surfaces */
-    --muted: 240 10% 20%;
-    --muted-light: 240 10% 25%;
-    --muted-foreground: 240 5% 70%;
+    --muted: 210 40% 96%;
+    --muted-light: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
 
     /* Status Colors */
-    --destructive: 0 85% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --success: 150 80% 50%;
-    --warning: 45 95% 60%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
 
     /* Borders & Inputs */
-    --border: 240 10% 25%;
-    --border-light: 240 10% 30%;
-    --input: 240 15% 15%;
-    --ring: 200 95% 55%;
+    --border: 214 32% 87%;
+    --border-light: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 220 80% 30%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* 3D Effects & Shadows */
-    --shadow-3d: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-    --shadow-glass: 0 8px 32px rgba(31, 38, 135, 0.37);
-    --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.3);
-    --shadow-glow-secondary: 0 0 40px rgba(251, 146, 60, 0.3);
+    /* Shadows */
+    --shadow-3d: 0 4px 16px rgba(11, 61, 145, 0.10);
+    --shadow-glass: 0 2px 8px rgba(11, 61, 145, 0.08);
+    --shadow-glow: 0 0 20px rgba(11, 61, 145, 0.15);
+    --shadow-glow-secondary: 0 0 20px rgba(255, 153, 51, 0.15);
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-dark)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 50%, hsl(var(--secondary)) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-mesh: radial-gradient(at 40% 20%, hsl(var(--primary)) 0px, transparent 50%), 
-                     radial-gradient(at 80% 0%, hsl(var(--secondary)) 0px, transparent 50%), 
-                     radial-gradient(at 0% 50%, hsl(var(--accent)) 0px, transparent 50%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 80% 30%) 0%, hsl(220 80% 22%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(244,247,251,0.9) 100%);
+    --gradient-mesh: linear-gradient(135deg, #f4f7fb 0%, #eaf0fb 100%);
 
     /* Animations */
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --transition-spring: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-spring: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  /* Light mode adjustments (for future use) */
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 240 15% 5%;
-    --card: 0 0% 100%;
-    --card-glass: 0 0% 98%;
-    --muted: 240 5% 95%;
-    --border: 240 5% 90%;
   }
 }
 
@@ -111,7 +92,7 @@
 
   body {
     @apply bg-background text-foreground overflow-x-hidden;
-    background: var(--gradient-mesh);
+    background: #f4f7fb;
     min-height: 100vh;
   }
 
