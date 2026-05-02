@@ -1,0 +1,108 @@
+{
+  "nav": {
+    "home": "ꯅꯨꯃꯤꯗꯥꯡ", "features": "ꯐꯤꯆꯔ", "pricing": "ꯃꯨꯒꯤ", "about": "ꯑꯁꯤꯒꯤ ꯑꯃꯨꯛꯇꯥ",
+    "verify": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯌꯦꯡꯁꯤꯅꯕ", "help": "ꯃꯇꯦꯡ ꯄꯥꯡꯕ", "login": "ꯂꯣꯏꯅ", "register": "ꯔꯦꯖꯤꯁ꯭ꯇꯔ",
+    "sign_out": "ꯁꯥꯏꯅ ꯑꯥꯎꯠ", "overview": "ꯑꯣꯕꯥꯔꯕꯤꯎ", "my_documents": "ꯑꯩꯒꯤ ꯗꯣꯀꯨꯃꯦꯟꯇ",
+    "checklist": "ꯆꯦꯛꯂꯤꯁ꯭ꯇ", "digital_id": "ꯗꯤꯖꯤꯇꯦꯜ ꯑꯥꯏꯗꯤ", "profile": "ꯄ꯭ꯔꯣꯐꯥꯏꯜ"
+  },
+  "status": {
+    "verified": "ꯌꯦꯡꯁꯤꯅꯒꯗꯕ", "pending": "ꯄꯦꯟꯗꯤꯡ", "rejected": "ꯔꯤꯖꯦꯛꯇꯦꯗ",
+    "all": "ꯑꯃꯃꯥꯡ", "expired": "ꯁꯥꯗꯅꯕꯤ", "valid": "ꯌꯥꯝꯅꯕ", "active": "ꯑꯦꯛꯇꯤꯕ"
+  },
+  "actions": {
+    "view": "ꯉꯥꯛꯄ", "download": "ꯗꯥꯎꯅꯂꯣꯗ", "delete": "ꯗꯤꯂꯤꯠ", "upload": "ꯑꯄꯂꯣꯗ",
+    "cancel": "ꯀꯦꯟꯁꯦꯜ", "close": "ꯇꯧꯕ", "confirm": "ꯀꯟꯐꯔꯝ", "share": "ꯁꯦꯌꯔ",
+    "revoke": "ꯔꯤꯕꯣꯛ", "copy": "ꯀꯣꯄꯤ", "done": "ꯇꯧꯕꯤ", "upgrade": "ꯑꯄꯒ꯭ꯔꯦꯗ",
+    "view_plans": "ꯄ꯭ꯂꯦꯟ ꯉꯥꯛꯄ", "save": "ꯁꯦꯕ"
+  },
+  "gov": {
+    "india": "Government of India", "bharat": "भारत सरकार",
+    "ministry": "Ministry of Electronics & Information Technology",
+    "digital_india": "Digital India · डिजिटल इंडिया",
+    "citizen_portal": "Citizen Digital Services Portal"
+  },
+  "portal": { "name": "Virtual Setu", "tagline": "Secure Digital Document Portal", "tagline_native": "ꯕꯔ꯭ꯆꯨꯑꯦꯜ ꯁꯦꯇꯨ" },
+  "plan": { "free": "ꯐ꯭ꯔꯤ", "premium": "ꯄ꯭ꯔꯤꯃꯤꯌꯝ", "platinum": "ꯄ꯭ꯂꯦꯇꯤꯅꯝ", "upgrade": "ꯑꯄꯒ꯭ꯔꯦꯗ", "unlimited": "ꯁꯤꯖꯤꯟꯅꯕꯤ" },
+  "dashboard": {
+    "title": "ꯁꯤꯇꯤꯖꯦꯟ ꯗꯦꯁꯕꯣꯔꯗ", "overview": "ꯑꯣꯕꯥꯔꯕꯤꯎ", "documents": "ꯑꯩꯒꯤ ꯗꯣꯀꯨꯃꯦꯟꯇ",
+    "checklist": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯆꯦꯛꯂꯤꯁ꯭ꯇ", "digital_id": "ꯗꯤꯖꯤꯇꯦꯜ ꯑꯥꯏꯗꯤ ꯀꯥꯔꯗ", "profile": "ꯑꯩꯒꯤ ꯄ꯭ꯔꯣꯐꯥꯏꯜ",
+    "total_documents": "ꯗꯣꯀꯨꯃꯦꯟꯇ", "verified_documents": "ꯌꯦꯡꯁꯤꯅꯒꯗꯕ", "plan_label": "ꯄ꯭ꯂꯦꯟ",
+    "recent_documents": "ꯃꯆꯤꯟꯅꯕ ꯗꯣꯀꯨꯃꯦꯟꯇ", "recent_subtitle": "ꯃꯆꯤꯟꯅꯕ ꯑꯄꯂꯣꯗ ꯇꯧꯔꯒ ꯕꯦꯔꯤꯐꯤꯀꯦꯁꯅ",
+    "no_documents": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯂꯩꯕꯤ", "upload_first": "ꯑꯩꯒꯤ ꯄꯨꯝꯅꯃꯛ ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯄꯂꯣꯗ ꯇꯧꯗꯨꯅ ꯁꯨꯔꯨ ꯇꯧꯕ।",
+    "activity_log": "ꯑꯦꯛꯇꯤꯕꯤꯇꯤ ꯂꯣꯒ", "activity_subtitle": "ꯃꯆꯤꯟꯅꯕ ꯑꯦꯛꯁꯟ",
+    "upload_limit_reached": "ꯑꯄꯂꯣꯗ ꯂꯤꯃꯤꯠ ꯁꯥꯗꯅꯒꯗꯕ",
+    "limit_message": "ꯐ꯭ꯔꯤ ꯄ꯭ꯂꯦꯟꯗꯥ {{count}} ꯗꯣꯀꯨꯃꯦꯟꯇ ꯁ꯭ꯂꯣꯠ ꯁꯥꯗꯅꯕꯤ।",
+    "upgrade_banner": "ꯄ꯭ꯔꯤꯃꯤꯌꯃꯗꯥ ꯃꯔꯨꯑꯣꯏꯅ ꯄꯥꯎꯕ",
+    "upgrade_message": "100 ꯗꯣꯀꯨꯃꯦꯟꯇ, QR ꯁꯦꯌꯔꯤꯡ, AI ꯑꯦꯁꯤꯁ꯭ꯇꯦꯟꯠ — ₹299/ꯆꯥꯅꯕꯗꯒꯤ।"
+  },
+  "upload": {
+    "title": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯄꯂꯣꯗ", "select_type": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯇꯥꯏꯄ ꯁꯦꯂꯦꯛꯇ ꯇꯧꯕ",
+    "document_name": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯃꯤꯡ", "choose_file": "ꯐꯥꯏꯜ ꯆꯤꯡꯕ",
+    "uploading": "ꯑꯄꯂꯣꯗ ꯇꯧꯈꯤꯕ꯭ꯔꯤ...", "verifying": "AI ꯗꯒꯤ ꯌꯦꯡꯁꯤꯅꯕ...",
+    "success": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯄꯂꯣꯗ ꯇꯧꯕ ꯌꯥꯔꯕꯤ", "error": "ꯑꯄꯂꯣꯗ ꯄꯥꯝꯕꯤ"
+  },
+  "doclist": {
+    "title": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯕꯣꯜꯠ", "subtitle": "{{count}} ꯗꯣꯀꯨꯃꯦꯟꯇ",
+    "type_col": "ꯇꯥꯏꯄ", "uploaded_col": "ꯑꯄꯂꯣꯗ", "status_col": "ꯁ꯭ꯇꯦꯇꯁ", "actions_col": "ꯑꯦꯛꯁꯟ",
+    "search_placeholder": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯈꯔ꯭ꯔꯃꯅꯕ…", "status_filter": "ꯁ꯭ꯇꯦꯇꯁ:",
+    "share_hint": "QR = ꯃꯔꯨꯝ ꯁꯦꯌꯔ · ꯉꯥꯛꯅꯕꯒꯤ ꯃꯊꯛꯇꯥ, ꯇꯥꯏꯝ-ꯂꯤꯃꯤꯇꯦꯗ",
+    "delete_title": "ꯗꯤꯂꯤꯠ ꯀꯟꯐꯔꯝ", "delete_msg": "\"{{name}}\" ꯄꯨꯃꯅꯥꯝꯛ ꯗꯤꯂꯤꯠ ꯇꯧꯕꯣ?",
+    "delete_confirm": "ꯄꯨꯃꯅꯥꯝꯛ ꯗꯤꯂꯤꯠ", "no_match": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯄꯥꯝꯕꯤ।",
+    "clear_filters": "ꯐꯤꯂ꯭ꯇꯔ ꯁꯥꯐ ꯇꯧꯕ"
+  },
+  "share": {
+    "title": "ꯃꯔꯨꯝ QR ꯁꯦꯌꯔ", "subtitle": "ꯇꯥꯏꯝ-ꯂꯤꯃꯤꯇꯦꯗ · PIN ꯄ꯭ꯔꯣꯇꯦꯛꯇꯦꯗ · ꯔꯤꯕꯣꯀꯦꯕꯜ",
+    "set_pin": "ꯁꯦꯌꯔ PIN ꯁꯦꯠ ꯇꯧꯕ", "pin_required": "4-6 ꯗꯤꯖꯤꯠ PIN",
+    "pin_hint": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯉꯥꯛꯕꯒꯤꯗꯃꯛ PIN ꯌꯥꯎꯔꯤ।",
+    "valid_for": "ꯂꯤꯡꯛ ꯌꯥꯝꯅꯕ", "generate": "QR ꯀꯣꯗ ꯔꯦꯖꯔꯝ ꯇꯧꯕ", "generating": "ꯔꯦꯖꯔꯝ ꯇꯧꯈꯤꯕ꯭ꯔꯤ…",
+    "note": "ꯁꯥꯗꯅꯕꯥ ꯌꯥꯅꯒꯤ ꯅꯠꯇ꯭ꯔꯒꯥ ꯔꯤꯕꯣꯛ ꯇꯧꯒꯅꯒꯤ।",
+    "link_active": "ꯁꯦꯌꯔ ꯂꯤꯡꯛ ꯑꯦꯛꯇꯤꯕ", "expires_in": "ꯑꯦꯛꯁꯦꯁ ꯁꯥꯗꯅꯒꯗꯕ",
+    "link_expired": "ꯂꯤꯡꯛ ꯁꯥꯗꯅꯕꯤ", "access_revoked": "ꯑꯦꯛꯁꯦꯁ ꯔꯤꯕꯣꯀꯦꯗ",
+    "close_active": "ꯇꯧꯕ (ꯂꯤꯡꯛ ꯌꯥꯝꯅꯕꯤ)", "new_share": "ꯅꯆꯤꯡꯕ ꯁꯦꯌꯔ ꯂꯤꯡꯛ",
+    "revoke_btn": "ꯑꯦꯛꯁꯦꯁ ꯔꯤꯕꯣꯛ ꯇꯧꯕ", "revoke_confirm_msg": "ꯑꯃꯃꯥꯡꯒꯤ ꯑꯦꯛꯁꯦꯁ ꯇꯧꯕꯣ?",
+    "revoke_yes": "ꯍꯥꯡꯗꯣꯛ, ꯔꯤꯕꯣꯛ ꯇꯧꯕ", "revoking": "ꯔꯤꯕꯣꯛ ꯇꯧꯈꯤꯕ꯭ꯔꯤ…",
+    "revoke_success": "ꯑꯦꯛꯁꯦꯁ ꯔꯤꯕꯣꯀꯦꯗ", "copy_success": "ꯂꯤꯡꯛ ꯀꯣꯄꯤ ꯇꯧꯕꯤ"
+  },
+  "share_view": {
+    "title": "ꯁꯤꯀꯨꯔ ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯦꯛꯁꯦꯁ", "subtitle": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯣꯏꯅꯔꯒꯤ PIN ꯄꯨꯠꯈꯤꯕꯨ",
+    "pin_label": "ꯁꯦꯌꯔ PIN", "pin_placeholder": "4-6 ꯗꯤꯖꯤꯠ PIN ꯄꯨꯠꯈꯤꯕꯨ",
+    "unlock_btn": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯟꯂꯛ ꯇꯧꯕ", "unlocking": "ꯌꯦꯡꯁꯤꯅꯈꯤꯕ꯭ꯔꯤ…",
+    "view_only": "ꯉꯥꯛꯅꯕꯒꯤ ꯃꯊꯛꯇꯥ ꯃꯥꯇꯟ · ꯗꯥꯎꯅꯂꯣꯗ ꯌꯥꯕꯤ।",
+    "fullscreen": "ꯐꯨꯜꯁ꯭ꯀ꯭ꯔꯤꯟ", "resume_view": "ꯉꯥꯛꯄ ꯆꯠꯖꯔꯕ", "security_alert": "ꯁꯤꯀꯨꯔꯤꯇꯤ ꯑꯦꯂꯔ꯭ꯠ"
+  },
+  "index": {
+    "badge": "Citizen Digital Services Portal",
+    "hero_title": "ꯁꯤꯀꯨꯔ ꯗꯤꯖꯤꯇꯦꯜ ꯑꯥꯏꯗꯦꯟꯇꯤꯇꯤ &", "hero_title2": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯦꯛꯁꯦꯁ ꯄ꯭ꯂꯦꯇꯐꯣꯔꯝ",
+    "hero_subtitle": "Virtual Setu ꯍꯥꯏꯕꯁꯤ ꯁꯤꯀꯨꯔ ꯗꯤꯖꯤꯇꯦꯜ ꯗꯣꯀꯨꯃꯦꯟꯇ ꯃꯦꯅꯦꯖꯃꯦꯟꯠ ꯄꯣꯔ꯭ꯇꯦꯜ।",
+    "register_btn": "ꯁꯤꯇꯤꯖꯦꯟ ꯅꯥꯊꯥꯏꯔꯤꯁꯤꯡꯒꯤꯗꯃꯛ ꯔꯦꯖꯤꯁ꯭ꯇꯔ", "login_btn": "ꯄꯣꯔ꯭ꯇꯦꯜꯗꯥ ꯂꯣꯏꯅ",
+    "notice": "Virtual Setu ꯍꯥꯏꯕꯁꯤ ꯒꯕꯔꯅꯃꯦꯟꯠ ꯗꯣꯀꯨꯃꯦꯟꯇ ꯃꯦꯅꯦꯖ ꯇꯧꯕꯒꯤꯗꯃꯛ। PIN ꯌꯨꯃꯐꯥꯝ ꯃꯥꯡꯂꯣꯅꯕꯨ।",
+    "services_title": "Virtual Setu ꯗꯥ ꯇꯧꯕ ꯌꯥꯕ", "services_badge": "ꯁꯔꯕꯤꯁ",
+    "how_title": "ꯀꯥꯡꯂꯨꯞ ꯀꯥꯡꯂꯨꯞ ꯁꯨꯔꯨ ꯇꯧꯕ", "how_subtitle": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯃꯦꯅꯦꯖ ꯇꯧꯕꯒꯤꯗꯃꯛ ꯃꯁꯛ ꯀꯥꯡꯂꯨꯞ",
+    "step1_title": "ꯃꯣꯕꯥꯏꯜ/ꯏꯃꯦꯏꯂꯗꯒꯤ ꯔꯦꯖꯤꯁ꯭ꯇꯔ ꯇꯧꯕ", "step1_desc": "OTP ꯗꯒꯤ ꯌꯦꯡꯁꯤꯅꯗꯨꯅ 4-ꯗꯤꯖꯤꯠ PIN ꯁꯦꯠ ꯇꯧꯕ।",
+    "step2_title": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯄꯂꯣꯗ ꯇꯧꯕ", "step2_desc": "ꯑꯥꯗꯥꯔ, PAN, ꯄꯥꯁꯄꯣꯔ꯭ꯠ ꯑꯃꯁꯨꯡ ꯑꯃꯨꯛ ꯒꯕꯔꯅꯃꯦꯟꯠ ꯑꯥꯏꯗꯤ।",
+    "step3_title": "QR ꯀꯥꯔꯗꯗꯒꯤ ꯌꯥꯎꯕ ꯆꯥꯡꯒꯗꯒꯤ ꯑꯦꯛꯁꯦꯁ", "step3_desc": "ꯗꯤꯖꯤꯇꯦꯜ ꯑꯥꯏꯗꯤ ꯀꯥꯔꯗ QR ꯁꯦꯌꯔ ꯇꯧꯕ।",
+    "start_btn": "ꯔꯦꯖꯤꯁ꯭ꯇ꯭ꯔꯦꯁꯅ ꯁꯨꯔꯨ", "announcements_title": "ꯑꯦꯅꯥꯎꯟꯁꯃꯦꯟꯠ",
+    "announcements_subtitle": "Virtual Setu ꯒꯤ ꯃꯆꯤꯟꯅꯕ ꯑꯄꯗꯦꯠ", "view_all": "ꯑꯃꯃꯥꯡ ꯉꯥꯛꯄ"
+  },
+  "footer": {
+    "tagline": "ꯍꯤꯟꯗꯨꯁ꯭ꯇꯥꯟꯒꯤ ꯁꯤꯇꯤꯖꯦꯟ ꯑꯃꯃꯥꯡꯒꯤꯗꯃꯛ ꯁꯤꯀꯨꯔ ꯗꯤꯖꯤꯇꯦꯜ ꯗꯣꯀꯨꯃꯦꯟꯇ ꯃꯦꯅꯦꯖꯃꯦꯟꯠ ꯄꯣꯔ꯭ꯇꯦꯜ।",
+    "portal_title": "ꯄꯣꯔ꯭ꯇꯦꯜ", "services_title": "ꯁꯤꯇꯤꯖꯦꯟ ꯁꯔꯕꯤꯁ", "contact_title": "ꯀꯣꯟꯇꯦꯛꯠ & ꯁꯄꯣꯔ꯭ꯠ",
+    "email": "support@virtualsetu.gov.in", "toll_free": "Toll-Free: 1800-XXX-XXXX",
+    "hours": "ꯁꯣꯝꯕꯥꯔ – ꯁꯅꯤꯆꯔ", "timing": "09:00 – 18:00 IST",
+    "copyright": "© {{year}} Virtual Setu · Government of India · ꯑꯃꯃꯥꯡ ꯍꯛꯀꯤ ꯑꯋꯥꯃꯊꯧ।",
+    "standards": "WCAG 2.1 AA · NIC ꯁ꯭ꯇꯦꯟꯗꯔꯗ",
+    "citizen_login": "ꯁꯤꯇꯤꯖꯦꯟ ꯂꯣꯏꯅ", "new_registration": "ꯅꯆꯤꯡꯕ ꯔꯦꯖꯤꯁ꯭ꯇ꯭ꯔꯦꯁꯅ",
+    "verify_doc": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯌꯦꯡꯁꯤꯅꯕ", "help_support": "ꯃꯇꯦꯡ ꯄꯥꯡꯕ"
+  },
+  "lang": { "label": "ꯂꯥꯏꯔꯤꯛ", "select": "ꯂꯥꯏꯔꯤꯛ ꯆꯤꯡꯕ" },
+  "profile": {
+    "title": "ꯄꯥꯔꯁꯅꯦꯜ ꯏꯅꯐꯣꯔꯃꯦꯁꯟ", "subtitle": "ꯑꯩꯒꯤ ꯑꯦꯛꯀꯥꯎꯟꯇ ꯗꯤꯇꯦꯜꯁ",
+    "full_name": "ꯃꯤꯡ ꯄꯨꯝꯅꯕ", "email": "ꯏꯃꯦꯏꯜ", "phone": "ꯐꯣꯟ ꯅꯝꯕꯔ",
+    "member_since": "ꯃꯦꯝꯕꯔ ꯍꯥꯏꯅꯕꯤ", "security_title": "ꯁꯤꯀꯨꯔꯤꯇꯤ & ꯄ꯭ꯂꯦꯟ",
+    "current_plan": "ꯌꯥꯝꯅꯕ ꯄ꯭ꯂꯦꯟ", "not_provided": "ꯄꯨꯠꯈꯤꯕꯤ"
+  },
+  "errors": {
+    "invalid_pin": "PIN ꯌꯥꯝꯅꯕꯤ", "link_expired": "ꯁꯦꯌꯔ ꯂꯤꯡꯛ ꯄꯥꯕꯤ ꯅꯠꯇ꯭ꯔꯒꯥ ꯁꯥꯗꯅꯕꯤ",
+    "upload_failed": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯑꯄꯂꯣꯗ ꯄꯥꯃꯕꯤ", "delete_failed": "ꯗꯣꯀꯨꯃꯦꯟꯇ ꯗꯤꯂꯤꯠ ꯄꯥꯃꯕꯤ"
+  }
+}
