@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import {
   Search, X, Bookmark, BookmarkCheck, ExternalLink, ChevronDown,
   Filter, Sparkles, Globe, Calendar, CheckCircle, XCircle, BadgeInfo,
-  Building2, Loader2, Zap,
+  Building2, Loader2, Zap, Languages,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,6 +12,10 @@ import {
   type GovScheme, type SchemeCategory, type TargetGender, type TargetIncome,
 } from '@/data/govSchemes';
 import { searchSchemesWithAI, type AISchemeResult } from '@/lib/schemeSearchService';
+import {
+  translateSchemeCards, translateSchemeDetail,
+  type CardTranslation, type DetailTranslation,
+} from '@/lib/schemeTranslationService';
 
 const BOOKMARK_KEY = 'vs_scheme_bookmarks';
 
@@ -45,9 +50,14 @@ interface SchemeDetailProps {
   onClose: () => void;
   bookmarked: boolean;
   onToggleBookmark: (id: string) => void;
+  translation?: DetailTranslation | null;
+  translating?: boolean;
 }
 
-function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark }: SchemeDetailProps) {
+function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translation, translating }: SchemeDetailProps) {
+  const T = translation;
+  const labels = T?.labels;
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-8 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white w-full max-w-2xl rounded-sm border border-[#cdd3da] shadow-2xl my-4">
@@ -60,8 +70,13 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark }: SchemeD
               <StatusBadge status={scheme.status} />
               {scheme.isNew && <NewBadge />}
               <LevelBadge level={scheme.level} />
+              {translating && (
+                <span className="inline-flex items-center gap-1 text-[10px] bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded-sm">
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> Translating…
+                </span>
+              )}
             </div>
-            <h2 className="text-lg font-bold leading-tight">{scheme.name}</h2>
+            <h2 className="text-lg font-bold leading-tight">{T?.name ?? scheme.name}</h2>
             <p className="text-blue-200 text-xs mt-0.5">{scheme.nameHindi}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 mt-1">
@@ -78,43 +93,49 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark }: SchemeD
 
           {/* Ministry + Launch */}
           <div className="px-6 py-3 bg-[#f0f4fa] flex flex-wrap items-center gap-4 text-xs text-slate-600">
-            <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#003580]" /> {scheme.ministry}</span>
-            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#003580]" /> Launched: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#003580]" /> {T?.ministry ?? scheme.ministry}</span>
+            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#003580]" /> {labels?.launchedLabel ?? 'Launched'}: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
 
           {/* Description */}
           <div className="px-6 py-4">
-            <p className="text-sm text-slate-700 leading-relaxed">{scheme.description}</p>
-            <p className="text-xs text-slate-500 mt-2 italic">{scheme.objective}</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{T?.description ?? scheme.description}</p>
+            {(T?.objective ?? scheme.objective) && (
+              <p className="text-xs text-slate-500 mt-2 italic">{T?.objective ?? scheme.objective}</p>
+            )}
           </div>
 
           {/* Eligibility */}
-          <Section title="Eligibility Criteria" icon="✅">
+          <Section title={labels?.eligibilityTitle ?? 'Eligibility Criteria'} icon="✅">
             <ul className="space-y-1">
-              {scheme.eligibility.map((e, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-green-500 mt-0.5 shrink-0">•</span>{e}</li>)}
+              {(T?.eligibility ?? scheme.eligibility).map((e, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-green-500 mt-0.5 shrink-0">•</span>{e}</li>
+              ))}
             </ul>
           </Section>
 
           {/* Benefits */}
-          <Section title="Benefits & Support" icon="🎁">
+          <Section title={labels?.benefitsTitle ?? 'Benefits & Support'} icon="🎁">
             <ul className="space-y-1">
-              {scheme.benefits.map((b, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-[#003580] mt-0.5 shrink-0">▸</span>{b}</li>)}
+              {(T?.benefits ?? scheme.benefits).map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-[#003580] mt-0.5 shrink-0">▸</span>{b}</li>
+              ))}
             </ul>
           </Section>
 
           {/* Required Documents */}
-          <Section title="Required Documents" icon="📄">
+          <Section title={labels?.documentsTitle ?? 'Required Documents'} icon="📄">
             <div className="flex flex-wrap gap-1.5">
-              {scheme.requiredDocuments.map((d, i) => (
+              {(T?.requiredDocuments ?? scheme.requiredDocuments).map((d, i) => (
                 <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
               ))}
             </div>
           </Section>
 
           {/* Application Process */}
-          <Section title="How to Apply" icon="📝">
+          <Section title={labels?.applyTitle ?? 'How to Apply'} icon="📝">
             <ol className="space-y-2">
-              {scheme.applicationProcess.map((step, i) => (
+              {(T?.applicationProcess ?? scheme.applicationProcess).map((step, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-[#003580] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                   {step}
@@ -128,7 +149,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark }: SchemeD
             <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#003580] hover:bg-[#002060] text-white text-sm font-semibold rounded-sm transition-colors"
             >
-              <ExternalLink className="h-4 w-4" /> Apply / Visit Official Website
+              <ExternalLink className="h-4 w-4" /> {labels?.applyButton ?? 'Apply / Visit Official Website'}
             </a>
           </div>
         </div>
@@ -153,9 +174,14 @@ interface SchemeCardProps {
   bookmarked: boolean;
   onToggleBookmark: (id: string) => void;
   onClick: () => void;
+  cardTranslation?: CardTranslation;
+  translating?: boolean;
 }
 
-function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick }: SchemeCardProps) {
+function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTranslation, translating }: SchemeCardProps) {
+  const displayName = cardTranslation?.name ?? scheme.name;
+  const displayDesc = cardTranslation?.description ?? scheme.description;
+
   return (
     <div className="bg-white border border-[#cdd3da] rounded-sm shadow-sm hover:shadow-md hover:border-[#003580]/40 transition-all group flex flex-col">
       {/* Card header */}
@@ -177,10 +203,22 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick }: SchemeCar
 
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-lg">{CATEGORY_ICONS[scheme.category]}</span>
-          <p className="font-bold text-slate-900 text-sm leading-tight group-hover:text-[#003580] transition-colors">{scheme.name}</p>
+          {translating && !cardTranslation ? (
+            <div className="h-4 bg-slate-100 rounded animate-pulse flex-1" />
+          ) : (
+            <p className="font-bold text-slate-900 text-sm leading-tight group-hover:text-[#003580] transition-colors">{displayName}</p>
+          )}
         </div>
         <p className="text-[11px] text-slate-400 mb-2">{scheme.nameHindi}</p>
-        <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{scheme.description}</p>
+        {translating && !cardTranslation ? (
+          <div className="space-y-1.5">
+            <div className="h-3 bg-slate-100 rounded animate-pulse w-full" />
+            <div className="h-3 bg-slate-100 rounded animate-pulse w-5/6" />
+            <div className="h-3 bg-slate-100 rounded animate-pulse w-4/6" />
+          </div>
+        ) : (
+          <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{displayDesc}</p>
+        )}
       </div>
 
       {/* Card footer */}
@@ -201,6 +239,9 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick }: SchemeCar
 }
 
 export default function GovSchemes() {
+  const { i18n } = useTranslation();
+  const lang = i18n.language;
+
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<SchemeCategory | 'All' | 'Bookmarked' | 'New'>('All');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
@@ -215,7 +256,37 @@ export default function GovSchemes() {
   const [aiLoading, setAiLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounced AI search — fires 800ms after user stops typing
+  // ── Card translations (batch) ─────────────────────────────────────────────
+  const [cardTranslations, setCardTranslations] = useState<Record<string, CardTranslation>>({});
+  const [translatingCards, setTranslatingCards] = useState(false);
+
+  useEffect(() => {
+    if (lang === 'en') { setCardTranslations({}); return; }
+    let cancelled = false;
+    setTranslatingCards(true);
+    translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
+      if (!cancelled) { setCardTranslations(res); setTranslatingCards(false); }
+    });
+    return () => { cancelled = true; };
+  }, [lang]);
+
+  // ── Detail translation (per scheme on open) ───────────────────────────────
+  const [detailTranslation, setDetailTranslation] = useState<DetailTranslation | null>(null);
+  const [translatingDetail, setTranslatingDetail] = useState(false);
+
+  useEffect(() => {
+    if (!selected) { setDetailTranslation(null); return; }
+    if (lang === 'en') { setDetailTranslation(null); return; }
+    let cancelled = false;
+    setTranslatingDetail(true);
+    setDetailTranslation(null);
+    translateSchemeDetail(selected, lang).then((res) => {
+      if (!cancelled) { setDetailTranslation(res); setTranslatingDetail(false); }
+    });
+    return () => { cancelled = true; };
+  }, [selected, lang]);
+
+  // ── Debounced AI search — fires 800ms after user stops typing ─────────────
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!search.trim() || search.trim().length < 3) {
@@ -225,12 +296,12 @@ export default function GovSchemes() {
     }
     setAiLoading(true);
     debounceRef.current = setTimeout(async () => {
-      const results = await searchSchemesWithAI(search.trim());
+      const results = await searchSchemesWithAI(search.trim(), lang);
       setAiResults(results);
       setAiLoading(false);
     }, 800);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [search]);
+  }, [search, lang]);
 
   const toggleBookmark = useCallback((id: string) => {
     setBookmarks((prev) => {
@@ -397,6 +468,14 @@ export default function GovSchemes() {
           )}
         </div>
 
+        {/* Translation status banner */}
+        {lang !== 'en' && translatingCards && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-sm text-xs text-amber-700">
+            <Languages className="h-3.5 w-3.5 shrink-0 animate-pulse" />
+            <span>Translating all schemes to your language… please wait a moment.</span>
+          </div>
+        )}
+
         {/* Scheme grid */}
         {filtered.length === 0 && !aiLoading && aiResults.length === 0 ? (
           <GovCard className="py-16 text-center">
@@ -415,6 +494,8 @@ export default function GovSchemes() {
                 bookmarked={bookmarks.has(scheme.id)}
                 onToggleBookmark={toggleBookmark}
                 onClick={() => setSelected(scheme)}
+                cardTranslation={cardTranslations[scheme.id]}
+                translating={translatingCards}
               />
             ))}
           </div>
@@ -484,6 +565,8 @@ export default function GovSchemes() {
           onClose={() => setSelected(null)}
           bookmarked={bookmarks.has(selected.id)}
           onToggleBookmark={toggleBookmark}
+          translation={detailTranslation}
+          translating={translatingDetail}
         />
       )}
 
