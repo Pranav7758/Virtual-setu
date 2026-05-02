@@ -40,11 +40,11 @@
     --secondary-light: 23 100% 60%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Accent = Green */
-    --accent: 125 83% 29%;
-    --accent-dark: 125 83% 22%;
-    --accent-light: 125 60% 40%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent = Blue-slate (neutral hover, not green) */
+    --accent: 216 30% 93%;
+    --accent-dark: 216 30% 86%;
+    --accent-light: 216 30% 96%;
+    --accent-foreground: 216 100% 26%;
 
     /* Muted */
     --muted: 220 15% 94%;
