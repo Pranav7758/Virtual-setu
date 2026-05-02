@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -20,18 +21,21 @@ interface UserDocument {
   created_at: string;
 }
 
-const QUICK_PURPOSES = [
-  { id: 'passport_application',   label: 'Passport' },
-  { id: 'pan_card_application',   label: 'PAN Card' },
-  { id: 'driving_license',        label: 'Driving License' },
-  { id: 'voter_id_registration',  label: 'Voter ID' },
-  { id: 'bank_account_opening',   label: 'Bank Account' },
-  { id: 'aadhaar_enrollment',     label: 'Aadhaar' },
-  { id: 'job_application',        label: 'Job Application' },
-  { id: 'college_admission',      label: 'College Admission' },
-];
-
 export default function SmartChecklist() {
+  const { t, i18n } = useTranslation('common');
+  const lang = i18n.language;
+
+  const QUICK_PURPOSES = [
+    { id: 'passport_application',  label: t('checklist.p_passport') },
+    { id: 'pan_card_application',  label: t('checklist.p_pan') },
+    { id: 'driving_license',       label: t('checklist.p_driving') },
+    { id: 'voter_id_registration', label: t('checklist.p_voter') },
+    { id: 'bank_account_opening',  label: t('checklist.p_bank') },
+    { id: 'aadhaar_enrollment',    label: t('checklist.p_aadhaar') },
+    { id: 'job_application',       label: t('checklist.p_job') },
+    { id: 'college_admission',     label: t('checklist.p_college') },
+  ];
+
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [userDocs, setUserDocs] = useState<UserDocument[]>([]);
@@ -61,24 +65,26 @@ export default function SmartChecklist() {
     }
   };
 
-  const handleSearch = (purposeLabel: string) => {
+  const handleSearch = (purposeId: string, purposeLabel: string) => {
     const trimmed = purposeLabel.trim();
     if (!trimmed) return;
     setSubmittedQuery(trimmed);
     setStepsOpen(false);
     setNotesOpen(false);
-    const id = trimmed.toLowerCase().replace(/\s+/g, '_');
-    fetchChecklist(id, trimmed, userDocs);
+    fetchChecklist(purposeId, trimmed, userDocs, lang);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(query);
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const id = trimmed.toLowerCase().replace(/\s+/g, '_');
+    handleSearch(id, trimmed);
   };
 
-  const handleQuickSelect = (label: string) => {
+  const handleQuickSelect = (purposeId: string, label: string) => {
     setQuery(label);
-    handleSearch(label);
+    handleSearch(purposeId, label);
   };
 
   const handleClear = () => {
@@ -91,7 +97,7 @@ export default function SmartChecklist() {
   const handleRefresh = () => {
     if (!submittedQuery) return;
     const id = submittedQuery.toLowerCase().replace(/\s+/g, '_');
-    fetchChecklist(id, submittedQuery, userDocs, true);
+    fetchChecklist(id, submittedQuery, userDocs, lang, true);
   };
 
   const available = data?.requiredDocuments.filter((d) => d.status === 'available') ?? [];
@@ -109,7 +115,7 @@ export default function SmartChecklist() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            AI-Powered Document Checklist
+            {t('checklist.title')}
             {data && (
               <Badge
                 variant="secondary"
@@ -120,19 +126,18 @@ export default function SmartChecklist() {
                 }`}
               >
                 <Sparkles className="h-3 w-3" />
-                {data.source === 'scraped' ? 'Live from govt. website' : 'AI Generated'}
+                {data.source === 'scraped' ? t('checklist.live_badge') : t('checklist.ai_badge')}
               </Badge>
             )}
             {!data && (
               <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-xs font-normal">
                 <Sparkles className="h-3 w-3" />
-                AI + Web Scraping
+                {t('checklist.ai_scraping')}
               </Badge>
             )}
           </CardTitle>
           <CardDescription>
-            Search for any application or service — the AI builds a personalised checklist
-            and checks which documents you already have uploaded.
+            {t('checklist.description')}
           </CardDescription>
         </CardHeader>
 
@@ -145,7 +150,7 @@ export default function SmartChecklist() {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search any purpose — passport, ration card, GST registration…"
+                placeholder={t('checklist.placeholder')}
                 className="pl-9 pr-9"
               />
               {query && (
@@ -168,10 +173,10 @@ export default function SmartChecklist() {
               ) : (
                 <Search className="h-4 w-4" />
               )}
-              <span className="ml-2 hidden sm:inline">Search</span>
+              <span className="ml-2 hidden sm:inline">{t('checklist.search')}</span>
             </Button>
             {submittedQuery && status !== 'loading' && (
-              <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh from AI">
+              <Button variant="outline" size="icon" onClick={handleRefresh} title={t('checklist.refetch')}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
             )}
@@ -179,13 +184,13 @@ export default function SmartChecklist() {
 
           {/* Quick-select chips */}
           <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground font-medium">Quick select:</p>
+            <p className="text-xs text-muted-foreground font-medium">{t('checklist.quick_select')}</p>
             <div className="flex flex-wrap gap-2">
               {QUICK_PURPOSES.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => handleQuickSelect(p.label)}
+                  onClick={() => handleQuickSelect(p.id, p.label)}
                   disabled={status === 'loading'}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 ${
                     submittedQuery.toLowerCase() === p.label.toLowerCase()
@@ -203,8 +208,10 @@ export default function SmartChecklist() {
           {status === 'loading' && (
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm font-medium">AI is generating your checklist…</p>
-              <p className="text-xs">Building requirements for: <span className="font-semibold text-foreground">{submittedQuery}</span></p>
+              <p className="text-sm font-medium">{t('checklist.generating')}</p>
+              <p className="text-xs">
+                {t('checklist.building_for')} <span className="font-semibold text-foreground">{submittedQuery}</span>
+              </p>
             </div>
           )}
 
@@ -213,10 +220,10 @@ export default function SmartChecklist() {
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex gap-3">
               <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-destructive">Failed to generate checklist</p>
+                <p className="text-sm font-medium text-destructive">{t('checklist.failed')}</p>
                 <p className="text-xs text-muted-foreground">{error}</p>
                 <Button variant="outline" size="sm" onClick={handleRefresh} className="mt-2">
-                  <RefreshCw className="h-3 w-3 mr-2" /> Try again
+                  <RefreshCw className="h-3 w-3 mr-2" /> {t('checklist.try_again')}
                 </Button>
               </div>
             </div>
@@ -227,7 +234,7 @@ export default function SmartChecklist() {
             <div className="space-y-5">
               {/* Active query pill */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Results for:</span>
+                <span className="text-sm text-muted-foreground">{t('checklist.results_for')}</span>
                 <Badge variant="outline" className="flex items-center gap-1 text-xs font-medium capitalize">
                   <Search className="h-3 w-3" />
                   {submittedQuery}
@@ -241,7 +248,7 @@ export default function SmartChecklist() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">
-                    {available.length} / {total} documents ready
+                    {available.length} / {total} {t('checklist.docs_ready')}
                   </span>
                   <span className={`font-semibold ${pct === 100 ? 'text-green-600' : pct >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>
                     {pct}%
@@ -255,9 +262,9 @@ export default function SmartChecklist() {
                 </div>
                 {data.fromCache && (
                   <p className="text-xs text-muted-foreground text-right">
-                    Cached result ·{' '}
+                    {t('checklist.cached')} ·{' '}
                     <button onClick={handleRefresh} className="underline hover:no-underline">
-                      Re-fetch from AI
+                      {t('checklist.refetch')}
                     </button>
                   </p>
                 )}
@@ -266,7 +273,7 @@ export default function SmartChecklist() {
               {/* Document list */}
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" /> Required Documents
+                  <ListChecks className="h-4 w-4" /> {t('checklist.required_docs')}
                 </h4>
                 {data.requiredDocuments.map((doc, i) => (
                   <div
@@ -305,7 +312,11 @@ export default function SmartChecklist() {
                               : ''
                           }`}
                         >
-                          {doc.status === 'available' ? '✓ Uploaded' : doc.required ? 'Missing' : 'Optional'}
+                          {doc.status === 'available'
+                            ? t('checklist.uploaded')
+                            : doc.required
+                            ? t('checklist.missing')
+                            : t('checklist.optional')}
                         </Badge>
                       </div>
                       <p className={`text-xs mt-0.5 ${
@@ -325,7 +336,10 @@ export default function SmartChecklist() {
                 <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 p-4">
                   <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    {requiredMissing.length} required document{requiredMissing.length > 1 ? 's' : ''} still missing
+                    {requiredMissing.length}{' '}
+                    {requiredMissing.length === 1
+                      ? t('checklist.still_missing_one')
+                      : t('checklist.still_missing')}
                   </p>
                   <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
                     {requiredMissing.map((d, i) => (
@@ -343,10 +357,10 @@ export default function SmartChecklist() {
                   <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                      You're ready to apply!
+                      {t('checklist.ready_title')}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      All required documents are uploaded.
+                      {t('checklist.ready_desc')}
                     </p>
                   </div>
                 </div>
@@ -360,7 +374,7 @@ export default function SmartChecklist() {
                     onClick={() => setStepsOpen((v) => !v)}
                   >
                     <span className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> Application Steps
+                      <FileText className="h-4 w-4" /> {t('checklist.app_steps')}
                     </span>
                     {stepsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
@@ -387,7 +401,7 @@ export default function SmartChecklist() {
                     onClick={() => setNotesOpen((v) => !v)}
                   >
                     <span className="flex items-center gap-2">
-                      <Info className="h-4 w-4" /> Important Notes
+                      <Info className="h-4 w-4" /> {t('checklist.important_notes')}
                     </span>
                     {notesOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
@@ -410,12 +424,8 @@ export default function SmartChecklist() {
           {status === 'idle' && !submittedQuery && (
             <div className="text-center py-10 text-muted-foreground space-y-2">
               <Search className="h-10 w-10 mx-auto opacity-30" />
-              <p className="text-sm">
-                Type any application or service above — or pick a quick option.
-              </p>
-              <p className="text-xs opacity-70">
-                Examples: ration card, GST registration, marriage certificate, scholarship…
-              </p>
+              <p className="text-sm">{t('checklist.idle_hint')}</p>
+              <p className="text-xs opacity-70">{t('checklist.idle_examples')}</p>
             </div>
           )}
         </CardContent>

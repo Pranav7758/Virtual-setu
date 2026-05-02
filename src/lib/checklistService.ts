@@ -22,6 +22,33 @@ const SCRAPER_URL = 'https://api.scraperapi.com';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const LS_PREFIX = 'vs_checklist_';
 
+/** Maps i18n language codes → human-readable language names for GROQ prompts */
+const LANG_NAMES: Record<string, string> = {
+  en: 'English',
+  hi: 'Hindi (हिन्दी, Devanagari script)',
+  mr: 'Marathi (मराठी, Devanagari script)',
+  bn: 'Bengali (বাংলা)',
+  ta: 'Tamil (தமிழ்)',
+  te: 'Telugu (తెలుగు)',
+  kn: 'Kannada (ಕನ್ನಡ)',
+  ml: 'Malayalam (മലയാളം)',
+  pa: 'Punjabi (ਪੰਜਾਬੀ, Gurmukhi script)',
+  gu: 'Gujarati (ગુજરાતી)',
+  or: 'Odia (ଓଡ଼ିଆ)',
+  as: 'Assamese (অসমীয়া)',
+  ur: 'Urdu (اردو)',
+  mai: 'Maithili (मैथिली)',
+  kok: 'Konkani (कोंकणी)',
+  sd: 'Sindhi (سنڌي)',
+  ne: 'Nepali (नेपाली)',
+  mni: 'Meitei/Manipuri (মৈতৈলোন্)',
+  brx: 'Bodo (बड़ो)',
+  dgo: 'Dogri (डोगरी)',
+  ks: 'Kashmiri (کٲشُر)',
+  sa: 'Sanskrit (संस्कृतम्)',
+  sat: 'Santali (ᱥᱟᱱᱛᱟᱲᱤ)',
+};
+
 /** URLs of official Indian government pages for each purpose */
 const GOVT_URLS: Record<string, string> = {
   passport_application:
@@ -61,15 +88,19 @@ export interface ChecklistData {
   source: 'scraped' | 'ai' | 'cache';
 }
 
-// ─── localStorage cache ──────────────────────────────────────────────────────
+// ─── localStorage cache (per language) ──────────────────────────────────────
 
-function lsGet(key: string): ChecklistData | null {
+function lsCacheKey(purposeId: string, lang: string) {
+  return `${LS_PREFIX}${purposeId}_${lang}`;
+}
+
+function lsGet(purposeId: string, lang: string): ChecklistData | null {
   try {
-    const raw = localStorage.getItem(LS_PREFIX + key);
+    const raw = localStorage.getItem(lsCacheKey(purposeId, lang));
     if (!raw) return null;
     const data: ChecklistData = JSON.parse(raw);
     if (Date.now() - data.generatedAt > CACHE_TTL_MS) {
-      localStorage.removeItem(LS_PREFIX + key);
+      localStorage.removeItem(lsCacheKey(purposeId, lang));
       return null;
     }
     return { ...data, fromCache: true };
@@ -78,20 +109,24 @@ function lsGet(key: string): ChecklistData | null {
   }
 }
 
-function lsSet(key: string, data: ChecklistData): void {
+function lsSet(purposeId: string, lang: string, data: ChecklistData): void {
   try {
-    localStorage.setItem(LS_PREFIX + key, JSON.stringify(data));
+    localStorage.setItem(lsCacheKey(purposeId, lang), JSON.stringify(data));
   } catch { /* quota exceeded */ }
 }
 
-// ─── Supabase cache ──────────────────────────────────────────────────────────
+// ─── Supabase cache (per language) ──────────────────────────────────────────
 
-async function supabaseGet(documentType: string): Promise<ChecklistData | null> {
+function dbKey(purposeId: string, lang: string) {
+  return lang === 'en' ? purposeId : `${purposeId}_${lang}`;
+}
+
+async function supabaseGet(purposeId: string, lang: string): Promise<ChecklistData | null> {
   try {
     const { data, error } = await supabase
       .from('checklists')
       .select('*')
-      .eq('document_type', documentType)
+      .eq('document_type', dbKey(purposeId, lang))
       .maybeSingle();
     if (error || !data) return null;
     const age = Date.now() - new Date(data.created_at as string).getTime();
@@ -110,11 +145,11 @@ async function supabaseGet(documentType: string): Promise<ChecklistData | null> 
   }
 }
 
-async function supabaseSave(documentType: string, data: ChecklistData): Promise<void> {
+async function supabaseSave(purposeId: string, lang: string, data: ChecklistData): Promise<void> {
   try {
     await supabase.from('checklists').upsert(
       {
-        document_type: documentType,
+        document_type: dbKey(purposeId, lang),
         required_documents: data.requiredDocuments,
         steps: data.steps,
         notes: data.notes,
@@ -126,7 +161,6 @@ async function supabaseSave(documentType: string, data: ChecklistData): Promise<
 
 // ─── ScraperAPI ──────────────────────────────────────────────────────────────
 
-/** Fetch a government page via ScraperAPI and return cleaned plain text */
 async function scrapeGovPage(url: string): Promise<string> {
   const apiKey = import.meta.env.VITE_SCRAPER_API_KEY;
   if (!apiKey) throw new Error('VITE_SCRAPER_API_KEY not set');
@@ -134,15 +168,13 @@ async function scrapeGovPage(url: string): Promise<string> {
   const endpoint =
     `${SCRAPER_URL}?api_key=${apiKey}` +
     `&url=${encodeURIComponent(url)}` +
-    `&render=false`;           // static HTML is enough; saves credits
+    `&render=false`;
 
   const res = await fetch(endpoint, { signal: AbortSignal.timeout(20_000) });
   if (!res.ok) throw new Error(`ScraperAPI ${res.status}`);
 
   const html = await res.text();
-
-  // Strip scripts, styles, nav, footer noise → plain text
-  const cleaned = html
+  return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
@@ -151,25 +183,28 @@ async function scrapeGovPage(url: string): Promise<string> {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
-    .slice(0, 9000); // keep within GROQ context window
-
-  return cleaned;
+    .slice(0, 9000);
 }
 
 // ─── GROQ extraction from scraped content ────────────────────────────────────
 
 async function extractFromScrapedText(
   purposeLabel: string,
-  scrapedText: string
+  scrapedText: string,
+  langName: string
 ): Promise<ChecklistData['requiredDocuments'] | null> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) return null;
+
+  const langInstruction = langName === 'English'
+    ? ''
+    : `\n\nIMPORTANT: Respond ENTIRELY in ${langName}. All "name" and "description" values must be written in ${langName}.`;
 
   const prompt = `You are an expert on Indian government document requirements.
 
 Below is raw text scraped from an official Indian government website about: "${purposeLabel}"
 
-Your job is to extract the required documents from this text.
+Your job is to extract the required documents from this text.${langInstruction}
 
 Scraped text:
 """
@@ -215,7 +250,7 @@ Rules:
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return null;
     const parsed = JSON.parse(jsonMatch[0]) as RequiredDocument[];
-    return parsed.length >= 3 ? parsed : null; // too few = extraction failed
+    return parsed.length >= 3 ? parsed : null;
   } catch {
     return null;
   }
@@ -225,14 +260,19 @@ Rules:
 
 async function generateWithGroq(
   purposeId: string,
-  purposeLabel: string
+  purposeLabel: string,
+  langName: string
 ): Promise<ChecklistData> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) throw new Error('GROQ API key not configured.');
 
+  const langInstruction = langName === 'English'
+    ? ''
+    : `\n\nIMPORTANT: Respond ENTIRELY in ${langName}. All "name", "description", "steps", and "notes" values must be written in ${langName} script. Do NOT use English for any content values.`;
+
   const prompt = `You are an expert on Indian government document requirements.
 
-A user in India wants to: "${purposeLabel}"
+A user in India wants to: "${purposeLabel}"${langInstruction}
 
 Generate a comprehensive checklist in EXACTLY this JSON format (no other text):
 {
@@ -301,24 +341,27 @@ Rules:
 
 async function generateChecklist(
   purposeId: string,
-  purposeLabel: string
+  purposeLabel: string,
+  lang: string
 ): Promise<ChecklistData> {
+  const langName = LANG_NAMES[lang] ?? 'English';
   const govUrl = GOVT_URLS[purposeId];
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
 
-  // Try web scraping if we have both keys and a target URL
   if (scraperKey && govUrl) {
     try {
-      console.info(`[Checklist] Scraping ${govUrl} …`);
+      console.info(`[Checklist] Scraping ${govUrl} for lang=${lang}…`);
       const text = await scrapeGovPage(govUrl);
 
       if (text.length > 200) {
-        const extracted = await extractFromScrapedText(purposeLabel, text);
+        const extracted = await extractFromScrapedText(purposeLabel, text, langName);
 
         if (extracted && extracted.length >= 3) {
-          // Scraping succeeded → still ask GROQ for steps + notes using the real data
-          const enrichPrompt = `Based on the following scraped document requirements for "${purposeLabel}" in India,
-generate the application steps and important notes.
+          const langInstruction = langName === 'English'
+            ? ''
+            : ` Respond ENTIRELY in ${langName}. All steps and notes must be in ${langName}.`;
+
+          const enrichPrompt = `Based on the following scraped document requirements for "${purposeLabel}" in India, generate the application steps and important notes.${langInstruction}
 
 Documents found:
 ${extracted.map((d) => `- ${d.name}`).join('\n')}
@@ -356,7 +399,7 @@ Return ONLY valid JSON:
                 notes = rc.notes ?? [];
               }
             }
-          } catch { /* steps/notes enrichment failure — keep empty */ }
+          } catch { /* steps/notes enrichment failure */ }
 
           return {
             documentType: purposeId,
@@ -370,15 +413,14 @@ Return ONLY valid JSON:
         }
       }
     } catch (err) {
-      console.warn('[Checklist] Scraping failed, falling back to AI generation:', err);
+      console.warn('[Checklist] Scraping failed, falling back to AI:', err);
     }
   }
 
-  // Fallback: pure AI generation
-  return generateWithGroq(purposeId, purposeLabel);
+  return generateWithGroq(purposeId, purposeLabel, langName);
 }
 
-// ─── Built-in fallback data (no API keys needed) ─────────────────────────────
+// ─── Built-in fallback data (English only, no API keys needed) ───────────────
 
 const BUILTIN: Record<string, { docs: RequiredDocument[]; steps: string[]; notes: string[] }> = {
   passport_application: {
@@ -414,7 +456,7 @@ const BUILTIN: Record<string, { docs: RequiredDocument[]; steps: string[]; notes
       { name: 'Medical Certificate (Form 1A)', description: 'Required for commercial / heavy vehicle licence only', required: false, document_type: 'other' },
     ],
     steps: ['Register on Sarathi portal (parivahan.gov.in)', 'Apply for Learning Licence — Form 1 & 2, pay ₹200', 'Appear for LL test at RTO', 'Wait 30 days after obtaining LL', 'Apply for DL online, upload documents', 'Book driving test slot at RTO', 'Appear for driving skill test', 'DL issued within 7 days if passed'],
-    notes: ['Age 18+ required for motor car; 16+ for gearless mopeds', 'Learner\'s Licence is valid for 6 months', 'Smart card DL dispatched by post — keep acknowledgement as proof'],
+    notes: ['Age 18+ required for motor car; 16+ for gearless mopeds', "Learner's Licence is valid for 6 months", 'Smart card DL dispatched by post — keep acknowledgement as proof'],
   },
   voter_id_registration: {
     docs: [
@@ -471,57 +513,50 @@ const BUILTIN: Record<string, { docs: RequiredDocument[]; steps: string[]; notes
       { name: 'Migration Certificate', description: 'Required if moving from a different state board or university', required: false, document_type: 'other' },
     ],
     steps: ['Check eligibility — minimum percentage, entrance exam score (JEE/NEET/CET)', 'Fill university or state centralised admission form online', 'Upload scanned documents as per portal specifications', 'Pay application fee online', 'Attend counselling / merit-based allotment rounds', 'Accept seat and pay college fees within deadline', 'Report on joining date with all originals for verification'],
-    notes: ['Originals are verified on Day 1 — keep multiple self-attested sets', 'Anti-ragging affidavit signed by student and parent is mandatory', 'Scholarship forms (NSP / state schemes) open in the first month — don\'t miss the deadline'],
+    notes: ['Carry multiple sets of self-attested photocopies on joining day', 'SC/ST/OBC certificates must be from a competent authority of the home state', 'Keep migration certificate issued by previous board for inter-state admissions'],
   },
 };
 
-function getBuiltinChecklist(purposeId: string): ChecklistData | null {
-  const raw = BUILTIN[purposeId];
-  if (!raw) return null;
-  return {
-    documentType: purposeId,
-    requiredDocuments: raw.docs,
-    steps: raw.steps,
-    notes: raw.notes,
-    generatedAt: Date.now(),
-    fromCache: false,
-    source: 'ai',
-  };
-}
-
-// ─── Public API ──────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function getChecklist(
   purposeId: string,
   purposeLabel: string,
+  lang: string,
   forceRefresh = false
 ): Promise<ChecklistData> {
   if (!forceRefresh) {
-    const cached = lsGet(purposeId) ?? (await supabaseGet(purposeId));
+    // 1. localStorage
+    const cached = lsGet(purposeId, lang);
     if (cached) return cached;
-  }
 
-  // Try external generation (scraping + AI) if API keys are configured
-  const hasScraperKey = !!import.meta.env.VITE_SCRAPER_API_KEY;
-  const hasGroqKey = !!import.meta.env.VITE_GROQ_API_KEY;
+    // 2. Supabase
+    const dbCached = await supabaseGet(purposeId, lang);
+    if (dbCached) {
+      lsSet(purposeId, lang, dbCached);
+      return dbCached;
+    }
 
-  if (hasScraperKey || hasGroqKey) {
-    try {
-      const data = await generateChecklist(purposeId, purposeLabel);
-      lsSet(purposeId, data);
-      supabaseSave(purposeId, data).catch(() => {});
+    // 3. Built-in (English only)
+    if (lang === 'en' && BUILTIN[purposeId]) {
+      const b = BUILTIN[purposeId];
+      const data: ChecklistData = {
+        documentType: purposeId,
+        requiredDocuments: b.docs,
+        steps: b.steps,
+        notes: b.notes,
+        generatedAt: Date.now(),
+        fromCache: false,
+        source: 'ai',
+      };
+      lsSet(purposeId, lang, data);
       return data;
-    } catch {
-      // Fall through to built-in data
     }
   }
 
-  // Built-in fallback — always works, no API keys needed
-  const builtin = getBuiltinChecklist(purposeId);
-  if (builtin) {
-    lsSet(purposeId, builtin);
-    return builtin;
-  }
-
-  throw new Error(`No checklist data available for "${purposeLabel}".`);
+  // 4. Generate fresh (scrape → AI)
+  const data = await generateChecklist(purposeId, purposeLabel, lang);
+  lsSet(purposeId, lang, data);
+  supabaseSave(purposeId, lang, data);
+  return data;
 }

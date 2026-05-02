@@ -16,7 +16,6 @@ interface UserDocument {
   document_name: string;
 }
 
-// Known specific document types — "other" is excluded intentionally
 const KNOWN_TYPES = new Set([
   'aadhaar', 'pan_card', 'birth_certificate', 'voter_id',
   'driving_license', 'passport', 'income_certificate',
@@ -41,18 +40,13 @@ function docMatchesRequirement(doc: UserDocument, req: RequiredDocument): boolea
   const dn = ` ${doc.document_name.toLowerCase()} `;
   const rn = req.name.toLowerCase();
 
-  // For known specific types: match if the uploaded doc's type equals the required type
   if (KNOWN_TYPES.has(rt)) {
     if (dt === rt) return true;
-    // Also allow name-based fallback for known types (e.g. user named it "My Aadhaar")
     const kws = TYPE_KEYWORDS[rt] ?? [];
     return kws.some((kw) => dn.includes(kw) || dt.includes(kw));
   }
 
-  // For "other" type requirements: NEVER match just because both are "other".
-  // Instead require the document name to contain keywords from the requirement name.
   if (rt === 'other') {
-    // Build keywords from the requirement name words (length > 3)
     const nameKeywords = rn.split(/\s+/).filter((w) => w.length > 3);
     return nameKeywords.some((kw) => dn.includes(kw));
   }
@@ -80,12 +74,13 @@ export function useChecklist() {
       purposeId: string,
       purposeLabel: string,
       userDocs: UserDocument[],
+      lang: string,
       forceRefresh = false
     ) => {
       setStatus('loading');
       setError(null);
       try {
-        const result = await getChecklist(purposeId, purposeLabel, forceRefresh);
+        const result = await getChecklist(purposeId, purposeLabel, lang, forceRefresh);
         const enriched: EnrichedChecklist = {
           ...result,
           requiredDocuments: compareWithUserDocs(result.requiredDocuments, userDocs),
