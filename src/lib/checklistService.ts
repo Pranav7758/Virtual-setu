@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SCRAPER_URL = 'https://api.scraperapi.com';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const LS_PREFIX = 'vs_checklist_v4_';
+const LS_PREFIX = 'vs_checklist_v5_';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English',
@@ -40,6 +40,17 @@ const GOVT_URLS: Record<string, string> = {
   aadhaar_enrollment: 'https://myaadhaar.uidai.gov.in/',
   job_application: 'https://www.ncs.gov.in/',
   college_admission: 'https://www.ugc.gov.in/',
+};
+
+// YouTube: map app language code → YouTube relevanceLanguage + query suffix
+const YT_LANG_CODE: Record<string, string> = {
+  en: 'en', hi: 'hi', mr: 'mr', bn: 'bn', ta: 'ta',
+  te: 'te', kn: 'kn', ml: 'ml', pa: 'pa', gu: 'gu',
+};
+const YT_LANG_SUFFIX: Record<string, string> = {
+  hi: 'Hindi', mr: 'Marathi', bn: 'Bengali', ta: 'Tamil',
+  te: 'Telugu', kn: 'Kannada', ml: 'Malayalam', pa: 'Punjabi',
+  gu: 'Gujarati', or: 'Odia', as: 'Assamese',
 };
 
 // Curated YouTube search queries for builtin purposes
@@ -212,12 +223,17 @@ async function searchOfficialUrl(purposeLabel: string): Promise<string | undefin
 
 // ─── YouTube: get real video ID (YouTube Data API v3 → ScraperAPI fallback) ───
 
-async function searchYouTubeVideo(searchQuery: string): Promise<string | undefined> {
+async function searchYouTubeVideo(searchQuery: string, lang = 'en'): Promise<string | undefined> {
+  // Build a language-aware query: append language name so YouTube returns the right language
+  const suffix = lang !== 'en' ? (YT_LANG_SUFFIX[lang] ?? '') : '';
+  const langQuery = suffix ? `${searchQuery} ${suffix}` : searchQuery;
+  const ytLang = YT_LANG_CODE[lang] ?? 'en';
+
   // Primary: YouTube Data API v3 — instant, free 10k units/day, 100% reliable
   const ytApiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
   if (ytApiKey) {
     try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&maxResults=3&type=video&relevanceLanguage=en&key=${ytApiKey}`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(langQuery)}&maxResults=3&type=video&relevanceLanguage=${ytLang}&key=${ytApiKey}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
       if (res.ok) {
         const json = await res.json();
@@ -231,12 +247,11 @@ async function searchYouTubeVideo(searchQuery: string): Promise<string | undefin
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   if (!scraperKey) return undefined;
   try {
-    const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+    const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(langQuery)}&hl=${ytLang}`;
     const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(ytUrl)}&render=true`;
     const res = await fetch(endpoint, { signal: AbortSignal.timeout(35_000) });
     if (!res.ok) return undefined;
     const html = await res.text();
-    // ytInitialData is baked into the rendered page as JSON
     const match = html.match(/"videoId":"([A-Za-z0-9_-]{11})"/);
     return match?.[1] ?? undefined;
   } catch {
@@ -311,7 +326,8 @@ Rules:
 async function generateWithGroq(
   purposeId: string,
   purposeLabel: string,
-  langName: string
+  langName: string,
+  lang = 'en'
 ): Promise<ChecklistData> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) throw new Error('GROQ API key not configured.');
@@ -368,7 +384,7 @@ Rules:
 
   // Run YouTube search and Google official URL search in parallel
   const [videoId, liveOfficialUrl] = await Promise.all([
-    searchYouTubeVideo(videoQuery),
+    searchYouTubeVideo(videoQuery, lang),
     GOVT_URLS[purposeId]
       ? Promise.resolve(GOVT_URLS[purposeId])   // known purpose → use hardcoded verified URL
       : searchOfficialUrl(purposeLabel),          // custom purpose → Google it live
@@ -401,8 +417,8 @@ async function generateChecklist(
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
 
   const videoQuery = VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`;
-  // Start YouTube search early so it runs in parallel with everything else
-  const videoPromise = searchYouTubeVideo(videoQuery);
+  // Start YouTube search early — pass lang so results are in the right language
+  const videoPromise = searchYouTubeVideo(videoQuery, lang);
 
   if (scraperKey && govUrl) {
     try {
@@ -474,7 +490,7 @@ Make the steps detailed — include fees, timelines, and what to bring.`;
     }
   }
 
-  return generateWithGroq(purposeId, purposeLabel, langName);
+  return generateWithGroq(purposeId, purposeLabel, langName, lang);
 }
 
 // ─── Built-in data ────────────────────────────────────────────────────────────
@@ -691,7 +707,7 @@ export async function getChecklist(
     if (lang === 'en' && BUILTIN[purposeId]) {
       const b = BUILTIN[purposeId];
       const videoQuery = VIDEO_QUERIES[purposeId];
-      const videoId = await searchYouTubeVideo(videoQuery);
+      const videoId = await searchYouTubeVideo(videoQuery, 'en');
       const data: ChecklistData = {
         documentType: purposeId,
         requiredDocuments: b.docs,
