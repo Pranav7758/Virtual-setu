@@ -21,6 +21,7 @@ import DigitalIDCard from '@/components/DigitalIDCard';
 import ActivityLog from '@/components/ActivityLog';
 import ExpiryTracker from '@/components/ExpiryTracker';
 import { logActivity } from '@/lib/activityLog';
+import { getExpiry, getExpiryStatus } from '@/lib/documentExpiry';
 
 interface Profile {
   id: string;
@@ -178,14 +179,43 @@ export default function Dashboard() {
               </GovCard>
             )}
 
-            {/* ── Expiry Tracker ── */}
-            {user && documents.length > 0 && (
-              <ExpiryTracker
-                documents={documents}
-                userId={user.id}
-                onExpiryUpdated={fetchDocuments}
-              />
-            )}
+            {/* ── Compact Expiry Alert Strip (urgent only) ── */}
+            {user && (() => {
+              const urgentDocs = documents.filter((doc) => {
+                const rec = getExpiry(user.id, doc.id);
+                if (!rec?.expiryDate) return false;
+                const st = getExpiryStatus(rec.expiryDate);
+                return st === 'expired' || st === 'critical' || st === 'warning';
+              });
+              if (urgentDocs.length === 0) return null;
+              const hasExpiredOrCritical = urgentDocs.some((doc) => {
+                const st = getExpiryStatus(getExpiry(user.id, doc.id)?.expiryDate);
+                return st === 'expired' || st === 'critical';
+              });
+              return (
+                <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-sm border text-sm ${
+                  hasExpiredOrCritical
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className={`h-4 w-4 shrink-0 ${hasExpiredOrCritical ? 'text-red-600' : 'text-amber-600'}`} />
+                    <span className="font-medium">
+                      {urgentDocs.length} document{urgentDocs.length > 1 ? 's' : ''} need{urgentDocs.length === 1 ? 's' : ''} attention —{' '}
+                      {urgentDocs.map(d => d.document_name).join(', ')}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => document.getElementById('expiry-tracker-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    className={`text-xs font-semibold underline underline-offset-2 shrink-0 ${
+                      hasExpiredOrCritical ? 'text-red-700 hover:text-red-900' : 'text-amber-700 hover:text-amber-900'
+                    }`}
+                  >
+                    View →
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -220,6 +250,17 @@ export default function Dashboard() {
                 </GovCard>
               ))}
             </div>
+
+            {/* ── Full Expiry Tracker ── */}
+            {user && documents.length > 0 && (
+              <div id="expiry-tracker-section">
+                <ExpiryTracker
+                  documents={documents}
+                  userId={user.id}
+                  onExpiryUpdated={fetchDocuments}
+                />
+              </div>
+            )}
 
             {/* Recent Documents */}
             <GovCard>
