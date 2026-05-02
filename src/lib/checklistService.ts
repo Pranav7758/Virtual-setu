@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SCRAPER_URL = 'https://api.scraperapi.com';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const LS_PREFIX = 'vs_checklist_v3_';
+const LS_PREFIX = 'vs_checklist_v4_';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English',
@@ -174,46 +174,71 @@ async function searchOfficialUrl(purposeLabel: string): Promise<string | undefin
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   if (!scraperKey) return undefined;
   try {
-    const query = `${purposeLabel} official government website India apply online site:.gov.in OR site:.nic.in OR site:.mahaonline.gov.in`;
+    // Use site: restrict to get only govt domains
+    const query = `${purposeLabel} official website (site:gov.in OR site:nic.in OR site:mahaonline.gov.in OR site:digitalsatbara.mahabhumi.gov.in)`;
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&gl=in&num=5`;
-    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(googleUrl)}&render=false&country_code=in`;
-    const res = await fetch(endpoint, { signal: AbortSignal.timeout(20_000) });
+    // render=true so Google's full HTML loads with all redirect links
+    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(googleUrl)}&render=true&country_code=in`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) return undefined;
     const html = await res.text();
-    // Google encodes real result URLs as /url?q=ACTUAL_URL&...
-    const matches = html.match(/\/url\?q=(https?:\/\/[^&"]+)/g);
-    if (!matches?.length) return undefined;
-    const candidates = matches
-      .map((m) => {
+
+    // Pattern 1: Google /url?q= redirect links
+    const redirectMatches = html.match(/\/url\?q=(https?:\/\/[^&"' ]+)/g) ?? [];
+    // Pattern 2: Direct href links to gov domains
+    const hrefMatches = html.match(/href="(https?:\/\/[^"]*(?:gov\.in|nic\.in|mahabhumi|digitalsatbara|mahaonline)[^"]*)"/g) ?? [];
+
+    const allUrls = [
+      ...redirectMatches.map((m) => {
         try { return decodeURIComponent(m.replace('/url?q=', '').split('&')[0]); } catch { return ''; }
-      })
-      .filter((u) => u.startsWith('http') && !u.includes('google.') && !u.includes('webcache') && !u.includes('translate.'));
-    // Prefer .gov.in / .nic.in domains
-    const govUrl = candidates.find((u) => /\.(gov\.in|nic\.in|mahaonline\.gov\.in|digitalsatbara|mahabhumi)/.test(u));
-    return govUrl ?? candidates[0] ?? undefined;
+      }),
+      ...hrefMatches.map((m) => m.replace(/href="/, '').replace(/"$/, '')),
+    ].filter((u) =>
+      u.startsWith('http') &&
+      !u.includes('google.') &&
+      !u.includes('webcache') &&
+      !u.includes('translate.') &&
+      !u.includes('accounts.google') &&
+      !u.includes('support.google')
+    );
+
+    // Prefer .gov.in / .nic.in
+    const govUrl = allUrls.find((u) => /\.(gov\.in|nic\.in)/.test(u));
+    return govUrl ?? allUrls[0] ?? undefined;
   } catch {
     return undefined;
   }
 }
 
-// ─── YouTube: scrape real video ID from YouTube search results ────────────────
+// ─── YouTube: get real video ID (YouTube Data API v3 → ScraperAPI fallback) ───
 
 async function searchYouTubeVideo(searchQuery: string): Promise<string | undefined> {
+  // Primary: YouTube Data API v3 — instant, free 10k units/day, 100% reliable
+  const ytApiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+  if (ytApiKey) {
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&maxResults=3&type=video&relevanceLanguage=en&key=${ytApiKey}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) {
+        const json = await res.json();
+        const id = json.items?.[0]?.id?.videoId;
+        if (id) return id;
+      }
+    } catch { /* fallthrough to ScraperAPI */ }
+  }
+
+  // Fallback: ScraperAPI scraping YouTube with JS rendering
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   if (!scraperKey) return undefined;
   try {
     const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(ytUrl)}&render=false`;
-    const res = await fetch(endpoint, { signal: AbortSignal.timeout(22_000) });
+    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(ytUrl)}&render=true`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(35_000) });
     if (!res.ok) return undefined;
     const html = await res.text();
-    // YouTube bakes all video data as JSON inside <script> — extract first videoId
-    const matches = html.match(/"videoId":"([A-Za-z0-9_-]{11})"/g);
-    if (!matches?.length) return undefined;
-    const ids = [...new Set(
-      matches.map((m) => m.match(/([A-Za-z0-9_-]{11})/)?.[0] ?? '').filter(Boolean)
-    )];
-    return ids[0] || undefined;
+    // ytInitialData is baked into the rendered page as JSON
+    const match = html.match(/"videoId":"([A-Za-z0-9_-]{11})"/);
+    return match?.[1] ?? undefined;
   } catch {
     return undefined;
   }

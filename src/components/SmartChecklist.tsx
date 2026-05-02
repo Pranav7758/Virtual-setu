@@ -388,26 +388,16 @@ export default function SmartChecklist() {
                       <p className="text-xs text-muted-foreground font-mono mb-1 truncate">{officialDomain}</p>
                     )}
                     <p className="text-xs text-muted-foreground mb-4">{t('checklist.portal_note')}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {officialUrl && (
-                        <a href={officialUrl} target="_blank" rel="noopener noreferrer">
-                          <Button className="bg-primary hover:bg-primary/90 gap-2">
-                            {t('checklist.apply_now')}
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </a>
-                      )}
-                      <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(submittedQuery + ' official website apply online India')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button variant="outline" className="gap-2">
-                          <Search className="h-4 w-4" />
-                          Search on Google
+                    {officialUrl ? (
+                      <a href={officialUrl} target="_blank" rel="noopener noreferrer">
+                        <Button className="bg-primary hover:bg-primary/90 gap-2">
+                          {t('checklist.apply_now')}
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
                       </a>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">{t('checklist.portal_note')}</p>
+                    )}
                   </div>
                 </div>
               </div>
