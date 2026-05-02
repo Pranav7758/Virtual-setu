@@ -183,7 +183,7 @@ export default function Dashboard() {
               <ExpiryTracker
                 documents={documents}
                 userId={user.id}
-                onExpiryUpdated={loadDocuments}
+                onExpiryUpdated={fetchDocuments}
               />
             )}
 
