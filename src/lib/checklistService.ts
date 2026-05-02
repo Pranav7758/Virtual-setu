@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SCRAPER_URL = 'https://api.scraperapi.com';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const LS_PREFIX = 'vs_checklist_v2_';
+const LS_PREFIX = 'vs_checklist_v3_';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English',
@@ -68,6 +68,7 @@ export interface ChecklistData {
   requiredDocuments: RequiredDocument[];
   steps: string[];
   notes: string[];
+  videoId?: string;
   videoSearchQuery?: string;
   officialUrl?: string;
   generatedAt: number;
@@ -165,6 +166,29 @@ async function scrapeGovPage(url: string): Promise<string> {
     .replace(/\s{2,}/g, ' ')
     .trim()
     .slice(0, 9000);
+}
+
+// ─── YouTube: scrape real video ID from YouTube search results ────────────────
+
+async function searchYouTubeVideo(searchQuery: string): Promise<string | undefined> {
+  const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
+  if (!scraperKey) return undefined;
+  try {
+    const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(ytUrl)}&render=false`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(22_000) });
+    if (!res.ok) return undefined;
+    const html = await res.text();
+    // YouTube bakes all video data as JSON inside <script> — extract first videoId
+    const matches = html.match(/"videoId":"([A-Za-z0-9_-]{11})"/g);
+    if (!matches?.length) return undefined;
+    const ids = [...new Set(
+      matches.map((m) => m.match(/([A-Za-z0-9_-]{11})/)?.[0] ?? '').filter(Boolean)
+    )];
+    return ids[0] || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // ─── GROQ extraction from scraped content ────────────────────────────────────
@@ -292,12 +316,16 @@ Rules:
   const content: string = raw.choices?.[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(content);
 
+  const videoQuery = VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`;
+  const videoId = await searchYouTubeVideo(videoQuery);
+
   return {
     documentType: purposeId,
     requiredDocuments: (parsed.requiredDocuments ?? []) as RequiredDocument[],
     steps: (parsed.steps ?? []) as string[],
     notes: (parsed.notes ?? []) as string[],
-    videoSearchQuery: VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`,
+    videoId,
+    videoSearchQuery: videoQuery,
     officialUrl: parsed.officialUrl || GOVT_URLS[purposeId] || '',
     generatedAt: Date.now(),
     fromCache: false,
@@ -316,6 +344,10 @@ async function generateChecklist(
   const govUrl = GOVT_URLS[purposeId];
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  const videoQuery = VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`;
+  // Start YouTube search early so it runs in parallel with everything else
+  const videoPromise = searchYouTubeVideo(videoQuery);
 
   if (scraperKey && govUrl) {
     try {
@@ -367,12 +399,14 @@ Make the steps detailed — include fees, timelines, and what to bring.`;
             }
           } catch { /* enrichment failure */ }
 
+          const videoId = await videoPromise;
           return {
             documentType: purposeId,
             requiredDocuments: extracted,
             steps,
             notes,
-            videoSearchQuery: VIDEO_QUERIES[purposeId] || `${purposeLabel} India 2024 how to apply tutorial`,
+            videoId,
+            videoSearchQuery: videoQuery,
             officialUrl: GOVT_URLS[purposeId] || '',
             generatedAt: Date.now(),
             fromCache: false,
@@ -598,15 +632,18 @@ export async function getChecklist(
       return dbCached;
     }
 
-    // Built-in (English only)
+    // Built-in (English only) — search YouTube in parallel
     if (lang === 'en' && BUILTIN[purposeId]) {
       const b = BUILTIN[purposeId];
+      const videoQuery = VIDEO_QUERIES[purposeId];
+      const videoId = await searchYouTubeVideo(videoQuery);
       const data: ChecklistData = {
         documentType: purposeId,
         requiredDocuments: b.docs,
         steps: b.steps,
         notes: b.notes,
-        videoSearchQuery: VIDEO_QUERIES[purposeId],
+        videoId,
+        videoSearchQuery: videoQuery,
         officialUrl: GOVT_URLS[purposeId],
         generatedAt: Date.now(),
         fromCache: false,

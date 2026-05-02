@@ -40,11 +40,13 @@ export default function SmartChecklist() {
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [userDocs, setUserDocs] = useState<UserDocument[]>([]);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   const { status, data, error, fetch: fetchChecklist, reset } = useChecklist();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadUserDocuments(); }, []);
+  useEffect(() => { setVideoError(false); }, [data?.videoId]);
 
   const loadUserDocuments = async () => {
     try {
@@ -309,32 +311,44 @@ export default function SmartChecklist() {
               )}
 
               {/* ── 3. YouTube Tutorial ── */}
-              <a
-                href={ytSearchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl border overflow-hidden hover:shadow-md transition-shadow group"
-              >
-                <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
-                  <Youtube className="h-5 w-5 text-red-600" />
-                  <span className="text-sm font-semibold">{t('checklist.watch_tutorial')}</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-red-500 ml-auto" />
-                </div>
-                <div className="flex items-center gap-5 px-5 py-4 bg-card">
-                  <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-                    <Youtube className="h-7 w-7 text-white" />
+              <div className="rounded-xl border bg-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900">
+                  <div className="flex items-center gap-2">
+                    <Youtube className="h-5 w-5 text-red-600" />
+                    <span className="text-sm font-semibold">{t('checklist.watch_tutorial')}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground mb-0.5">{t('checklist.video_subtitle')}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {data.videoSearchQuery ?? submittedQuery}
-                    </p>
-                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-                      {t('checklist.find_video')} →
-                    </span>
-                  </div>
+                  <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 font-medium">
+                    {t('checklist.find_video')} <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
-              </a>
+
+                {data.videoId && !videoError ? (
+                  <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      key={data.videoId}
+                      src={`https://www.youtube-nocookie.com/embed/${data.videoId}?rel=0&modestbranding=1`}
+                      title={t('checklist.watch_tutorial')}
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      onError={() => setVideoError(true)}
+                    />
+                  </div>
+                ) : (
+                  <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-5 px-5 py-5 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors group">
+                    <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center flex-shrink-0 shadow group-hover:scale-105 transition-transform">
+                      <Youtube className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground mb-1">{t('checklist.video_subtitle')}</p>
+                      <p className="text-xs text-muted-foreground truncate mb-2">{data.videoSearchQuery ?? submittedQuery}</p>
+                      <span className="text-xs font-medium text-red-600 dark:text-red-400">{t('checklist.find_video')} →</span>
+                    </div>
+                  </a>
+                )}
+              </div>
 
               {/* ── 4. Application Steps ── */}
               {data.steps.length > 0 && (
@@ -387,26 +401,40 @@ export default function SmartChecklist() {
               )}
 
               {/* ── 6. Official Application Portal ── */}
-              {officialUrl && (
-                <div className="rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-                      <Globe className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold mb-0.5">{t('checklist.official_portal')}</p>
-                      <p className="text-xs text-muted-foreground font-mono mb-3 truncate">{officialDomain}</p>
-                      <p className="text-xs text-muted-foreground mb-4">{t('checklist.portal_note')}</p>
-                      <a href={officialUrl} target="_blank" rel="noopener noreferrer">
-                        <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto gap-2">
-                          {t('checklist.apply_now')}
-                          <ExternalLink className="h-4 w-4" />
+              <div className="rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                    <Globe className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold mb-0.5">{t('checklist.official_portal')}</p>
+                    {officialDomain && (
+                      <p className="text-xs text-muted-foreground font-mono mb-1 truncate">{officialDomain}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mb-4">{t('checklist.portal_note')}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {officialUrl && (
+                        <a href={officialUrl} target="_blank" rel="noopener noreferrer">
+                          <Button className="bg-primary hover:bg-primary/90 gap-2">
+                            {t('checklist.apply_now')}
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      )}
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(submittedQuery + ' official website apply online India')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" className="gap-2">
+                          <Search className="h-4 w-4" />
+                          Search on Google
                         </Button>
                       </a>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
             </div>
           )}
