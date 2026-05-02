@@ -19,6 +19,7 @@ import AIChatbot from '@/components/AIChatbot';
 import DigitalIDCard from '@/components/DigitalIDCard';
 import ActivityLog from '@/components/ActivityLog';
 import { logActivity } from '@/lib/activityLog';
+import { getExpiry, getExpiryStatus, formatExpiryDate } from '@/lib/documentExpiry';
 
 interface Profile {
   id: string;
@@ -170,6 +171,60 @@ export default function Dashboard() {
                 </div>
               </GovCard>
             )}
+
+            {/* ── Expiry Warning Banner ── */}
+            {(() => {
+              if (!user || documents.length === 0) return null;
+              const expiring = documents.filter((doc) => {
+                const rec = getExpiry(user.id, doc.id);
+                if (!rec?.expiryDate) return false;
+                const st = getExpiryStatus(rec.expiryDate);
+                return st === 'expired' || st === 'critical' || st === 'warning';
+              });
+              if (expiring.length === 0) return null;
+              const hasExpired = expiring.some((doc) => {
+                const rec = getExpiry(user.id, doc.id);
+                return getExpiryStatus(rec?.expiryDate) === 'expired';
+              });
+              const hasCritical = expiring.some((doc) => {
+                const rec = getExpiry(user.id, doc.id);
+                return getExpiryStatus(rec?.expiryDate) === 'critical';
+              });
+              const bannerClass = hasExpired || hasCritical
+                ? 'border-red-200 bg-red-50'
+                : 'border-amber-200 bg-amber-50';
+              const iconColor = hasExpired || hasCritical ? 'text-red-600' : 'text-amber-600';
+              const textColor = hasExpired || hasCritical ? 'text-red-800' : 'text-amber-800';
+              return (
+                <GovCard className={bannerClass}>
+                  <div className="px-5 py-3">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className={`h-5 w-5 mt-0.5 shrink-0 ${iconColor}`} />
+                      <div className="flex-1">
+                        <p className={`font-semibold text-sm ${textColor}`}>
+                          {hasExpired ? 'Document(s) Expired' : 'Document(s) Expiring Soon'}
+                        </p>
+                        <ul className="mt-1 space-y-0.5">
+                          {expiring.map((doc) => {
+                            const rec = getExpiry(user.id, doc.id)!;
+                            const st = getExpiryStatus(rec.expiryDate);
+                            return (
+                              <li key={doc.id} className={`text-xs ${textColor}`}>
+                                <span className="font-medium">{doc.document_name}</span>
+                                {' — '}
+                                {st === 'expired'
+                                  ? `Expired on ${formatExpiryDate(rec.expiryDate!)}`
+                                  : `Expires ${formatExpiryDate(rec.expiryDate!)}`}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </GovCard>
+              );
+            })()}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[

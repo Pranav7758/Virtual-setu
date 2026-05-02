@@ -29,6 +29,14 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activityLog';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  getExpiry,
+  removeExpiry,
+  getExpiryStatus,
+  formatExpiryDate,
+  daysUntilExpiry,
+} from '@/lib/documentExpiry';
 
 interface Document {
   id: string;
@@ -48,6 +56,7 @@ const STATUS_FILTERS = ['all', 'verified', 'pending', 'rejected'] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
 
 export default function DocumentList({ documents, onDelete }: DocumentListProps) {
+  const { user } = useAuth();
   const [confirmDoc, setConfirmDoc] = useState<Document | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -167,6 +176,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
       if (!res.ok) throw new Error(json.error || 'Delete failed');
 
       toast.success(`"${confirmDoc.document_name}" deleted successfully`);
+      removeExpiry(userId, confirmDoc.id);
       logActivity(userId, {
         type: 'document_deleted',
         title: confirmDoc.document_name,
@@ -274,12 +284,40 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-lg truncate">{doc.document_name}</h4>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                         <span className="capitalize">{getDocumentTypeLabel(doc.document_type)}</span>
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3" />
                           <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                         </div>
+                        {/* ── Expiry badge ── */}
+                        {(() => {
+                          if (!user) return null;
+                          const rec = getExpiry(user.id, doc.id);
+                          if (!rec) return null;
+                          if (!rec.expiryDate) return (
+                            <span className="text-xs text-slate-400 italic">No expiry</span>
+                          );
+                          const st = getExpiryStatus(rec.expiryDate);
+                          const days = daysUntilExpiry(rec.expiryDate);
+                          const styleMap = {
+                            expired: 'bg-red-100 text-red-700 border-red-300',
+                            critical: 'bg-red-50 text-red-600 border-red-200',
+                            warning: 'bg-amber-50 text-amber-700 border-amber-200',
+                            ok: 'bg-green-50 text-[#138808] border-green-200',
+                            none: '',
+                          };
+                          const label =
+                            st === 'expired' ? `Expired ${formatExpiryDate(rec.expiryDate)}` :
+                            st === 'critical' ? `Expires in ${days}d` :
+                            st === 'warning' ? `Expires in ${days}d` :
+                            `Valid till ${formatExpiryDate(rec.expiryDate)}`;
+                          return (
+                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${styleMap[st]}`}>
+                              {label}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentVerification } from '@/hooks/useDocumentVerification';
 import { logActivity } from '@/lib/activityLog';
+import { saveExpiry } from '@/lib/documentExpiry';
 
 interface DocumentUploadProps {
   onUploadComplete: () => void;
@@ -263,7 +264,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
       setUploadProgress(80);
 
-      const { error: dbError } = await supabase
+      const { data: insertedDoc, error: dbError } = await supabase
         .from('documents')
         .insert({
           user_id: user.id,
@@ -271,12 +272,28 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
           document_name: documentName.trim(),
           file_url: filePath,
           verification_status: 'verified',
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) throw dbError;
 
+      // Save the AI-extracted expiry date in localStorage
+      if (insertedDoc?.id) {
+        saveExpiry(user.id, insertedDoc.id, {
+          expiryDate: result.expiryDate ?? null,
+          documentNumber: result.documentNumber ?? null,
+          storedAt: new Date().toISOString(),
+        });
+      }
+
       setUploadProgress(100);
-      toast.success('Document verified and uploaded successfully!');
+
+      const expiryNote = result.expiryDate
+        ? ` · Expires ${new Date(result.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+        : '';
+      toast.success(`Document verified and uploaded!${expiryNote}`);
+
       if (user) {
         const labelMap: Record<string, string> = {};
         for (const cat of DOCUMENT_CATEGORIES) {

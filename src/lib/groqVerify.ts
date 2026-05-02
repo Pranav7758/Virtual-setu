@@ -2,6 +2,8 @@ export interface VerificationResult {
   isValid: boolean;
   detectedType: string;
   message: string;
+  expiryDate?: string | null;   // YYYY-MM-DD extracted from the document, or null if not present
+  documentNumber?: string | null; // ID/number extracted from the document
 }
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -66,8 +68,16 @@ Respond with ONLY valid JSON in this exact format:
 {
   "detectedType": "<detected document type>",
   "isValid": <true or false>,
-  "message": "<short 1-2 sentence explanation for the user>"
+  "message": "<short 1-2 sentence explanation for the user>",
+  "expiryDate": "<expiry/validity date in YYYY-MM-DD format if visible on the document, otherwise null>",
+  "documentNumber": "<the primary ID number on the document (Aadhaar number, PAN number, passport number, etc.) if visible, otherwise null>"
 }
+
+EXPIRY DATE EXTRACTION RULES:
+- Look for fields labelled: "Date of Expiry", "Valid Till", "Validity", "Expiry Date", "DOE", "Valid Upto", "Expires On"
+- Convert any date format to YYYY-MM-DD (e.g. "31/12/2029" → "2029-12-31", "31 DEC 2029" → "2029-12-31")
+- If the document type never expires (e.g. Aadhaar Card, PAN Card, Birth Certificate, Caste Certificate) set expiryDate to null
+- If the document has an expiry field but it is not readable/visible, set expiryDate to null
 
 ${isOther
   ? `Since the user selected "Other", accept any document type. Set isValid to true and briefly describe what you see.`
