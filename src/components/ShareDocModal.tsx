@@ -199,7 +199,7 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-md bg-white border border-[#cdd3da] rounded-sm p-0 overflow-hidden">
+      <DialogContent hideClose className="max-w-md bg-white border border-[#cdd3da] rounded-sm p-0 overflow-hidden">
 
         {/* Header */}
         <div className="bg-[#003580] text-white px-5 py-4">
