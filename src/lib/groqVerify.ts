@@ -31,7 +31,6 @@ function fileToBase64(file: File): Promise<string> {
 
 async function extractPdfText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
-  // Use CDN worker URL — avoids Vite/browser module resolution issues
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
@@ -55,39 +54,42 @@ async function extractPdfText(file: File): Promise<string> {
 function buildPrompt(selectedTypeLabel: string): string {
   const isOther = selectedTypeLabel.toLowerCase() === 'other';
 
-  return `You are a document verification AI for an Indian government document portal called Virtual Setu.
+  return `You are a strict document authenticity verification AI for Virtual Setu, an Indian government document management portal.
 
 The user claims to be uploading a: "${selectedTypeLabel}"
 
-Analyze the document content and identify what type of document it actually is.
-
-Supported document types:
-- Aadhaar Card
-- PAN Card
-- Voter ID
-- Driving License
-- Passport
-- Birth Certificate
-- Income Certificate
-- Caste Certificate
-- Domicile Certificate
-- Other
+Your job is to CAREFULLY analyse the document and determine if it is:
+1. The correct type of document the user claims it is
+2. A GENUINE, REAL document — NOT a sample, specimen, fake, template, or watermarked copy
 
 Respond with ONLY valid JSON in this exact format:
 {
-  "detectedType": "<one of the supported types above, or your best guess>",
+  "detectedType": "<detected document type>",
   "isValid": <true or false>,
-  "message": "<a helpful 1-2 sentence message for the user>"
+  "message": "<short 1-2 sentence explanation for the user>"
 }
 
-Rules:
 ${isOther
-  ? `- The user has selected "Other", meaning this is a miscellaneous document. Always set isValid to true and detectedType to "Other".
-- In your message, briefly describe what the document appears to be.`
-  : `- If the document clearly matches the claimed type, set isValid to true
-- If it does not match, set isValid to false and explain what was found
-- If you cannot determine the type confidently, set detectedType to "Other" and isValid to false`}
-- Keep messages friendly and actionable`;
+  ? `Since the user selected "Other", accept any document type. Set isValid to true and briefly describe what you see.`
+  : `STRICT AUTHENTICITY RULES — reject the document (isValid: false) if ANY of the following are true:
+- The document contains watermarks such as "SAMPLE", "SPECIMEN", "FAKE", "TEST", "DEMO", "EXAMPLE", "FOR ILLUSTRATION", or any website domain (e.g. "IMMIHELP.COM", "SAMPLEDOCS.IN", "EXAMPLE.COM")
+- The document appears to be a template, printout from a tutorial, or illustrative copy
+- For PAN Card: the PAN number follows an obviously fake/sequential pattern like "ABCDE1234F", "AAAAA0000A", "XXXXX0000X", or any clearly non-genuine pattern. Real PAN cards have a format where the first 3 letters are random, the 4th letter indicates taxpayer type (P, C, H, F, A, T, B, L, J, G), and the 5th letter is the first letter of the surname.
+- For Aadhaar: the 12-digit number appears fake (e.g. 1234 5678 9012, all same digits, sequential)
+- For Passport: passport number appears fake or sequential
+- The document does not match the claimed type
+- The document appears digitally created, edited, or tampered with
+- Visible disclaimers, copyright notices, or annotations indicating it is not official
+- The image is clearly a screenshot of a document found online rather than a real physical document scan
+
+ACCEPT (isValid: true) only if:
+- The document clearly matches the claimed type
+- There are no fake/sample/watermark indicators
+- The document identifiers (PAN, Aadhaar number, etc.) follow valid real-world formats
+- The document appears to be a genuine official document`
+}
+
+Keep the message short, clear, and helpful for the citizen.`;
 }
 
 export async function verifyDocument(
@@ -99,9 +101,9 @@ export async function verifyDocument(
 
   if (!apiKey) {
     return {
-      isValid: true,
+      isValid: false,
       detectedType: selectedTypeLabel,
-      message: 'Verification skipped — GROQ API key not configured.',
+      message: 'Verification unavailable — API key not configured. Please contact support.',
     };
   }
 
@@ -156,7 +158,7 @@ export async function verifyDocument(
     body: JSON.stringify({
       model,
       messages,
-      temperature: 0.1,
+      temperature: 0.0,
       max_tokens: 300,
       response_format: { type: 'json_object' },
     }),
@@ -172,7 +174,6 @@ export async function verifyDocument(
 
   try {
     const parsed = JSON.parse(content) as VerificationResult;
-    // Safety net: "Other" type should always be accepted regardless of AI response
     if (selectedType === 'other') {
       return { ...parsed, isValid: true, detectedType: parsed.detectedType || 'Other' };
     }
