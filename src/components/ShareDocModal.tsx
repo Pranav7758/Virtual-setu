@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,20 +10,36 @@ import {
   StopCircle, AlertTriangle,
 } from 'lucide-react';
 
-interface ShareDocModalProps {
-  open: boolean;
-  onClose: () => void;
-  documentId: string;
-  documentName: string;
-  userId: string;
+/* ── Persistence helpers ── */
+interface StoredShare {
+  token: string;
+  shareUrl: string;
+  expiresAt: number;
+  pinLength: number;
 }
 
-const DURATIONS = [
-  { label: '1 Hour',   value: 1 },
-  { label: '6 Hours',  value: 6 },
-  { label: '24 Hours', value: 24 },
-];
+function loadShare(documentId: string): StoredShare | null {
+  try {
+    const raw = localStorage.getItem(`vs_share_${documentId}`);
+    if (!raw) return null;
+    const s: StoredShare = JSON.parse(raw);
+    if (s.expiresAt <= Date.now()) {
+      localStorage.removeItem(`vs_share_${documentId}`);
+      return null;
+    }
+    return s;
+  } catch { return null; }
+}
 
+function saveShare(documentId: string, s: StoredShare) {
+  localStorage.setItem(`vs_share_${documentId}`, JSON.stringify(s));
+}
+
+function clearShare(documentId: string) {
+  localStorage.removeItem(`vs_share_${documentId}`);
+}
+
+/* ── Countdown formatter ── */
 function formatCountdown(ms: number): string {
   if (ms <= 0) return 'Expired';
   const totalSecs = Math.floor(ms / 1000);
@@ -34,31 +50,64 @@ function formatCountdown(ms: number): string {
   return `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
 }
 
-export default function ShareDocModal({
-  open, onClose, documentId, documentName, userId,
-}: ShareDocModalProps) {
+const DURATIONS = [
+  { label: '1 Hour',   value: 1 },
+  { label: '6 Hours',  value: 6 },
+  { label: '24 Hours', value: 24 },
+];
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  documentId: string;
+  documentName: string;
+  userId: string;
+}
+
+export default function ShareDocModal({ open, onClose, documentId, documentName, userId }: Props) {
+  /* ── Form state ── */
   const [pin, setPin] = useState('');
   const [duration, setDuration] = useState(6);
   const [loading, setLoading] = useState(false);
-  const [revoking, setRevoking] = useState(false);
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  /* ── Active share state (loaded from localStorage on open) ── */
+  const [activeShare, setActiveShare] = useState<StoredShare | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [expired, setExpired] = useState(false);
   const [revoked, setRevoked] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
+  const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ── Load persisted share when modal opens ── */
+  useEffect(() => {
+    if (!open) return;
+    const stored = loadShare(documentId);
+    if (stored) {
+      setActiveShare(stored);
+      setExpired(false);
+      setRevoked(false);
+    } else {
+      setActiveShare(null);
+      setExpired(false);
+      setRevoked(false);
+    }
+    setConfirmRevoke(false);
+    setCopied(false);
+  }, [open, documentId]);
 
   /* ── Live countdown ── */
   useEffect(() => {
-    if (!expiresAt) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!activeShare) return;
+
     const tick = () => {
-      const remaining = expiresAt - Date.now();
+      const remaining = activeShare.expiresAt - Date.now();
       if (remaining <= 0) {
         setTimeLeft(0);
         setExpired(true);
+        clearShare(documentId);
         if (timerRef.current) clearInterval(timerRef.current);
       } else {
         setTimeLeft(remaining);
@@ -67,8 +116,9 @@ export default function ShareDocModal({
     tick();
     timerRef.current = setInterval(tick, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [expiresAt]);
+  }, [activeShare, documentId]);
 
+  /* ── Create share ── */
   const handleCreate = async () => {
     if (pin.length < 4) { toast.error('PIN must be at least 4 digits'); return; }
     setLoading(true);
@@ -80,13 +130,18 @@ export default function ShareDocModal({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create share');
-      const generatedToken = data.token;
-      const generatedExpiry = Date.now() + duration * 3_600_000;
-      setToken(generatedToken);
-      setShareUrl(`${window.location.origin}/s/${generatedToken}`);
-      setExpiresAt(generatedExpiry);
+
+      const share: StoredShare = {
+        token: data.token,
+        shareUrl: `${window.location.origin}/s/${data.token}`,
+        expiresAt: Date.now() + duration * 3_600_000,
+        pinLength: pin.length,
+      };
+      saveShare(documentId, share);
+      setActiveShare(share);
       setExpired(false);
       setRevoked(false);
+      setPin('');
     } catch (e: any) {
       toast.error(e.message || 'Failed to create share link');
     } finally {
@@ -94,16 +149,17 @@ export default function ShareDocModal({
     }
   };
 
+  /* ── Revoke share ── */
   const handleRevoke = async () => {
-    if (!token) return;
+    if (!activeShare) return;
     setRevoking(true);
     try {
-      const res = await fetch('/api/revoke-doc-share', {
+      await fetch('/api/revoke-doc-share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token: activeShare.token }),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      clearShare(documentId);
       setRevoked(true);
       setExpired(true);
       if (timerRef.current) clearInterval(timerRef.current);
@@ -118,28 +174,28 @@ export default function ShareDocModal({
   };
 
   const copyLink = async () => {
-    if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
+    if (!activeShare?.shareUrl) return;
+    await navigator.clipboard.writeText(activeShare.shareUrl);
     setCopied(true);
     toast.success('Link copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleClose = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPin(''); setShareUrl(null); setToken(null); setExpiresAt(null);
-    setExpired(false); setRevoked(false); setCopied(false); setConfirmRevoke(false);
+    // do NOT reset activeShare on close — leave it in localStorage
+    setPin('');
+    setConfirmRevoke(false);
+    setCopied(false);
     onClose();
   };
 
-  /* ── Urgency color for countdown ── */
-  const countdownColor = expired || revoked
-    ? 'text-red-600 bg-red-50 border-red-200'
-    : timeLeft < 5 * 60 * 1000       // < 5 min
-    ? 'text-red-600 bg-red-50 border-red-200'
-    : timeLeft < 30 * 60 * 1000      // < 30 min
-    ? 'text-amber-700 bg-amber-50 border-amber-200'
+  const countdownColor =
+    expired || revoked                  ? 'text-red-600 bg-red-50 border-red-200'
+    : timeLeft < 5 * 60 * 1000         ? 'text-red-600 bg-red-50 border-red-200'
+    : timeLeft < 30 * 60 * 1000        ? 'text-amber-700 bg-amber-50 border-amber-200'
     : 'text-[#138808] bg-[#e8f5e9] border-green-200';
+
+  const showActive = !!activeShare;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -168,8 +224,8 @@ export default function ShareDocModal({
             <p className="text-sm font-semibold text-slate-800 truncate">{documentName}</p>
           </div>
 
-          {!shareUrl ? (
-            /* ── Step 1: Configure share ── */
+          {!showActive ? (
+            /* ── Step 1: Configure new share ── */
             <>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
@@ -193,40 +249,34 @@ export default function ShareDocModal({
                 </Label>
                 <div className="flex gap-2">
                   {DURATIONS.map((d) => (
-                    <button
-                      key={d.value}
-                      onClick={() => setDuration(d.value)}
+                    <button key={d.value} onClick={() => setDuration(d.value)}
                       className={`flex-1 py-2 text-xs font-semibold border rounded-sm transition-colors ${
                         duration === d.value
                           ? 'bg-[#003580] text-white border-[#003580]'
                           : 'bg-white text-slate-700 border-slate-300 hover:border-[#003580]'
                       }`}
-                    >
-                      {d.label}
-                    </button>
+                    >{d.label}</button>
                   ))}
                 </div>
               </div>
 
               <div className="p-3 bg-[#fff8e1] border-l-4 border-[#f9a825]">
                 <p className="text-xs text-[#5d4037]">
-                  <strong>Important:</strong> This link expires after {duration} hour{duration > 1 ? 's' : ''}.
-                  You can revoke access at any time from this dialog.
+                  <strong>Note:</strong> The link stays active until it expires or you revoke it.
+                  Closing this dialog does not stop the share.
                 </p>
               </div>
 
-              <Button
-                onClick={handleCreate}
-                disabled={loading || pin.length < 4}
+              <Button onClick={handleCreate} disabled={loading || pin.length < 4}
                 className="w-full bg-[#003580] hover:bg-[#002060] text-white font-semibold rounded-sm"
               >
                 {loading ? 'Generating…' : <><QrCode className="h-4 w-4 mr-2" /> Generate QR Code</>}
               </Button>
             </>
           ) : (
-            /* ── Step 2: QR display + timer + revoke ── */
+            /* ── Step 2: Active share — timer + QR + revoke ── */
             <>
-              {/* Countdown timer */}
+              {/* Countdown */}
               <div className={`flex items-center justify-between px-3 py-2 border rounded-sm ${countdownColor}`}>
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 shrink-0" />
@@ -239,11 +289,11 @@ export default function ShareDocModal({
                 </span>
               </div>
 
-              {/* QR code */}
+              {/* QR or expired state */}
               {!expired && !revoked ? (
                 <div className="flex flex-col items-center gap-2 py-1">
                   <div className="p-3 bg-white border-2 border-[#003580] rounded-sm inline-block">
-                    <QRCode data={shareUrl} size={170} errorCorrectionLevel="M" />
+                    <QRCode data={activeShare.shareUrl} size={170} errorCorrectionLevel="M" />
                   </div>
                   <div className="flex items-center justify-center gap-1.5 text-[#138808]">
                     <CheckCircle className="h-4 w-4" />
@@ -261,18 +311,12 @@ export default function ShareDocModal({
                 </div>
               )}
 
-              {/* Link copy (disabled after expiry) */}
+              {/* Link copy */}
               <div className="flex gap-2">
-                <Input
-                  value={shareUrl}
-                  readOnly
-                  disabled={expired || revoked}
-                  className={`text-xs border-slate-300 rounded-sm flex-1 ${expired || revoked ? 'opacity-50 line-through' : 'bg-slate-50'}`}
+                <Input value={activeShare.shareUrl} readOnly disabled={expired || revoked}
+                  className={`text-xs border-slate-300 rounded-sm flex-1 ${expired || revoked ? 'opacity-40 line-through' : 'bg-slate-50'}`}
                 />
-                <Button
-                  onClick={copyLink}
-                  disabled={expired || revoked}
-                  variant="outline"
+                <Button onClick={copyLink} disabled={expired || revoked} variant="outline"
                   className="shrink-0 border-[#003580] text-[#003580] rounded-sm hover:bg-blue-50 disabled:opacity-40"
                 >
                   {copied ? <CheckCircle className="h-4 w-4 text-[#138808]" /> : <Copy className="h-4 w-4" />}
@@ -283,51 +327,56 @@ export default function ShareDocModal({
               {!expired && !revoked && (
                 <div className="p-3 bg-[#e8f5e9] border-l-4 border-[#138808]">
                   <p className="text-xs text-[#1b5e20]">
-                    <strong>PIN reminder:</strong> Share the PIN <strong>{'•'.repeat(pin.length)}</strong> separately from the QR link.
+                    <strong>PIN reminder:</strong> The PIN you set is <strong>{'•'.repeat(activeShare.pinLength)}</strong> ({activeShare.pinLength} digits).
+                    Share it separately from the QR link. Closing this dialog keeps the link active.
                   </p>
                 </div>
               )}
 
-              {/* Revoke / confirm revoke */}
+              {/* Revoke button */}
               {!expired && !revoked && (
-                <>
-                  {!confirmRevoke ? (
-                    <button
-                      onClick={() => setConfirmRevoke(true)}
-                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-sm hover:bg-red-50 transition-colors"
-                    >
-                      <StopCircle className="h-3.5 w-3.5" /> Revoke Access Now
-                    </button>
-                  ) : (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-sm space-y-2">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                        <p className="text-xs text-red-700 font-semibold">
-                          Immediately block all access to this share link? This cannot be undone.
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleRevoke}
-                          disabled={revoking}
-                          className="flex-1 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-sm transition-colors disabled:opacity-60"
-                        >
-                          {revoking ? 'Revoking…' : 'Yes, Revoke Now'}
-                        </button>
-                        <button
-                          onClick={() => setConfirmRevoke(false)}
-                          className="flex-1 py-1.5 text-xs font-semibold border border-slate-300 rounded-sm hover:bg-slate-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                !confirmRevoke ? (
+                  <button onClick={() => setConfirmRevoke(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-sm hover:bg-red-50 transition-colors"
+                  >
+                    <StopCircle className="h-3.5 w-3.5" /> Revoke Access Now
+                  </button>
+                ) : (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-sm space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                      <p className="text-xs text-red-700 font-semibold">
+                        Immediately block all access? Anyone currently viewing will lose access too.
+                      </p>
                     </div>
-                  )}
-                </>
+                    <div className="flex gap-2">
+                      <button onClick={handleRevoke} disabled={revoking}
+                        className="flex-1 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-sm disabled:opacity-60"
+                      >
+                        {revoking ? 'Revoking…' : 'Yes, Revoke Now'}
+                      </button>
+                      <button onClick={() => setConfirmRevoke(false)}
+                        className="flex-1 py-1.5 text-xs font-semibold border border-slate-300 rounded-sm hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
+
+              {/* Create new share after expiry/revoke */}
+              {(expired || revoked) && (
+                <button
+                  onClick={() => { setActiveShare(null); setExpired(false); setRevoked(false); }}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-[#003580] border border-[#003580] rounded-sm hover:bg-blue-50 transition-colors"
+                >
+                  <QrCode className="h-3.5 w-3.5" /> Create New Share Link
+                </button>
               )}
 
               <Button onClick={handleClose} variant="outline" className="w-full border-slate-300 rounded-sm text-sm">
-                {expired || revoked ? 'Close' : 'Done (link stays active)'}
+                {expired || revoked ? 'Close' : 'Close (link stays active)'}
               </Button>
             </>
           )}
