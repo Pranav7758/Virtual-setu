@@ -12,14 +12,17 @@ Virtual Setu is an official Indian government-style secure document management p
 - **State**: TanStack Query v5 + React Context for auth
 - **Forms**: React Hook Form + Zod
 
-### Backend (Express + TypeScript)
-- **API Server**: Express on port 3001 (`server/index.ts`)
-- **Routes**:
-  - `POST /api/create-order` — Creates Razorpay payment orders
-  - `POST /api/verify-payment` — Verifies Razorpay signatures, updates Supabase plan
-  - `POST /api/delete-document` — Secure server-side document deletion
-  - `POST /api/create-doc-share` — Creates time-limited PIN-protected single-document share token (in-memory store with TTL)
-  - `POST /api/get-doc-share` — Validates share token + PIN, returns signed document URL
+### Backend (Express for dev / Vercel Serverless for production)
+- **Dev API Server**: Express on port 3001 (`server/index.ts`) — used in Replit only
+- **Production API**: Vercel Serverless Functions in `api/` directory (one file per route)
+  - `api/create-order.ts` — POST /api/create-order — Creates Razorpay payment orders
+  - `api/verify-payment.ts` — POST /api/verify-payment — Verifies Razorpay signatures, updates Supabase plan
+  - `api/delete-document.ts` — POST /api/delete-document — Secure server-side document deletion
+  - `api/create-doc-share.ts` — POST /api/create-doc-share — Creates time-limited PIN-protected share token (stored in Supabase `doc_shares` table)
+  - `api/get-doc-share.ts` — POST /api/get-doc-share — Validates share token + PIN, returns signed document URL
+  - `api/revoke-doc-share.ts` — POST /api/revoke-doc-share — Revokes a share token
+  - `api/_shared.ts` — Shared helpers (Supabase client, Razorpay, doc signed URL) — NOT a serverless function
+- **Share store**: Previously in-memory (broken on Vercel) → now persisted in Supabase `doc_shares` table
 
 ### Database & Auth
 - **Supabase**: Auth (email/password + OTP), PostgreSQL DB, File Storage
@@ -79,9 +82,31 @@ Virtual Setu is an official Indian government-style secure document management p
 | `/i/:uid` | Share | All-documents public share view |
 | `/s/:token` | ShareSingle | Per-document emergency share (PIN protected, time-limited) |
 
-## Workflows
+## Workflows (Replit dev only)
 - **Start application**: `npm run dev` → port 5000 (Vite frontend)
 - **API server**: `npm run server` → port 3001 (Express backend)
+
+## Vercel Deployment
+- **Build command**: `npm run build`
+- **Output directory**: `dist`
+- **Framework**: Vite
+- **API**: `api/*.ts` files auto-detected as Node.js serverless functions (maxDuration: 30s)
+- **SPA routing**: catch-all rewrite `/(.*) → /index.html` in `vercel.json`
+- **Excluded files**: `server/`, `supabase/`, `.local/` (via `.vercelignore`)
+- **Required migration**: Run `supabase/migrations/20260502000002_doc_shares.sql` in Supabase SQL Editor before deploying
+
+### Vercel Environment Variables (set in Vercel dashboard)
+| Variable | Where used | Notes |
+|----------|-----------|-------|
+| `RAZORPAY_KEY_ID` | Server (api/) | Secret — never expose to client |
+| `RAZORPAY_KEY_SECRET` | Server (api/) | Secret — never expose to client |
+| `SUPABASE_API_KEY` | Server (api/) | Service role key — never expose to client |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server (api/) | Fallback for SUPABASE_API_KEY |
+| `VITE_SUPABASE_URL` | Server + Client | Used by both api/ functions and frontend |
+| `VITE_SUPABASE_ANON_KEY` | Client (bundled) | Public anon key |
+| `VITE_GROQ_API_KEY` | Client (bundled) | AI features |
+| `VITE_RAZORPAY_KEY_ID` | Client (bundled) | Razorpay checkout modal |
+| `VITE_SCRAPER_API_KEY` | Client (bundled) | Smart checklist scraping |
 
 ## Environment Secrets
 - `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` — Razorpay payment keys (server-only)
