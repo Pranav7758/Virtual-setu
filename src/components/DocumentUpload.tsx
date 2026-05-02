@@ -224,8 +224,18 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
       return;
     }
 
-    if (!result.isValid) {
-      toast.error(result.message);
+    // Second-layer safety net: catch any case where AI returned isValid:true
+    // but the message itself describes a fake/sample/non-genuine document.
+    const msgLower = (result.message ?? '').toLowerCase();
+    const RED_FLAGS = [
+      'sample', 'specimen', 'fake', 'not genuine', 'not real', 'not authentic',
+      'not a genuine', 'not an authentic', 'illustrative', 'template', 'demo',
+      'watermark', 'immihelp', 'not valid', 'not issued', 'not official', 'placeholder',
+    ];
+    const forceFailed = RED_FLAGS.some((f) => msgLower.includes(f));
+
+    if (!result.isValid || forceFailed) {
+      toast.error(result.message || 'This document could not be verified. Please upload a genuine document.');
       return;
     }
 

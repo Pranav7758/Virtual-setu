@@ -177,6 +177,29 @@ export async function verifyDocument(
     if (selectedType === 'other') {
       return { ...parsed, isValid: true, detectedType: parsed.detectedType || 'Other' };
     }
+
+    // Safety net: if the AI message contains authenticity red-flag words but
+    // still returned isValid: true, force-reject. This handles cases where the
+    // model correctly describes the problem in the message but forgets to flip
+    // isValid to false.
+    const msg = (parsed.message ?? '').toLowerCase();
+    const RED_FLAGS = [
+      'sample', 'specimen', 'fake', 'not genuine', 'not real', 'not authentic',
+      'not a genuine', 'not an authentic', 'not a real', 'illustrative',
+      'template', 'demo', 'test document', 'example document', 'watermark',
+      'immihelp', 'sampledoc', 'for illustration', 'not valid', 'invalid document',
+      'appear to be a sample', 'appears to be a sample', 'appears to be fake',
+      'not issued', 'not official', 'tutorial', 'placeholder',
+    ];
+    const flagged = RED_FLAGS.some((flag) => msg.includes(flag));
+    if (flagged && parsed.isValid) {
+      return {
+        ...parsed,
+        isValid: false,
+        message: parsed.message,
+      };
+    }
+
     return parsed;
   } catch {
     throw new Error('Unexpected response format from AI. Please try again.');
