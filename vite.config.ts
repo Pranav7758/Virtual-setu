@@ -33,7 +33,8 @@ function apiPlugin(_env: Record<string, string>): Plugin {
   const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
   const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  // SUPABASE_API_KEY is the actual service role key in this project
+  const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!;
 
   const PLAN_PRICES: Record<string, number> = {
     premium: 29900,
@@ -235,7 +236,6 @@ function apiPlugin(_env: Record<string, string>): Plugin {
               Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
               'Content-Type': 'application/json',
             };
-            // 'Prefer: return=minimal' suppresses row data — only use it for writes
             const writeHeaders = { ...baseHeaders, Prefer: 'return=minimal' };
 
             // Verify ownership (no Prefer header so rows are actually returned)
@@ -243,6 +243,10 @@ function apiPlugin(_env: Record<string, string>): Plugin {
               `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}&select=id`,
               { headers: baseHeaders }
             );
+            if (!checkRes.ok) {
+              const err = await checkRes.text();
+              throw new Error(`Supabase auth error: ${checkRes.status} ${err}`);
+            }
             const rows = await checkRes.json();
             if (!Array.isArray(rows) || rows.length === 0) {
               res.writeHead(403, { 'Content-Type': 'application/json' });
