@@ -237,6 +237,20 @@ app.post('/api/create-doc-share', async (req, res) => {
   }
 });
 
+/* ── POST /api/revoke-doc-share ── */
+app.post('/api/revoke-doc-share', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token || !shareStore.has(token)) {
+      return res.status(404).json({ error: 'Share not found' });
+    }
+    shareStore.delete(token);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 /* ── POST /api/get-doc-share ── */
 app.post('/api/get-doc-share', async (req, res) => {
   try {

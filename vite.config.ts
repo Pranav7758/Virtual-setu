@@ -203,6 +203,21 @@ function apiPlugin(_env: Record<string, string>): Plugin {
           return;
         }
 
+        /* ---------- POST /api/revoke-doc-share ---------- */
+        if (isPost && req.url === '/api/revoke-doc-share') {
+          try {
+            const { token } = await parseJsonBody(req);
+            if (!token || !shareStore.has(token)) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Share not found' })); return; }
+            shareStore.delete(token);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
         if (!isPost) return next();
 
         /* ---------- POST /api/create-order ---------- */
