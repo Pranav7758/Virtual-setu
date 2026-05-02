@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, Trash2, CheckCircle, AlertCircle, Crown, LogIn, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,44 +8,6 @@ import { ActivityEntry, ActivityType, getActivityLog, clearActivityLog } from '@
 interface ActivityLogProps {
   userId: string;
 }
-
-const META: Record<ActivityType, { icon: React.ReactNode; label: string; color: string }> = {
-  upload_success: {
-    icon: <Upload className="h-4 w-4" />,
-    label: 'Uploaded',
-    color: 'bg-blue-50 text-[#0B3D91] border-blue-200',
-  },
-  upload_failed: {
-    icon: <Upload className="h-4 w-4" />,
-    label: 'Upload Failed',
-    color: 'bg-red-50 text-red-700 border-red-200',
-  },
-  verify_success: {
-    icon: <CheckCircle className="h-4 w-4" />,
-    label: 'Verified',
-    color: 'bg-green-50 text-[#138808] border-green-200',
-  },
-  verify_failed: {
-    icon: <AlertCircle className="h-4 w-4" />,
-    label: 'Rejected',
-    color: 'bg-red-50 text-red-700 border-red-200',
-  },
-  document_deleted: {
-    icon: <Trash2 className="h-4 w-4" />,
-    label: 'Deleted',
-    color: 'bg-slate-50 text-slate-600 border-slate-200',
-  },
-  plan_upgraded: {
-    icon: <Crown className="h-4 w-4" />,
-    label: 'Plan Upgraded',
-    color: 'bg-amber-50 text-amber-700 border-amber-200',
-  },
-  login: {
-    icon: <LogIn className="h-4 w-4" />,
-    label: 'Signed In',
-    color: 'bg-slate-50 text-slate-600 border-slate-200',
-  },
-};
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -59,7 +22,18 @@ function formatRelative(iso: string): string {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+const ICON_MAP: Record<ActivityType, { icon: React.ReactNode; color: string }> = {
+  upload_success:   { icon: <Upload className="h-4 w-4" />,       color: 'bg-blue-50 text-[#0B3D91] border-blue-200' },
+  upload_failed:    { icon: <Upload className="h-4 w-4" />,       color: 'bg-red-50 text-red-700 border-red-200' },
+  verify_success:   { icon: <CheckCircle className="h-4 w-4" />,  color: 'bg-green-50 text-[#138808] border-green-200' },
+  verify_failed:    { icon: <AlertCircle className="h-4 w-4" />,  color: 'bg-red-50 text-red-700 border-red-200' },
+  document_deleted: { icon: <Trash2 className="h-4 w-4" />,       color: 'bg-slate-50 text-slate-600 border-slate-200' },
+  plan_upgraded:    { icon: <Crown className="h-4 w-4" />,        color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  login:            { icon: <LogIn className="h-4 w-4" />,        color: 'bg-slate-50 text-slate-600 border-slate-200' },
+};
+
 export default function ActivityLog({ userId }: ActivityLogProps) {
+  const { t } = useTranslation('common');
   const [entries, setEntries] = useState<ActivityEntry[]>(() => getActivityLog(userId));
 
   const refresh = () => setEntries(getActivityLog(userId));
@@ -69,12 +43,25 @@ export default function ActivityLog({ userId }: ActivityLogProps) {
     setEntries([]);
   };
 
+  const getActivityLabel = (type: ActivityType) => {
+    const map: Record<ActivityType, string> = {
+      upload_success:   t('actions.upload'),
+      upload_failed:    t('errors.upload_failed'),
+      verify_success:   t('status.verified'),
+      verify_failed:    t('status.rejected'),
+      document_deleted: t('actions.delete'),
+      plan_upgraded:    t('actions.upgrade'),
+      login:            t('auth.sign_in'),
+    };
+    return map[type] || type;
+  };
+
   if (entries.length === 0) {
     return (
       <div className="text-center py-10 px-4">
         <RefreshCw className="h-8 w-8 text-slate-300 mx-auto mb-3" />
-        <p className="text-sm font-medium text-slate-600">No activity yet</p>
-        <p className="text-xs text-slate-400 mt-1">Your uploads, verifications, and deletions will appear here.</p>
+        <p className="text-sm font-medium text-slate-600">{t('dashboard.no_documents')}</p>
+        <p className="text-xs text-slate-400 mt-1">{t('dashboard.activity_subtitle')}</p>
       </div>
     );
   }
@@ -82,19 +69,19 @@ export default function ActivityLog({ userId }: ActivityLogProps) {
   return (
     <div>
       <div className="flex items-center justify-between px-5 py-2 border-b border-slate-100">
-        <p className="text-xs text-slate-500">{entries.length} recent event{entries.length !== 1 ? 's' : ''}</p>
+        <p className="text-xs text-slate-500">{entries.length} {t('dashboard.activity_log').toLowerCase()}</p>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-slate-500" onClick={refresh}>
-            <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+            <RefreshCw className="h-3 w-3 mr-1" /> {t('actions.view')}
           </Button>
           <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-red-500 hover:text-red-600" onClick={handleClear}>
-            Clear
+            {t('actions.delete')}
           </Button>
         </div>
       </div>
       <ul className="divide-y divide-slate-100">
         {entries.map((entry) => {
-          const meta = META[entry.type];
+          const meta = ICON_MAP[entry.type];
           return (
             <li key={entry.id} className="flex items-start gap-3 px-5 py-3">
               <div className={`mt-0.5 flex items-center justify-center w-7 h-7 rounded-full border shrink-0 ${meta.color}`}>
@@ -104,7 +91,7 @@ export default function ActivityLog({ userId }: ActivityLogProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-slate-900 truncate">{entry.title}</span>
                   <Badge variant="outline" className={`text-xs shrink-0 ${meta.color}`}>
-                    {meta.label}
+                    {getActivityLabel(entry.type)}
                   </Badge>
                 </div>
                 {entry.description && (

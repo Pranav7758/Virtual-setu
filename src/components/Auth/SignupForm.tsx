@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ interface SignupFormProps {
 }
 
 export default function SignupForm({ onSuccess }: SignupFormProps) {
+  const { t } = useTranslation('common');
   const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -75,7 +77,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           <Shield className="h-8 w-8 text-[#138808]" />
         </div>
         <div>
-          <h3 className="font-semibold text-lg">Check your email</h3>
+          <h3 className="font-semibold text-lg">{t('auth.need_help')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
             We sent a verification link to <strong>{form.email}</strong>.<br />
             Click it to activate your account and sign in.
@@ -91,7 +93,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-name" className="flex items-center space-x-2">
           <User className="h-4 w-4 text-[#0B3D91]" />
-          <span>Full Name</span>
+          <span>{t('auth.full_name')}</span>
         </Label>
         <Input
           id="signup-name"
@@ -110,7 +112,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-email" className="flex items-center space-x-2">
           <Mail className="h-4 w-4 text-[#0B3D91]" />
-          <span>Email Address</span>
+          <span>{t('auth.email')}</span>
         </Label>
         <Input
           id="signup-email"
@@ -129,7 +131,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-phone" className="flex items-center space-x-2">
           <Phone className="h-4 w-4 text-[#0B3D91]" />
-          <span>Phone Number</span>
+          <span>{t('auth.phone')}</span>
         </Label>
         <Input
           id="signup-phone"
@@ -148,7 +150,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-password" className="flex items-center space-x-2">
           <Lock className="h-4 w-4 text-[#0B3D91]" />
-          <span>Password</span>
+          <span>{t('auth.password')}</span>
         </Label>
         <div className="relative mt-1">
           <Input
@@ -176,7 +178,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-confirm" className="flex items-center space-x-2">
           <Lock className="h-4 w-4 text-[#0B3D91]" />
-          <span>Confirm Password</span>
+          <span>{t('auth.confirm_password')}</span>
         </Label>
         <Input
           id="signup-confirm"
@@ -195,7 +197,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       <div>
         <Label htmlFor="signup-pin" className="flex items-center space-x-2">
           <Shield className="h-4 w-4 text-[#0B3D91]" />
-          <span>4-Digit Security PIN</span>
+          <span>{t('auth.pin_label')}</span>
         </Label>
         <Input
           id="signup-pin"
@@ -210,9 +212,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91] tracking-widest text-center text-lg"
           placeholder="••••"
         />
-        <p className="text-xs text-muted-foreground mt-1">
-          Used for emergency document sharing access
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{t('auth.pin_hint')}</p>
       </div>
 
       <Button
@@ -222,8 +222,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         disabled={isLoading}
       >
         {isLoading
-          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating Account…</>
-          : 'Create Account'}
+          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('auth.creating')}</>
+          : t('auth.create_account')}
       </Button>
     </form>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 type LoginView = 'login' | 'forgot';
 
 export default function LoginForm() {
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { signIn } = useAuth();
 
@@ -78,10 +80,8 @@ export default function LoginForm() {
           <div className="mx-auto w-fit p-3 bg-blue-50 rounded-xl mb-3">
             <KeyRound className="h-6 w-6 text-[#0B3D91]" />
           </div>
-          <h3 className="font-semibold text-lg">Reset your password</h3>
-          <p className="text-sm text-muted-foreground">
-            Enter your email and we'll send you a reset link
-          </p>
+          <h3 className="font-semibold text-lg">{t('auth.reset_password')}</h3>
+          <p className="text-sm text-muted-foreground">{t('auth.reset_subtitle')}</p>
         </div>
 
         {resetSent ? (
@@ -91,10 +91,10 @@ export default function LoginForm() {
             </div>
             <Button
               variant="outline"
-              className="w-full border-border/20"
+              className="w-full"
               onClick={() => { setView('login'); setResetSent(false); setResetEmail(''); }}
             >
-              Back to Sign In
+              {t('auth.back_to_sign_in')}
             </Button>
           </div>
         ) : (
@@ -102,7 +102,7 @@ export default function LoginForm() {
             <div>
               <Label htmlFor="reset-email" className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-[#0B3D91]" />
-                <span>Email Address</span>
+                <span>{t('auth.email')}</span>
               </Label>
               <Input
                 id="reset-email"
@@ -120,14 +120,16 @@ export default function LoginForm() {
               size="lg"
               disabled={isLoading}
             >
-              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</> : 'Send Reset Link'}
+              {isLoading
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('auth.sending')}</>
+                : t('auth.send_reset_link')}
             </Button>
             <button
               type="button"
               onClick={() => setView('login')}
               className="w-full text-sm text-muted-foreground hover:text-[#0B3D91] transition-colors"
             >
-              ← Back to Sign In
+              {t('auth.back_to_sign_in')}
             </button>
           </form>
         )}
@@ -140,7 +142,7 @@ export default function LoginForm() {
       <div>
         <Label htmlFor="login-email" className="flex items-center space-x-2">
           <Mail className="h-4 w-4 text-[#0B3D91]" />
-          <span>Email Address</span>
+          <span>{t('auth.email')}</span>
         </Label>
         <Input
           id="login-email"
@@ -158,14 +160,14 @@ export default function LoginForm() {
         <div className="flex items-center justify-between">
           <Label htmlFor="login-password" className="flex items-center space-x-2">
             <Lock className="h-4 w-4 text-[#0B3D91]" />
-            <span>Password</span>
+            <span>{t('auth.password')}</span>
           </Label>
           <button
             type="button"
             onClick={() => setView('forgot')}
             className="text-xs text-[#0B3D91] hover:underline underline-offset-2"
           >
-            Forgot password?
+            {t('auth.forgot_password')}
           </button>
         </div>
         <div className="relative mt-1">
@@ -177,7 +179,7 @@ export default function LoginForm() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="bg-white border-slate-300 focus:border-[#0B3D91] pr-10"
-            placeholder="Enter your password"
+            placeholder="••••••••"
           />
           <button
             type="button"
@@ -195,7 +197,9 @@ export default function LoginForm() {
         size="lg"
         disabled={isLoading}
       >
-        {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing In…</> : 'Sign In'}
+        {isLoading
+          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('auth.signing_in')}</>
+          : t('auth.sign_in')}
       </Button>
     </form>
   );

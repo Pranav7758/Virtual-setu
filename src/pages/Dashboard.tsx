@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,7 @@ function PlanBadge({ plan }: { plan: string }) {
 const VALID_TABS = ['overview', 'documents', 'checklist', 'digital-id', 'profile'];
 
 export default function Dashboard() {
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,7 +82,6 @@ export default function Dashboard() {
     if (!user) { navigate('/auth'); return; }
     fetchProfile().catch(console.error);
     fetchDocuments().catch(console.error);
-    // Log sign-in once per session (only if not already logged in last 10 min)
     const lastLogin = sessionStorage.getItem('vs_last_login');
     if (!lastLogin) {
       logActivity(user.id, { type: 'login', title: 'Signed in', description: `Logged in as ${user.email}` });
@@ -110,15 +111,20 @@ export default function Dashboard() {
     s === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
     'bg-amber-50 text-amber-700 border-amber-200';
 
+  const getStatusLabel = (s: string) =>
+    s === 'verified' ? t('status.verified') :
+    s === 'rejected' ? t('status.rejected') :
+    t('status.pending');
+
   const docLimit = limits.maxDocuments === Infinity ? '∞' : limits.maxDocuments;
   const uploadAllowed = canUploadDocument(documents.length);
 
   const sectionTitle: Record<string, string> = {
-    overview: 'Dashboard Overview',
-    documents: 'My Documents',
-    checklist: 'Document Checklist',
-    'digital-id': 'Digital ID Card',
-    profile: 'My Profile',
+    overview:   t('dashboard.overview'),
+    documents:  t('dashboard.documents'),
+    checklist:  t('dashboard.checklist'),
+    'digital-id': t('dashboard.digital_id'),
+    profile:    t('dashboard.profile'),
   };
 
   if (loading) {
@@ -147,7 +153,7 @@ export default function Dashboard() {
           {plan === 'free' && (
             <Link to="/pricing">
               <Button size="sm" className="bg-[#0B3D91] hover:bg-[#082c6c] text-white">
-                <Zap className="h-4 w-4 mr-1" /> Upgrade Plan
+                <Zap className="h-4 w-4 mr-1" /> {t('actions.upgrade')}
               </Button>
             </Link>
           )}
@@ -161,11 +167,11 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <p className="text-sm text-amber-800">You've reached the 5-document limit on the Free plan.</p>
+                    <p className="text-sm text-amber-800">{t('dashboard.limit_message', { count: limits.maxDocuments })}</p>
                   </div>
                   <Link to="/pricing">
                     <Button size="sm" className="bg-[#0B3D91] hover:bg-[#082c6c] text-white">
-                      <Zap className="h-4 w-4 mr-1" /> Upgrade
+                      <Zap className="h-4 w-4 mr-1" /> {t('actions.upgrade')}
                     </Button>
                   </Link>
                 </div>
@@ -190,9 +196,7 @@ export default function Dashboard() {
                 const rec = getExpiry(user.id, doc.id);
                 return getExpiryStatus(rec?.expiryDate) === 'critical';
               });
-              const bannerClass = hasExpired || hasCritical
-                ? 'border-red-200 bg-red-50'
-                : 'border-amber-200 bg-amber-50';
+              const bannerClass = hasExpired || hasCritical ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50';
               const iconColor = hasExpired || hasCritical ? 'text-red-600' : 'text-amber-600';
               const textColor = hasExpired || hasCritical ? 'text-red-800' : 'text-amber-800';
               return (
@@ -202,7 +206,7 @@ export default function Dashboard() {
                       <AlertCircle className={`h-5 w-5 mt-0.5 shrink-0 ${iconColor}`} />
                       <div className="flex-1">
                         <p className={`font-semibold text-sm ${textColor}`}>
-                          {hasExpired ? 'Document(s) Expired' : 'Document(s) Expiring Soon'}
+                          {hasExpired ? t('status.expired') : t('status.valid')}
                         </p>
                         <ul className="mt-1 space-y-0.5">
                           {expiring.map((doc) => {
@@ -226,11 +230,28 @@ export default function Dashboard() {
               );
             })()}
 
+            {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: FileText, label: 'Documents', value: `${documents.length} / ${docLimit}`, sub: 'Total uploaded' },
-                { icon: CheckCircle, label: 'Verified', value: documents.filter(d => d.verification_status === 'verified').length.toString(), sub: 'Documents verified' },
-                { icon: Shield, label: 'Plan', value: plan, sub: plan === 'free' ? 'Free tier' : 'Active subscription', cap: true },
+                {
+                  icon: FileText,
+                  label: t('dashboard.total_documents'),
+                  value: `${documents.length} / ${docLimit}`,
+                  sub: t('upload.title'),
+                },
+                {
+                  icon: CheckCircle,
+                  label: t('dashboard.verified_documents'),
+                  value: documents.filter(d => d.verification_status === 'verified').length.toString(),
+                  sub: t('status.verified'),
+                },
+                {
+                  icon: Shield,
+                  label: t('dashboard.plan_label'),
+                  value: t(`plan.${plan}`, plan),
+                  sub: plan === 'free' ? t('plan.free') : t('status.active'),
+                  cap: true,
+                },
               ].map((s, i) => (
                 <GovCard key={i} className="p-5">
                   <div className="flex items-center gap-2 text-[#0B3D91]">
@@ -243,21 +264,22 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {/* Recent Documents */}
             <GovCard>
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                <p className="font-semibold text-slate-900 text-sm">Recent Documents</p>
-                <p className="text-xs text-slate-500">Your latest uploaded documents and their verification status</p>
+                <p className="font-semibold text-slate-900 text-sm">{t('dashboard.recent_documents')}</p>
+                <p className="text-xs text-slate-500">{t('dashboard.recent_subtitle')}</p>
               </div>
               {documents.length === 0 ? (
                 <div className="text-center py-10 px-4">
                   <FileText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                  <p className="font-medium text-slate-700">No documents yet</p>
-                  <p className="text-sm text-slate-500 mb-4">Upload your first document to get started.</p>
+                  <p className="font-medium text-slate-700">{t('dashboard.no_documents')}</p>
+                  <p className="text-sm text-slate-500 mb-4">{t('dashboard.upload_first')}</p>
                   <Button
                     className="bg-[#0B3D91] hover:bg-[#082c6c] text-white"
                     onClick={() => setSearchParams({ tab: 'documents' })}
                   >
-                    <Upload className="h-4 w-4 mr-2" /> Upload Document
+                    <Upload className="h-4 w-4 mr-2" /> {t('actions.upload')}
                   </Button>
                 </div>
               ) : (
@@ -268,12 +290,12 @@ export default function Dashboard() {
                         <FileText className="h-6 w-6 text-[#0B3D91] shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium text-slate-900 text-sm truncate">{doc.document_name}</p>
-                          <p className="text-xs text-slate-500 capitalize">{doc.document_type.replace('_', ' ')}</p>
+                          <p className="text-xs text-slate-500 capitalize">{doc.document_type.replace(/_/g, ' ')}</p>
                         </div>
                       </div>
                       <Badge variant="outline" className={getStatusColor(doc.verification_status)}>
                         {getStatusIcon(doc.verification_status)}
-                        <span className="ml-1 capitalize">{doc.verification_status}</span>
+                        <span className="ml-1">{getStatusLabel(doc.verification_status)}</span>
                       </Badge>
                     </li>
                   ))}
@@ -281,15 +303,16 @@ export default function Dashboard() {
               )}
             </GovCard>
 
+            {/* Upgrade banner */}
             {plan === 'free' && (
               <GovCard className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-blue-200 bg-blue-50/40">
                 <div>
-                  <p className="font-semibold text-slate-900">Unlock more with Premium</p>
-                  <p className="text-sm text-slate-600">100 documents, QR sharing, full AI assistant and more — from ₹299/year.</p>
+                  <p className="font-semibold text-slate-900">{t('dashboard.upgrade_banner')}</p>
+                  <p className="text-sm text-slate-600">{t('dashboard.upgrade_message')}</p>
                 </div>
                 <Link to="/pricing">
                   <Button className="bg-[#0B3D91] hover:bg-[#082c6c] text-white whitespace-nowrap">
-                    <Zap className="h-4 w-4 mr-2" /> View Plans
+                    <Zap className="h-4 w-4 mr-2" /> {t('actions.view_plans')}
                   </Button>
                 </Link>
               </GovCard>
@@ -298,8 +321,8 @@ export default function Dashboard() {
             {/* Activity Log */}
             <GovCard>
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                <p className="font-semibold text-slate-900 text-sm">Activity Log</p>
-                <p className="text-xs text-slate-500">Recent actions on your account — uploads, verifications, deletions</p>
+                <p className="font-semibold text-slate-900 text-sm">{t('dashboard.activity_log')}</p>
+                <p className="text-xs text-slate-500">{t('dashboard.activity_subtitle')}</p>
               </div>
               <ActivityLog userId={user?.id || ''} />
             </GovCard>
@@ -314,11 +337,11 @@ export default function Dashboard() {
             ) : (
               <GovCard className="p-8 text-center space-y-3">
                 <Lock className="h-10 w-10 text-amber-600 mx-auto" />
-                <p className="font-semibold text-slate-900">Upload Limit Reached</p>
-                <p className="text-sm text-slate-600">You've used all {limits.maxDocuments} document slots on the Free plan.</p>
+                <p className="font-semibold text-slate-900">{t('dashboard.upload_limit_reached')}</p>
+                <p className="text-sm text-slate-600">{t('dashboard.limit_message', { count: limits.maxDocuments })}</p>
                 <Link to="/pricing">
                   <Button className="bg-[#0B3D91] hover:bg-[#082c6c] text-white">
-                    <Zap className="h-4 w-4 mr-2" /> Upgrade to Upload More
+                    <Zap className="h-4 w-4 mr-2" /> {t('actions.upgrade')}
                   </Button>
                 </Link>
               </GovCard>
@@ -334,8 +357,8 @@ export default function Dashboard() {
         {activeTab === 'digital-id' && (
           <GovCard>
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-              <p className="font-semibold text-slate-900 text-sm">Digital ID Card</p>
-              <p className="text-xs text-slate-500">Your secure digital identity card — print or download as PDF</p>
+              <p className="font-semibold text-slate-900 text-sm">{t('dashboard.digital_id')}</p>
+              <p className="text-xs text-slate-500">{t('nav.digital_id')}</p>
             </div>
             <div className="flex justify-center py-6 px-4">
               <DigitalIDCard
@@ -364,15 +387,15 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <GovCard>
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                <p className="font-semibold text-slate-900 text-sm">Personal Information</p>
-                <p className="text-xs text-slate-500">Your account details and contact information</p>
+                <p className="font-semibold text-slate-900 text-sm">{t('profile.title')}</p>
+                <p className="text-xs text-slate-500">{t('profile.subtitle')}</p>
               </div>
               <div className="p-5 space-y-4">
                 {[
-                  { label: 'Full Name', value: profile?.full_name || 'Not provided' },
-                  { label: 'Email Address', value: user?.email },
-                  { label: 'Phone Number', value: profile?.phone || 'Not provided' },
-                  { label: 'Member Since', value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown' },
+                  { label: t('profile.full_name'),    value: profile?.full_name || t('profile.not_provided') },
+                  { label: t('profile.email'),         value: user?.email },
+                  { label: t('profile.phone'),         value: profile?.phone || t('profile.not_provided') },
+                  { label: t('profile.member_since'),  value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '—' },
                 ].map((f) => (
                   <div key={f.label}>
                     <Label className="text-xs uppercase tracking-wider text-slate-500">{f.label}</Label>
@@ -384,22 +407,22 @@ export default function Dashboard() {
 
             <GovCard>
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                <p className="font-semibold text-slate-900 text-sm">Security &amp; Plan</p>
-                <p className="text-xs text-slate-500">Your security preferences and subscription</p>
+                <p className="font-semibold text-slate-900 text-sm">{t('profile.security_title')}</p>
+                <p className="text-xs text-slate-500">{t('profile.subtitle')}</p>
               </div>
               <div className="p-5 space-y-3">
                 <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
                   <div>
-                    <p className="font-medium text-slate-900 text-sm">Current Plan</p>
+                    <p className="font-medium text-slate-900 text-sm">{t('profile.current_plan')}</p>
                     <p className="text-xs text-slate-500 capitalize">
-                      {plan} — {plan === 'free' ? '5 documents' : plan === 'premium' ? '100 documents' : 'Unlimited'}
+                      {t(`plan.${plan}`, plan)} — {plan === 'free' ? '5 ' + t('dashboard.total_documents') : plan === 'premium' ? '100 ' + t('dashboard.total_documents') : t('plan.unlimited')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <PlanBadge plan={plan} />
                     {plan !== 'platinum' && (
                       <Link to="/pricing">
-                        <Button size="sm" variant="outline" className="border-[#0B3D91] text-[#0B3D91]">Upgrade</Button>
+                        <Button size="sm" variant="outline" className="border-[#0B3D91] text-[#0B3D91]">{t('actions.upgrade')}</Button>
                       </Link>
                     )}
                   </div>
@@ -410,7 +433,7 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-500">4-digit PIN for card access</p>
                   </div>
                   <Badge variant="outline" className="bg-green-50 text-[#138808] border-green-200">
-                    <CheckCircle className="h-3 w-3 mr-1" /> Active
+                    <CheckCircle className="h-3 w-3 mr-1" /> {t('status.active')}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border border-slate-200 rounded">
@@ -419,7 +442,9 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-500">Email address verification status</p>
                   </div>
                   <Badge variant="outline" className={user?.email_confirmed_at ? 'bg-green-50 text-[#138808] border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}>
-                    {user?.email_confirmed_at ? <><CheckCircle className="h-3 w-3 mr-1" /> Verified</> : <><Clock className="h-3 w-3 mr-1" /> Pending</>}
+                    {user?.email_confirmed_at
+                      ? <><CheckCircle className="h-3 w-3 mr-1" /> {t('status.verified')}</>
+                      : <><Clock className="h-3 w-3 mr-1" /> {t('status.pending')}</>}
                   </Badge>
                 </div>
               </div>

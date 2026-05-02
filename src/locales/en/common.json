@@ -101,6 +101,33 @@
     "member_since": "Member Since", "security_title": "Security & Plan",
     "current_plan": "Current Plan", "not_provided": "Not provided"
   },
+  "auth": {
+    "secure_auth": "Secure Authentication",
+    "sign_in": "Sign In", "new_registration": "New Registration", "otp_login": "OTP Login",
+    "email": "Email Address", "password": "Password", "forgot_password": "Forgot password?",
+    "confirm_password": "Confirm Password", "full_name": "Full Name", "phone": "Phone Number",
+    "pin_label": "4-Digit Security PIN", "pin_hint": "Used for emergency document sharing access",
+    "send_otp": "Send OTP", "resend_otp": "Resend OTP", "verify_sign_in": "Verify & Sign In",
+    "create_account": "Create Account", "signing_in": "Signing In…", "sending": "Sending…",
+    "verifying": "Verifying…", "creating": "Creating Account…",
+    "reset_password": "Reset your password",
+    "reset_subtitle": "Enter your email and we'll send you a reset link",
+    "send_reset_link": "Send Reset Link", "back_to_sign_in": "Back to Sign In",
+    "citizen_access": "Citizen Account Access",
+    "citizen_subtitle": "Sign in or register to manage your secure digital documents.",
+    "tos": "By continuing, you agree to Virtual Setu's Terms of Service and Privacy Policy. Do not share your password or PIN with anyone.",
+    "your_security": "Your Security",
+    "sec1": "End-to-end 256-bit encryption",
+    "sec2": "4-digit PIN protected document access",
+    "sec3": "Device-aware login activity logs",
+    "sec4": "OTP-based passwordless option",
+    "need_help": "Need help?",
+    "help_text": "Forgot your password or unable to log in? Visit our Help & Support section, or contact citizen support at 1800-XXX-XXXX.",
+    "otp_subtitle": "Get a one-time password sent directly to your email — no password needed.",
+    "otp_enter": "Enter the 6-digit code sent to",
+    "change_email": "← Change email",
+    "citizen_portal": "Citizen Portal · Login"
+  },
   "errors": {
     "invalid_pin": "Invalid PIN", "link_expired": "Share link not found or expired",
     "upload_failed": "Failed to upload document", "delete_failed": "Failed to delete document"

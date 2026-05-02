@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,139 +20,87 @@ interface DocumentUploadProps {
   onUploadComplete: () => void;
 }
 
-const DOCUMENT_CATEGORIES = [
+const DOCUMENT_CATEGORY_KEYS = [
   {
-    group: 'Identity',
+    groupKey: 'group_identity',
+    groupDefault: 'Identity',
     types: [
-      { value: 'aadhaar', label: 'Aadhaar Card' },
-      { value: 'pan_card', label: 'PAN Card' },
-      { value: 'voter_id', label: 'Voter ID / EPIC Card' },
-      { value: 'passport', label: 'Passport' },
-      { value: 'driving_license', label: 'Driving License' },
-      { value: 'ration_card', label: 'Ration Card' },
-      { value: 'npr_card', label: 'NPR Card (National Population Register)' },
-      { value: 'senior_citizen_card', label: 'Senior Citizen Card' },
-      { value: 'disability_certificate', label: 'Disability Certificate' },
-      { value: 'arms_license', label: 'Arms License' },
+      'aadhaar', 'pan_card', 'voter_id', 'passport', 'driving_license',
+      'ration_card', 'npr_card', 'senior_citizen_card', 'disability_certificate', 'arms_license',
     ],
   },
   {
-    group: 'Birth & Family',
+    groupKey: 'group_birth_family',
+    groupDefault: 'Birth & Family',
     types: [
-      { value: 'birth_certificate', label: 'Birth Certificate' },
-      { value: 'death_certificate', label: 'Death Certificate' },
-      { value: 'marriage_certificate', label: 'Marriage Certificate' },
-      { value: 'divorce_certificate', label: 'Divorce Certificate' },
-      { value: 'adoption_certificate', label: 'Adoption Certificate' },
-      { value: 'legal_heir_certificate', label: 'Legal Heir Certificate' },
-      { value: 'family_certificate', label: 'Family Certificate' },
+      'birth_certificate', 'death_certificate', 'marriage_certificate', 'divorce_certificate',
+      'adoption_certificate', 'legal_heir_certificate', 'family_certificate',
     ],
   },
   {
-    group: 'Education',
+    groupKey: 'group_education',
+    groupDefault: 'Education',
     types: [
-      { value: 'class_10_marksheet', label: 'Class 10 Marksheet' },
-      { value: 'class_12_marksheet', label: 'Class 12 Marksheet' },
-      { value: 'graduation_certificate', label: 'Graduation / Degree Certificate' },
-      { value: 'postgrad_certificate', label: 'Post-Graduation Certificate' },
-      { value: 'diploma_certificate', label: 'Diploma Certificate' },
-      { value: 'transfer_certificate', label: 'Transfer Certificate (TC)' },
-      { value: 'migration_certificate', label: 'Migration Certificate' },
-      { value: 'bonafide_certificate', label: 'Bonafide Certificate' },
-      { value: 'character_certificate', label: 'Character Certificate' },
-      { value: 'scholarship_certificate', label: 'Scholarship Certificate' },
-      { value: 'provisional_certificate', label: 'Provisional Certificate' },
+      'class_10_marksheet', 'class_12_marksheet', 'graduation_certificate', 'postgrad_certificate',
+      'diploma_certificate', 'transfer_certificate', 'migration_certificate', 'bonafide_certificate',
+      'character_certificate', 'scholarship_certificate', 'provisional_certificate',
     ],
   },
   {
-    group: 'Income & Finance',
+    groupKey: 'group_income_finance',
+    groupDefault: 'Income & Finance',
     types: [
-      { value: 'income_certificate', label: 'Income Certificate' },
-      { value: 'salary_slip', label: 'Salary Slip' },
-      { value: 'form_16', label: 'Form 16 (TDS Certificate)' },
-      { value: 'itr', label: 'Income Tax Return (ITR)' },
-      { value: 'bank_statement', label: 'Bank Statement' },
-      { value: 'passbook', label: 'Bank Passbook' },
-      { value: 'cancelled_cheque', label: 'Cancelled Cheque' },
-      { value: 'gst_certificate', label: 'GST Registration Certificate' },
-      { value: 'pan_business', label: 'Business PAN Card' },
-      { value: 'udyam_certificate', label: 'Udyam Registration Certificate (MSME)' },
+      'income_certificate', 'salary_slip', 'form_16', 'itr', 'bank_statement',
+      'passbook', 'cancelled_cheque', 'gst_certificate', 'pan_business', 'udyam_certificate',
     ],
   },
   {
-    group: 'Property & Land',
+    groupKey: 'group_property_land',
+    groupDefault: 'Property & Land',
     types: [
-      { value: 'property_deed', label: 'Property / Sale Deed' },
-      { value: 'land_record', label: 'Land Record / Khasra / Khatauni' },
-      { value: 'encumbrance_certificate', label: 'Encumbrance Certificate' },
-      { value: 'property_tax_receipt', label: 'Property Tax Receipt' },
-      { value: 'rental_agreement', label: 'Rental / Lease Agreement' },
-      { value: 'noc_property', label: 'NOC from Society / Landlord' },
-      { value: 'electricity_bill', label: 'Electricity Bill' },
-      { value: 'water_bill', label: 'Water Bill' },
-      { value: 'gas_connection', label: 'Gas Connection Document' },
+      'property_deed', 'land_record', 'encumbrance_certificate', 'property_tax_receipt',
+      'rental_agreement', 'noc_property', 'electricity_bill', 'water_bill', 'gas_connection',
     ],
   },
   {
-    group: 'Category / Community',
+    groupKey: 'group_category_community',
+    groupDefault: 'Category / Community',
     types: [
-      { value: 'caste_certificate', label: 'Caste Certificate' },
-      { value: 'domicile_certificate', label: 'Domicile Certificate' },
-      { value: 'obc_certificate', label: 'OBC Certificate' },
-      { value: 'sc_st_certificate', label: 'SC / ST Certificate' },
-      { value: 'ews_certificate', label: 'EWS Certificate' },
-      { value: 'minority_certificate', label: 'Minority Certificate' },
-      { value: 'nationality_certificate', label: 'Nationality Certificate' },
+      'caste_certificate', 'domicile_certificate', 'obc_certificate', 'sc_st_certificate',
+      'ews_certificate', 'minority_certificate', 'nationality_certificate',
     ],
   },
   {
-    group: 'Employment',
+    groupKey: 'group_employment',
+    groupDefault: 'Employment',
     types: [
-      { value: 'employment_certificate', label: 'Employment / Experience Certificate' },
-      { value: 'relieving_letter', label: 'Relieving Letter' },
-      { value: 'offer_letter', label: 'Offer Letter' },
-      { value: 'appointment_letter', label: 'Appointment Letter' },
-      { value: 'service_certificate', label: 'Service Certificate (Government)' },
-      { value: 'police_clearance', label: 'Police Clearance Certificate' },
-      { value: 'noc_employer', label: 'NOC from Employer' },
+      'employment_certificate', 'relieving_letter', 'offer_letter', 'appointment_letter',
+      'service_certificate', 'police_clearance', 'noc_employer',
     ],
   },
   {
-    group: 'Health & Medical',
+    groupKey: 'group_health_medical',
+    groupDefault: 'Health & Medical',
     types: [
-      { value: 'medical_certificate', label: 'Medical / Fitness Certificate' },
-      { value: 'vaccination_certificate', label: 'Vaccination Certificate' },
-      { value: 'covid_certificate', label: 'COVID-19 Vaccination Certificate' },
-      { value: 'health_card', label: 'Health / Ayushman Bharat Card' },
-      { value: 'blood_group_report', label: 'Blood Group Report' },
-      { value: 'insurance_policy', label: 'Insurance Policy Document' },
+      'medical_certificate', 'vaccination_certificate', 'covid_certificate',
+      'health_card', 'blood_group_report', 'insurance_policy',
     ],
   },
   {
-    group: 'Vehicle',
-    types: [
-      { value: 'vehicle_rc', label: 'Vehicle Registration Certificate (RC)' },
-      { value: 'vehicle_insurance', label: 'Vehicle Insurance' },
-      { value: 'puc_certificate', label: 'PUC Certificate' },
-      { value: 'vehicle_fitness', label: 'Vehicle Fitness Certificate' },
-    ],
+    groupKey: 'group_vehicle',
+    groupDefault: 'Vehicle',
+    types: ['vehicle_rc', 'vehicle_insurance', 'puc_certificate', 'vehicle_fitness'],
   },
   {
-    group: 'Legal & Miscellaneous',
-    types: [
-      { value: 'affidavit', label: 'Affidavit' },
-      { value: 'power_of_attorney', label: 'Power of Attorney' },
-      { value: 'gazette_notification', label: 'Gazette Notification (Name Change)' },
-      { value: 'noc_police', label: 'NOC from Police' },
-      { value: 'court_order', label: 'Court Order / Judgement' },
-      { value: 'other', label: 'Other' },
-    ],
+    groupKey: 'group_legal_misc',
+    groupDefault: 'Legal & Miscellaneous',
+    types: ['affidavit', 'power_of_attorney', 'gazette_notification', 'noc_police', 'court_order', 'other'],
   },
 ];
 
-const ALL_TYPES = DOCUMENT_CATEGORIES.flatMap((c) => c.types);
-
 export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
+  const { t } = useTranslation('common');
+  const { t: tDocs } = useTranslation('documents');
   const { user } = useAuth();
   const { verify, state: verifyState, result: verifyResult, reset: resetVerify } = useDocumentVerification();
 
@@ -163,7 +112,10 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   const [typeOpen, setTypeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedTypeLabel = ALL_TYPES.find((t) => t.value === documentType)?.label ?? '';
+  const getDocLabel = (typeKey: string) =>
+    tDocs(`${typeKey}.name`, typeKey.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()));
+
+  const selectedTypeLabel = documentType ? getDocLabel(documentType) : '';
 
   const resetForm = () => {
     setSelectedFile(null);
@@ -226,8 +178,6 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
       return;
     }
 
-    // Second-layer safety net: catch any case where AI returned isValid:true
-    // but the message itself describes a fake/sample/non-genuine document.
     const msgLower = (result.message ?? '').toLowerCase();
     const RED_FLAGS = [
       'sample', 'specimen', 'fake', 'not genuine', 'not real', 'not authentic',
@@ -278,7 +228,6 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
       if (dbError) throw dbError;
 
-      // Save the AI-extracted expiry date in localStorage
       if (insertedDoc?.id) {
         saveExpiry(user.id, insertedDoc.id, {
           expiryDate: result.expiryDate ?? null,
@@ -292,24 +241,20 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
       const expiryNote = result.expiryDate
         ? ` · Expires ${new Date(result.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
         : '';
-      toast.success(`Document verified and uploaded!${expiryNote}`);
+      toast.success(`${t('upload.success')}${expiryNote}`);
 
       if (user) {
-        const labelMap: Record<string, string> = {};
-        for (const cat of DOCUMENT_CATEGORIES) {
-          for (const t of cat.types) labelMap[t.value] = t.label;
-        }
         logActivity(user.id, {
           type: 'upload_success',
           title: documentName.trim(),
-          description: `${labelMap[documentType] || documentType} verified and saved successfully.`,
+          description: `${getDocLabel(documentType)} verified and saved successfully.`,
         });
       }
       resetForm();
       onUploadComplete();
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload document. Please try again.');
+      toast.error(t('upload.error'));
       if (user) {
         logActivity(user.id, {
           type: 'upload_failed',
@@ -328,9 +273,9 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
   return (
     <Card className="card-3d border-0">
       <CardHeader>
-        <CardTitle>Upload Document</CardTitle>
+        <CardTitle>{t('upload.title')}</CardTitle>
         <CardDescription>
-          Documents are AI-verified before upload. Accepted formats: JPG, PNG, PDF (max 5MB)
+          {t('upload.verifying')} JPG, PNG, PDF (max 5MB)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -373,7 +318,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
             <div className="space-y-3">
               <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
               <div>
-                <p className="font-medium">Click to upload or drag and drop</p>
+                <p className="font-medium">{t('upload.choose_file')}</p>
                 <p className="text-sm text-muted-foreground">JPG, PNG or PDF up to 5MB</p>
               </div>
             </div>
@@ -391,20 +336,14 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                 : 'bg-red-500/10 border-red-500/20 text-red-400'
             }`}
           >
-            {verifyState === 'verifying' && (
-              <Loader2 className="h-5 w-5 mt-0.5 animate-spin flex-shrink-0" />
-            )}
-            {verifyState === 'success' && (
-              <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-            )}
-            {verifyState === 'error' && (
-              <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-            )}
+            {verifyState === 'verifying' && <Loader2 className="h-5 w-5 mt-0.5 animate-spin flex-shrink-0" />}
+            {verifyState === 'success'   && <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />}
+            {verifyState === 'error'     && <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />}
             <div>
               <p className="text-sm font-semibold">
-                {verifyState === 'verifying' && 'AI is analysing your document…'}
-                {verifyState === 'success' && `Verified — ${verifyResult?.detectedType}`}
-                {verifyState === 'error' && 'Verification Failed'}
+                {verifyState === 'verifying' && t('upload.verifying')}
+                {verifyState === 'success'   && `${t('status.verified')} — ${verifyResult?.detectedType}`}
+                {verifyState === 'error'     && t('errors.upload_failed')}
               </p>
               {verifyResult?.message && (
                 <p className="text-sm opacity-80 mt-0.5">{verifyResult.message}</p>
@@ -417,7 +356,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
         {uploading && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Uploading…</span>
+              <span>{t('upload.uploading')}</span>
               <span>{Math.round(uploadProgress)}%</span>
             </div>
             <Progress value={uploadProgress} className="w-full" />
@@ -429,7 +368,7 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
           {/* Searchable Document Type */}
           <div className="space-y-2">
-            <Label htmlFor="document-type">Document Type *</Label>
+            <Label htmlFor="document-type">{t('upload.select_type')} *</Label>
             <Popover open={typeOpen} onOpenChange={setTypeOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -441,24 +380,24 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                   className="w-full justify-between font-normal"
                 >
                   <span className={cn(!selectedTypeLabel && 'text-muted-foreground')}>
-                    {selectedTypeLabel || 'Search document type…'}
+                    {selectedTypeLabel || t('upload.select_type')}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[320px] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder="Search any document type…" />
+                  <CommandInput placeholder={t('doclist.search_placeholder')} />
                   <CommandList className="max-h-72">
-                    <CommandEmpty>No document type found.</CommandEmpty>
-                    {DOCUMENT_CATEGORIES.map((category) => (
-                      <CommandGroup key={category.group} heading={category.group}>
-                        {category.types.map((type) => (
+                    <CommandEmpty>{t('doclist.no_match')}</CommandEmpty>
+                    {DOCUMENT_CATEGORY_KEYS.map((category) => (
+                      <CommandGroup key={category.groupKey} heading={category.groupDefault}>
+                        {category.types.map((typeKey) => (
                           <CommandItem
-                            key={type.value}
-                            value={type.label}
+                            key={typeKey}
+                            value={getDocLabel(typeKey)}
                             onSelect={() => {
-                              setDocumentType(type.value);
+                              setDocumentType(typeKey);
                               resetVerify();
                               setTypeOpen(false);
                             }}
@@ -466,10 +405,10 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
                             <Check
                               className={cn(
                                 'mr-2 h-4 w-4 flex-shrink-0',
-                                documentType === type.value ? 'opacity-100' : 'opacity-0'
+                                documentType === typeKey ? 'opacity-100' : 'opacity-0'
                               )}
                             />
-                            {type.label}
+                            {getDocLabel(typeKey)}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -481,10 +420,10 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="document-name">Document Name *</Label>
+            <Label htmlFor="document-name">{t('upload.document_name')} *</Label>
             <Input
               id="document-name"
-              placeholder="Enter document name"
+              placeholder={t('upload.document_name')}
               value={documentName}
               onChange={(e) => setDocumentName(e.target.value)}
               disabled={isBusy}
@@ -501,17 +440,17 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
           {isVerifying ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              AI Verifying Document…
+              {t('upload.verifying')}
             </>
           ) : uploading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Uploading…
+              {t('upload.uploading')}
             </>
           ) : (
             <>
               <ShieldCheck className="h-4 w-4 mr-2" />
-              Verify &amp; Upload
+              {t('upload.title')}
             </>
           )}
         </Button>
@@ -521,9 +460,9 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
           <Button
             variant="outline"
             onClick={resetVerify}
-            className="w-full bg-card-glass/50 backdrop-blur-xl border-border/20"
+            className="w-full"
           >
-            Try a Different File
+            {t('actions.cancel')}
           </Button>
         )}
       </CardContent>

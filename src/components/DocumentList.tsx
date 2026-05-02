@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -57,12 +58,17 @@ const STATUS_FILTERS = ['all', 'verified', 'pending', 'rejected'] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
 
 export default function DocumentList({ documents, onDelete }: DocumentListProps) {
+  const { t } = useTranslation('common');
+  const { t: tDocs } = useTranslation('documents');
   const { user } = useAuth();
   const [confirmDoc, setConfirmDoc] = useState<Document | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [shareDoc, setShareDoc] = useState<Document | null>(null);
+
+  const getDocTypeLabel = (type: string) =>
+    tDocs(`${type}.name`, type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()));
 
   const filtered = useMemo(() => {
     let list = documents;
@@ -71,7 +77,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
       list = list.filter(
         (d) =>
           d.document_name.toLowerCase().includes(q) ||
-          getDocumentTypeLabel(d.document_type).toLowerCase().includes(q)
+          getDocTypeLabel(d.document_type).toLowerCase().includes(q)
       );
     }
     if (statusFilter !== 'all') {
@@ -96,20 +102,12 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
     }
   };
 
-  const getDocumentTypeLabel = (type: string) => {
-    const typeMap: Record<string, string> = {
-      aadhaar: 'Aadhaar Card',
-      pan_card: 'PAN Card',
-      voter_id: 'Voter ID',
-      driving_license: 'Driving License',
-      passport: 'Passport',
-      birth_certificate: 'Birth Certificate',
-      income_certificate: 'Income Certificate',
-      caste_certificate: 'Caste Certificate',
-      domicile_certificate: 'Domicile Certificate',
-      other: 'Other',
-    };
-    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'verified': return t('status.verified');
+      case 'rejected': return t('status.rejected');
+      default:         return t('status.pending');
+    }
   };
 
   const normalizePath = (urlOrPath: string) => {
@@ -198,14 +196,14 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
       <div className="bg-white border border-[#cdd3da] rounded-sm shadow-sm">
         <div className="px-5 py-3 border-b border-slate-100 bg-[#f0f4fa]">
           <div className="border-l-4 border-[#003580] pl-2">
-            <p className="font-bold text-slate-900 text-sm">Document Vault</p>
-            <p className="text-[11px] text-slate-500">No documents uploaded yet</p>
+            <p className="font-bold text-slate-900 text-sm">{t('doclist.title')}</p>
+            <p className="text-[11px] text-slate-500">{t('dashboard.no_documents')}</p>
           </div>
         </div>
         <div className="text-center py-12 px-4">
           <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-700 mb-1">No documents found</h3>
-          <p className="text-sm text-slate-500">Upload your first document using the form above</p>
+          <h3 className="text-base font-semibold text-slate-700 mb-1">{t('dashboard.no_documents')}</h3>
+          <p className="text-sm text-slate-500">{t('dashboard.upload_first')}</p>
         </div>
       </div>
     );
@@ -218,6 +216,13 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
     rejected: 'bg-red-50 text-red-700 border-red-300',
   };
 
+  const statusFilterLabels: Record<StatusFilter, string> = {
+    all:      t('status.all'),
+    verified: t('status.verified'),
+    pending:  t('status.pending'),
+    rejected: t('status.rejected'),
+  };
+
   return (
     <>
       <div className="bg-white border border-[#cdd3da] rounded-sm shadow-sm overflow-hidden">
@@ -225,13 +230,13 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
         {/* Header */}
         <div className="px-5 py-3 border-b border-slate-100 bg-[#f0f4fa] flex items-center justify-between flex-wrap gap-2">
           <div className="border-l-4 border-[#003580] pl-2">
-            <p className="font-bold text-slate-900 text-sm">Document Vault</p>
+            <p className="font-bold text-slate-900 text-sm">{t('doclist.title')}</p>
             <p className="text-[11px] text-slate-500">
-              {documents.length} document{documents.length !== 1 ? 's' : ''} on record
+              {t('doclist.subtitle', { count: documents.length })}
             </p>
           </div>
           <div className="text-[11px] text-slate-500 uppercase tracking-wide">
-            Records as of {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
         </div>
 
@@ -242,7 +247,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search documents…"
+              placeholder={t('doclist.search_placeholder')}
               className="pl-8 pr-8 h-8 text-sm bg-slate-50 border-slate-200 rounded-sm focus-visible:ring-[#003580]"
             />
             {search && (
@@ -253,7 +258,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide shrink-0">Status:</span>
+            <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide shrink-0">{t('doclist.status_filter')}</span>
             {STATUS_FILTERS.map((s) => (
               <button
                 key={s}
@@ -264,10 +269,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                 }`}
               >
-                {s === 'all'
-                  ? `All (${documents.length})`
-                  : `${s} (${documents.filter((d) => d.verification_status === s).length})`
-                }
+                {statusFilterLabels[s]} ({s === 'all' ? documents.length : documents.filter((d) => d.verification_status === s).length})
               </button>
             ))}
           </div>
@@ -275,20 +277,20 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
 
         {filtered.length === 0 ? (
           <div className="py-8 text-center text-sm text-slate-500">
-            No documents match your search.{' '}
+            {t('doclist.no_match')}{' '}
             <button className="text-[#003580] underline" onClick={() => { setSearch(''); setStatusFilter('all'); }}>
-              Clear filters
+              {t('doclist.clear_filters')}
             </button>
           </div>
         ) : (
           <table className="gov-table">
             <thead>
               <tr>
-                <th>Document</th>
-                <th className="hidden sm:table-cell">Type</th>
-                <th className="hidden md:table-cell">Uploaded</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
+                <th>{t('nav.my_documents')}</th>
+                <th className="hidden sm:table-cell">{t('doclist.type_col')}</th>
+                <th className="hidden md:table-cell">{t('doclist.uploaded_col')}</th>
+                <th>{t('doclist.status_col')}</th>
+                <th className="text-right">{t('doclist.actions_col')}</th>
               </tr>
             </thead>
             <tbody>
@@ -317,20 +319,20 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
                               expiryStatus === 'ok'       ? 'bg-green-50 text-[#138808] border-green-200' :
                               'bg-slate-50 text-slate-500 border-slate-200'
                             }`}>
-                              {expiryStatus === 'expired'  ? `Expired ${formatExpiryDate(rec.expiryDate!)}` :
-                               expiryStatus === 'critical' ? `Exp. in ${days}d` :
-                               expiryStatus === 'warning'  ? `Exp. in ${days}d` :
-                               rec.expiryDate              ? `Valid to ${formatExpiryDate(rec.expiryDate)}` :
-                               'No expiry'}
+                              {expiryStatus === 'expired'  ? `${t('status.expired')} ${formatExpiryDate(rec.expiryDate!)}` :
+                               expiryStatus === 'critical' ? `${days}d` :
+                               expiryStatus === 'warning'  ? `${days}d` :
+                               rec.expiryDate              ? `${t('status.valid')} ${formatExpiryDate(rec.expiryDate)}` :
+                               '—'}
                             </span>
                           )}
                         </div>
                       </div>
                     </td>
 
-                    {/* Type */}
+                    {/* Type — translated via documents namespace */}
                     <td className="hidden sm:table-cell">
-                      <span className="text-xs text-slate-600">{getDocumentTypeLabel(doc.document_type)}</span>
+                      <span className="text-xs text-slate-600">{getDocTypeLabel(doc.document_type)}</span>
                     </td>
 
                     {/* Date */}
@@ -345,7 +347,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
                     <td>
                       <span className={getStatusPill(doc.verification_status)}>
                         {getStatusIcon(doc.verification_status)}
-                        <span className="hidden xs:inline capitalize">{doc.verification_status}</span>
+                        <span className="hidden xs:inline">{getStatusLabel(doc.verification_status)}</span>
                       </span>
                     </td>
 
@@ -353,28 +355,28 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
                     <td>
                       <div className="flex items-center justify-end gap-0.5">
                         <button
-                          title="View document"
+                          title={t('actions.view')}
                           onClick={() => handleView(doc)}
                           className="p-1.5 rounded-sm text-slate-500 hover:text-[#003580] hover:bg-blue-50 transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          title="Download"
+                          title={t('actions.download')}
                           onClick={() => handleDownload(doc)}
                           className="p-1.5 rounded-sm text-slate-500 hover:text-[#003580] hover:bg-blue-50 transition-colors"
                         >
                           <Download className="h-4 w-4" />
                         </button>
                         <button
-                          title="Emergency QR Share"
+                          title={t('actions.share')}
                           onClick={() => setShareDoc(doc)}
                           className="p-1.5 rounded-sm text-slate-500 hover:text-[#FF6200] hover:bg-orange-50 transition-colors"
                         >
                           <QrCode className="h-4 w-4" />
                         </button>
                         <button
-                          title="Delete"
+                          title={t('actions.delete')}
                           onClick={() => setConfirmDoc(doc)}
                           disabled={deletingId === doc.id}
                           className="p-1.5 rounded-sm text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
@@ -395,7 +397,7 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
         )}
 
         <div className="px-5 py-2 border-t border-slate-100 bg-[#f8f9fb] text-[11px] text-slate-400 flex items-center gap-1">
-          <QrCode className="h-3 w-3 text-[#FF6200]" /> QR icon = Emergency share · View-only, time-limited, PIN protected
+          <QrCode className="h-3 w-3 text-[#FF6200]" /> {t('doclist.share_hint')}
         </div>
       </div>
 
@@ -414,20 +416,18 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
       <AlertDialog open={!!confirmDoc} onOpenChange={(open) => !open && setConfirmDoc(null)}>
         <AlertDialogContent className="rounded-sm border border-[#cdd3da]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#003580]">Confirm Deletion</AlertDialogTitle>
+            <AlertDialogTitle className="text-[#003580]">{t('doclist.delete_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete{' '}
-              <span className="font-semibold text-slate-900">"{confirmDoc?.document_name}"</span>?
-              This action cannot be undone.
+              {t('doclist.delete_msg', { name: confirmDoc?.document_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-sm">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-sm">{t('actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirmed}
               className="bg-red-600 hover:bg-red-700 text-white rounded-sm"
             >
-              Delete Permanently
+              {t('doclist.delete_confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
