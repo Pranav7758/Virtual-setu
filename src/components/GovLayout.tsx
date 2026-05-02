@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
+import LanguageSelector from '@/components/LanguageSelector';
 
 interface GovLayoutProps {
   children: React.ReactNode;
@@ -147,6 +148,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
 
           {!minimal && (
             <div className="flex items-center gap-2 shrink-0">
+              <LanguageSelector />
               {isLoggedIn ? (
                 <>
                   {plan === 'free' ? (
