@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
@@ -9,24 +10,6 @@ interface GovLayoutProps {
   children: React.ReactNode;
   minimal?: boolean;
 }
-
-const PUBLIC_NAV = [
-  { to: '/', label: 'Home' },
-  { to: '/features', label: 'Features' },
-  { to: '/pricing', label: 'Pricing' },
-  { to: '/about', label: 'About' },
-  { to: '/scan', label: 'Verify Document' },
-  { to: '/help', label: 'Help' },
-];
-
-const CITIZEN_NAV = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { to: '/dashboard?tab=documents', label: 'My Documents', icon: FileText },
-  { to: '/dashboard?tab=checklist', label: 'Checklist', icon: ListChecks },
-  { to: '/dashboard?tab=digital-id', label: 'Digital ID', icon: CreditCard },
-  { to: '/dashboard?tab=profile', label: 'Profile', icon: UserCircle },
-  { to: '/help', label: 'Help', icon: HelpCircle },
-];
 
 /* ── Ashoka Chakra SVG — 24-spoke dharma wheel ── */
 function AshokaChakra({ size = 40 }: { size?: number }) {
@@ -104,6 +87,7 @@ function CitizenNavItem({ to, label, icon: Icon, mobile, onClick }: {
 }
 
 export default function GovLayout({ children, minimal = false }: GovLayoutProps) {
+  const { t } = useTranslation('common');
   const { user, signOut } = useAuth();
   const { plan } = useUserPlan();
   const navigate = useNavigate();
@@ -111,6 +95,24 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
   const isLoggedIn = !!user;
+
+  const PUBLIC_NAV = [
+    { to: '/', label: t('nav.home') },
+    { to: '/features', label: t('nav.features') },
+    { to: '/pricing', label: t('nav.pricing') },
+    { to: '/about', label: t('nav.about') },
+    { to: '/scan', label: t('nav.verify') },
+    { to: '/help', label: t('nav.help') },
+  ];
+
+  const CITIZEN_NAV = [
+    { to: '/dashboard', label: t('nav.overview'), icon: LayoutDashboard },
+    { to: '/dashboard?tab=documents', label: t('nav.my_documents'), icon: FileText },
+    { to: '/dashboard?tab=checklist', label: t('nav.checklist'), icon: ListChecks },
+    { to: '/dashboard?tab=digital-id', label: t('nav.digital_id'), icon: CreditCard },
+    { to: '/dashboard?tab=profile', label: t('nav.profile'), icon: UserCircle },
+    { to: '/help', label: t('nav.help'), icon: HelpCircle },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#eef2f7] text-[#0f172a]" style={{ fontFamily: "'Noto Sans','Segoe UI',Arial,sans-serif" }}>
@@ -126,11 +128,11 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
       <div className="bg-[#003580] text-white text-[11px] shrink-0">
         <div className="container mx-auto max-w-7xl px-4 py-1.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-semibold tracking-wide">भारत सरकार · Government of India</span>
+            <span className="font-semibold tracking-wide">{t('gov.bharat')} · {t('gov.india')}</span>
             <span className="text-blue-300 hidden sm:inline">|</span>
-            <span className="text-blue-200 hidden sm:inline">Ministry of Electronics &amp; Information Technology</span>
+            <span className="text-blue-200 hidden sm:inline">{t('gov.ministry')}</span>
           </div>
-          <span className="hidden md:inline text-blue-200 tracking-wide text-[10px]">Digital India · डिजिटल इंडिया</span>
+          <span className="hidden md:inline text-blue-200 tracking-wide text-[10px]">{t('gov.digital_india')}</span>
         </div>
       </div>
 
@@ -141,8 +143,8 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
           <Link to={isLoggedIn ? '/dashboard' : '/'} className="flex items-center gap-3 min-w-0 shrink-0">
             <AshokaChakra size={40} />
             <div className="leading-tight min-w-0 border-l-2 border-[#003580] pl-3">
-              <p className="font-bold text-[#003580] text-base sm:text-lg truncate leading-none">Virtual Setu</p>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">Secure Digital Document Portal · वर्चुअल सेतु</p>
+              <p className="font-bold text-[#003580] text-base sm:text-lg truncate leading-none">{t('portal.name')}</p>
+              <p className="text-[11px] text-slate-500 truncate mt-0.5">{t('portal.tagline')} · {t('portal.tagline_native')}</p>
             </div>
           </Link>
 
@@ -155,7 +157,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                     <Link to="/pricing"
                       className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#FF6200] hover:bg-[#d94f00] text-white rounded-sm transition-colors uppercase tracking-wide"
                     >
-                      <Zap className="h-3 w-3" /> Upgrade Plan
+                      <Zap className="h-3 w-3" /> {t('actions.upgrade')}
                     </Link>
                   ) : (
                     <PlanChip plan={plan} />
@@ -163,17 +165,17 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                   <button onClick={handleSignOut}
                     className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-slate-300 rounded-sm text-slate-600 hover:bg-slate-50 transition-colors uppercase tracking-wide font-semibold"
                   >
-                    <LogOut className="h-3.5 w-3.5" /> Sign Out
+                    <LogOut className="h-3.5 w-3.5" /> {t('nav.sign_out')}
                   </button>
                 </>
               ) : (
                 <>
                   <Link to="/auth"
                     className="hidden sm:inline-flex px-4 py-1.5 text-sm text-[#003580] border border-[#003580] rounded-sm hover:bg-blue-50 font-semibold transition-colors"
-                  >Login</Link>
+                  >{t('nav.login')}</Link>
                   <Link to="/register"
                     className="hidden sm:inline-flex px-4 py-1.5 text-sm bg-[#003580] text-white rounded-sm hover:bg-[#002060] font-semibold transition-colors"
-                  >Register</Link>
+                  >{t('nav.register')}</Link>
                 </>
               )}
               <button className="sm:hidden p-2 text-slate-700" onClick={() => setOpen(o => !o)} aria-label="Toggle menu">
@@ -223,7 +225,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                   {plan === 'free' ? (
                     <Link to="/pricing" onClick={() => setOpen(false)}
                       className="flex-1 text-center py-2 text-sm font-bold bg-[#FF6200] text-white rounded-sm uppercase tracking-wide"
-                    >⚡ Upgrade Plan</Link>
+                    >⚡ {t('actions.upgrade')}</Link>
                   ) : (
                     <span className="flex-1 text-center py-2 text-sm font-bold text-[#003580]">
                       {plan === 'platinum' ? '🏅 Platinum' : '⚡ Premium'} Plan
@@ -231,7 +233,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                   )}
                   <button onClick={() => { setOpen(false); handleSignOut(); }}
                     className="flex-1 py-2 text-sm border border-slate-300 rounded-sm text-slate-700 font-semibold"
-                  >Sign Out</button>
+                  >{t('nav.sign_out')}</button>
                 </div>
               </>
             ) : (
@@ -246,10 +248,10 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                 <div className="flex gap-2 p-3 border-t border-slate-100">
                   <Link to="/auth" onClick={() => setOpen(false)}
                     className="flex-1 text-center py-2 text-sm border border-[#003580] text-[#003580] rounded-sm font-semibold"
-                  >Login</Link>
+                  >{t('nav.login')}</Link>
                   <Link to="/register" onClick={() => setOpen(false)}
                     className="flex-1 text-center py-2 text-sm bg-[#003580] text-white rounded-sm font-semibold"
-                  >Register</Link>
+                  >{t('nav.register')}</Link>
                 </div>
               </>
             )}
@@ -267,45 +269,55 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
             <div className="flex items-center gap-3 mb-3">
               <AshokaChakra size={32} />
               <div>
-                <p className="font-bold text-white text-sm">Virtual Setu</p>
-                <p className="text-blue-300 text-[11px]">वर्चुअल सेतु</p>
+                <p className="font-bold text-white text-sm">{t('portal.name')}</p>
+                <p className="text-blue-300 text-[11px]">{t('portal.tagline_native')}</p>
               </div>
             </div>
             <p className="text-blue-200 text-xs leading-relaxed">
-              A secure digital document management portal for every Indian citizen, powered by DigiLocker-compatible standards.
+              {t('footer.tagline')}
             </p>
           </div>
           <div>
-            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">Portal</p>
+            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">{t('footer.portal_title')}</p>
             <ul className="space-y-1.5 text-xs">
-              {[['/', 'Home'], ['/features', 'Features'], ['/pricing', 'Pricing'], ['/about', 'About']].map(([to, label]) => (
+              {[
+                ['/', t('nav.home')],
+                ['/features', t('nav.features')],
+                ['/pricing', t('nav.pricing')],
+                ['/about', t('nav.about')],
+              ].map(([to, label]) => (
                 <li key={to}><Link to={to} className="hover:text-white hover:underline transition-colors">{label}</Link></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">Citizen Services</p>
+            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">{t('footer.services_title')}</p>
             <ul className="space-y-1.5 text-xs">
-              {[['/scan', 'Verify Document'], ['/auth', 'Citizen Login'], ['/register', 'New Registration'], ['/help', 'Help &amp; Support']].map(([to, label]) => (
-                <li key={to}><Link to={to} className="hover:text-white hover:underline transition-colors" dangerouslySetInnerHTML={{ __html: label }} /></li>
+              {[
+                ['/scan', t('footer.verify_doc')],
+                ['/auth', t('footer.citizen_login')],
+                ['/register', t('footer.new_registration')],
+                ['/help', t('footer.help_support')],
+              ].map(([to, label]) => (
+                <li key={to}><Link to={to} className="hover:text-white hover:underline transition-colors">{label}</Link></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">Contact &amp; Support</p>
+            <p className="text-white font-bold mb-2 text-xs uppercase tracking-wide border-b border-blue-400/30 pb-1">{t('footer.contact_title')}</p>
             <ul className="space-y-1.5 text-xs text-blue-200">
-              <li>support@virtualsetu.gov.in</li>
-              <li>Toll-Free: 1800-XXX-XXXX</li>
-              <li>Monday – Saturday</li>
-              <li>09:00 – 18:00 IST</li>
+              <li>{t('footer.email')}</li>
+              <li>{t('footer.toll_free')}</li>
+              <li>{t('footer.hours')}</li>
+              <li>{t('footer.timing')}</li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-blue-900/40 text-[11px] text-blue-200">
           <div className="container mx-auto max-w-7xl px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>© {new Date().getFullYear()} Virtual Setu · Government of India · All rights reserved.</p>
-            <p className="text-blue-300">Best viewed on modern browsers · WCAG 2.1 AA compliant · NIC standards</p>
+            <p>{t('footer.copyright', { year: new Date().getFullYear() })}</p>
+            <p className="text-blue-300">Best viewed on modern browsers · {t('footer.standards')}</p>
           </div>
         </div>
 

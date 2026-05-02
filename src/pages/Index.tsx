@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import GovLayout, { GovCard } from '@/components/GovLayout';
 import {
   ShieldCheck,
@@ -15,13 +16,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const services = [
-  { icon: IdCard,      title: 'Digital Identity Card',  description: 'Generate a unified digital identity card that aggregates your essential government IDs.', to: '/dashboard' },
-  { icon: FileText,    title: 'Document Vault',          description: 'Securely upload and store Aadhaar, PAN, Driving Licence, Passport and other certificates.', to: '/dashboard' },
-  { icon: QrCode,      title: 'Emergency QR Access',     description: 'Share documents during emergencies through a PIN-protected, time-limited QR code.', to: '/scan' },
-  { icon: ShieldCheck, title: 'AI-Verified Records',     description: 'AI-assisted verification keeps your records authentic with live status indicators.', to: '/features' },
-];
-
 const announcements = [
   { date: '23 Apr 2026', text: 'New: Secure document viewer with anti-screenshot protection now live.' },
   { date: '15 Apr 2026', text: 'Premium plan introduced with full AI assistant and emergency QR sharing.' },
@@ -29,6 +23,15 @@ const announcements = [
 ];
 
 export default function Index() {
+  const { t } = useTranslation('common');
+
+  const services = [
+    { icon: IdCard,      title: t('index.services_s1_title', 'Digital Identity Card'),  description: t('index.services_s1_desc', 'Generate a unified digital identity card that aggregates your essential government IDs.'), to: '/dashboard' },
+    { icon: FileText,    title: t('index.services_s2_title', 'Document Vault'),          description: t('index.services_s2_desc', 'Securely upload and store Aadhaar, PAN, Driving Licence, Passport and other certificates.'), to: '/dashboard' },
+    { icon: QrCode,      title: t('index.services_s3_title', 'Emergency QR Access'),     description: t('index.services_s3_desc', 'Share documents during emergencies through a PIN-protected, time-limited QR code.'), to: '/scan' },
+    { icon: ShieldCheck, title: t('index.services_s4_title', 'AI-Verified Records'),     description: t('index.services_s4_desc', 'AI-assisted verification keeps your records authentic with live status indicators.'), to: '/features' },
+  ];
+
   return (
     <GovLayout>
 
@@ -38,26 +41,25 @@ export default function Index() {
           <div>
             <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 px-3 py-1 rounded-sm mb-4">
               <ShieldCheck className="h-3.5 w-3.5 text-[#FF9933]" />
-              <span className="text-xs font-semibold tracking-widest uppercase text-blue-100">Citizen Digital Services Portal</span>
+              <span className="text-xs font-semibold tracking-widest uppercase text-blue-100">{t('index.badge')}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-              Secure Digital Identity &amp;<br />
-              <span className="text-[#FF9933]">Document Access Platform</span>
+              {t('index.hero_title')}<br />
+              <span className="text-[#FF9933]">{t('index.hero_title2')}</span>
             </h1>
             <p className="text-blue-200 mt-4 max-w-xl leading-relaxed text-sm">
-              Virtual Setu is an official-style digital document management portal that lets every citizen
-              store, verify and share essential government documents securely from a single account.
+              {t('index.hero_subtitle')}
             </p>
             <div className="flex flex-wrap gap-3 mt-6">
               <Link to="/register"
                 className="inline-flex items-center gap-2 bg-[#FF6200] hover:bg-[#d94f00] text-white px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors"
               >
-                <ScanLine className="h-4 w-4" /> Register as Citizen
+                <ScanLine className="h-4 w-4" /> {t('index.register_btn')}
               </Link>
               <Link to="/auth"
                 className="inline-flex items-center gap-2 border border-white/40 text-white px-5 py-2.5 rounded-sm font-semibold text-sm hover:bg-white/10 transition-colors"
               >
-                Login to Portal <ChevronRight className="h-4 w-4" />
+                {t('index.login_btn')} <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
             <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-100">
@@ -83,13 +85,13 @@ export default function Index() {
             </div>
             <div className="p-4 grid grid-cols-2 gap-2">
               {[
-                { icon: ScanLine, label: 'Verify via QR', to: '/scan', color: 'bg-blue-50' },
-                { icon: IdCard, label: 'Citizen Login', to: '/auth', color: 'bg-blue-50' },
-                { icon: FileText, label: 'My Dashboard', to: '/dashboard', color: 'bg-blue-50' },
-                { icon: HelpCircle, label: 'Help & Support', to: '/help', color: 'bg-blue-50' },
-              ].map(({ icon: Icon, label, to, color }) => (
+                { icon: ScanLine, label: 'Verify via QR', to: '/scan' },
+                { icon: IdCard, label: 'Citizen Login', to: '/auth' },
+                { icon: FileText, label: 'My Dashboard', to: '/dashboard' },
+                { icon: HelpCircle, label: 'Help & Support', to: '/help' },
+              ].map(({ icon: Icon, label, to }) => (
                 <Link key={label} to={to}
-                  className={`flex items-center gap-2 p-3 border border-slate-200 rounded-sm hover:border-[#003580] hover:bg-blue-50/80 transition-colors ${color}`}
+                  className="flex items-center gap-2 p-3 border border-slate-200 rounded-sm hover:border-[#003580] hover:bg-blue-50/80 transition-colors bg-blue-50"
                 >
                   <Icon className="h-5 w-5 text-[#003580] shrink-0" />
                   <span className="text-xs font-semibold text-slate-700">{label}</span>
@@ -116,8 +118,7 @@ export default function Index() {
         <div className="container mx-auto max-w-7xl px-4 py-2 flex items-center gap-2 text-sm text-[#795548]">
           <AlertCircle className="h-4 w-4 text-[#f9a825] shrink-0" />
           <p>
-            <strong>Notice:</strong> Virtual Setu handles sensitive government documents. Do not share your PIN or login credentials with anyone.
-            For assistance, call our helpline <strong>1800-XXX-XXXX</strong>.
+            <strong>Notice:</strong> {t('index.notice')} <strong>1800-XXX-XXXX</strong>.
           </p>
         </div>
       </div>
@@ -126,11 +127,11 @@ export default function Index() {
       <section className="container mx-auto max-w-7xl px-4 py-10">
         <div className="flex items-end justify-between flex-wrap gap-2 mb-5">
           <div className="border-l-4 border-[#003580] pl-3">
-            <p className="text-[11px] font-bold text-[#003580] tracking-[0.2em] uppercase">Services</p>
-            <h2 className="text-xl font-bold text-slate-900">What you can do on Virtual Setu</h2>
+            <p className="text-[11px] font-bold text-[#003580] tracking-[0.2em] uppercase">{t('index.services_badge')}</p>
+            <h2 className="text-xl font-bold text-slate-900">{t('index.services_title')}</h2>
           </div>
           <Link to="/features" className="text-sm text-[#003580] hover:underline font-medium flex items-center gap-1">
-            View all features <ArrowRight className="h-3.5 w-3.5" />
+            {t('index.view_all')} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -158,23 +159,23 @@ export default function Index() {
         <GovCard className="lg:col-span-2">
           <div className="px-4 py-3 border-b border-slate-100 bg-[#f0f4fa]">
             <div className="border-l-4 border-[#003580] pl-2">
-              <h3 className="font-bold text-slate-900 text-sm">How to Get Started</h3>
-              <p className="text-[11px] text-slate-500">Three steps to manage your documents securely</p>
+              <h3 className="font-bold text-slate-900 text-sm">{t('index.how_title')}</h3>
+              <p className="text-[11px] text-slate-500">{t('index.how_subtitle')}</p>
             </div>
           </div>
           <ol className="divide-y divide-slate-100">
             {[
-              { n: 1, t: 'Register with your mobile / email', d: 'Verify your identity using OTP and set a 4-digit access PIN.' },
-              { n: 2, t: 'Upload your documents', d: 'Add Aadhaar, PAN, Passport and other government IDs to your secure vault.' },
-              { n: 3, t: 'Access anywhere with your QR card', d: 'Use your Digital ID Card QR for verified, view-only emergency access.' },
+              { n: 1, title: t('index.step1_title'), desc: t('index.step1_desc') },
+              { n: 2, title: t('index.step2_title'), desc: t('index.step2_desc') },
+              { n: 3, title: t('index.step3_title'), desc: t('index.step3_desc') },
             ].map((s) => (
               <li key={s.n} className="flex gap-4 px-4 py-4">
                 <div className="w-8 h-8 rounded-sm bg-[#003580] text-white text-sm font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {s.n}
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900 text-sm">{s.t}</p>
-                  <p className="text-xs text-slate-600 mt-0.5">{s.d}</p>
+                  <p className="font-semibold text-slate-900 text-sm">{s.title}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{s.desc}</p>
                 </div>
               </li>
             ))}
@@ -183,7 +184,7 @@ export default function Index() {
             <Link to="/register"
               className="inline-flex items-center gap-2 bg-[#003580] hover:bg-[#002060] text-white text-sm font-semibold px-4 py-2 rounded-sm transition-colors"
             >
-              Start Registration <ArrowRight className="h-4 w-4" />
+              {t('index.start_btn')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </GovCard>
@@ -192,8 +193,8 @@ export default function Index() {
         <GovCard>
           <div className="px-4 py-3 border-b border-slate-100 bg-[#f0f4fa]">
             <div className="border-l-4 border-[#FF6200] pl-2">
-              <h3 className="font-bold text-slate-900 text-sm">Announcements</h3>
-              <p className="text-[11px] text-slate-500">Latest updates from Virtual Setu</p>
+              <h3 className="font-bold text-slate-900 text-sm">{t('index.announcements_title')}</h3>
+              <p className="text-[11px] text-slate-500">{t('index.announcements_subtitle')}</p>
             </div>
           </div>
           <ul className="divide-y divide-slate-100">
@@ -206,7 +207,7 @@ export default function Index() {
           </ul>
           <div className="px-4 py-2 border-t border-slate-100 bg-slate-50">
             <Link to="/features" className="text-xs text-[#003580] hover:underline font-medium flex items-center gap-1">
-              View all announcements <ChevronRight className="h-3 w-3" />
+              {t('index.view_all')} <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         </GovCard>
