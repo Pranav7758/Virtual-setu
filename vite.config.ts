@@ -27,11 +27,13 @@ function parseJsonBody(req: any): Promise<any> {
 /* ------------------------------------------------------------------ */
 /*  Vite plugin that serves the payment API during development        */
 /* ------------------------------------------------------------------ */
-function apiPlugin(env: Record<string, string>): Plugin {
-  const RAZORPAY_KEY_ID = env.RAZORPAY_KEY_ID;
-  const RAZORPAY_KEY_SECRET = env.RAZORPAY_KEY_SECRET;
-  const SUPABASE_URL = env.VITE_SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+function apiPlugin(_env: Record<string, string>): Plugin {
+  // Replit secrets live in process.env, NOT in .env files that loadEnv() reads.
+  // Always read server-side secrets directly from process.env here.
+  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
+  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   const PLAN_PRICES: Record<string, number> = {
     premium: 29900,
