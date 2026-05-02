@@ -1,10 +1,10 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan, userId } = req.body;
@@ -31,4 +31,4 @@ export default async function handler(req, res) {
   } catch (err) {
     res.status(500).json({ error: err.message || 'Internal server error' });
   }
-}
+};
