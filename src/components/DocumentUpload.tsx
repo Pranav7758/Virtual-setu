@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentVerification } from '@/hooks/useDocumentVerification';
+import { logActivity } from '@/lib/activityLog';
 
 interface DocumentUploadProps {
   onUploadComplete: () => void;
@@ -236,6 +237,13 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
     if (!result.isValid || forceFailed) {
       toast.error(result.message || 'This document could not be verified. Please upload a genuine document.');
+      if (user) {
+        logActivity(user.id, {
+          type: 'verify_failed',
+          title: documentName.trim() || selectedFile.name,
+          description: result.message || 'Document rejected — could not be verified as genuine.',
+        });
+      }
       return;
     }
 
@@ -269,11 +277,29 @@ export default function DocumentUpload({ onUploadComplete }: DocumentUploadProps
 
       setUploadProgress(100);
       toast.success('Document verified and uploaded successfully!');
+      if (user) {
+        const labelMap: Record<string, string> = {};
+        for (const cat of DOCUMENT_CATEGORIES) {
+          for (const t of cat.types) labelMap[t.value] = t.label;
+        }
+        logActivity(user.id, {
+          type: 'upload_success',
+          title: documentName.trim(),
+          description: `${labelMap[documentType] || documentType} verified and saved successfully.`,
+        });
+      }
       resetForm();
       onUploadComplete();
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload document. Please try again.');
+      if (user) {
+        logActivity(user.id, {
+          type: 'upload_failed',
+          title: documentName.trim() || selectedFile?.name || 'Unknown document',
+          description: 'Upload failed due to a server error. Please try again.',
+        });
+      }
     } finally {
       setUploading(false);
     }

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activityLog';
 
 interface Document {
   id: string;
@@ -142,6 +143,11 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
       if (!res.ok) throw new Error(json.error || 'Delete failed');
 
       toast.success(`"${confirmDoc.document_name}" deleted successfully`);
+      logActivity(userId, {
+        type: 'document_deleted',
+        title: confirmDoc.document_name,
+        description: `${confirmDoc.document_type.replace(/_/g, ' ')} removed from your vault.`,
+      });
       onDelete?.();
     } catch (err: any) {
       console.error('Delete error:', err);

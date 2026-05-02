@@ -17,6 +17,8 @@ import DocumentList from '@/components/DocumentList';
 import SmartChecklist from '@/components/SmartChecklist';
 import AIChatbot from '@/components/AIChatbot';
 import DigitalIDCard from '@/components/DigitalIDCard';
+import ActivityLog from '@/components/ActivityLog';
+import { logActivity } from '@/lib/activityLog';
 
 interface Profile {
   id: string;
@@ -77,6 +79,12 @@ export default function Dashboard() {
     if (!user) { navigate('/auth'); return; }
     fetchProfile().catch(console.error);
     fetchDocuments().catch(console.error);
+    // Log sign-in once per session (only if not already logged in last 10 min)
+    const lastLogin = sessionStorage.getItem('vs_last_login');
+    if (!lastLogin) {
+      logActivity(user.id, { type: 'login', title: 'Signed in', description: `Logged in as ${user.email}` });
+      sessionStorage.setItem('vs_last_login', Date.now().toString());
+    }
   }, [user, navigate]);
 
   const fetchProfile = async () => {
@@ -231,6 +239,15 @@ export default function Dashboard() {
                 </Link>
               </GovCard>
             )}
+
+            {/* Activity Log */}
+            <GovCard>
+              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+                <p className="font-semibold text-slate-900 text-sm">Activity Log</p>
+                <p className="text-xs text-slate-500">Recent actions on your account — uploads, verifications, deletions</p>
+              </div>
+              <ActivityLog userId={user?.id || ''} />
+            </GovCard>
           </>
         )}
 
