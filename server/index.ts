@@ -129,17 +129,18 @@ app.post('/api/delete-document', async (req, res) => {
       return res.status(400).json({ error: 'Missing documentId or userId' });
     }
 
-    const headers = {
+    const baseHeaders = {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
     };
+    // 'Prefer: return=minimal' suppresses row data — only use it for writes
+    const writeHeaders = { ...baseHeaders, Prefer: 'return=minimal' };
 
-    // Verify ownership then delete from DB
+    // Verify ownership (no Prefer header so rows are actually returned)
     const checkRes = await fetch(
       `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}&select=id`,
-      { headers }
+      { headers: baseHeaders }
     );
     const rows = await checkRes.json();
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -148,7 +149,7 @@ app.post('/api/delete-document', async (req, res) => {
 
     const delRes = await fetch(
       `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}`,
-      { method: 'DELETE', headers }
+      { method: 'DELETE', headers: writeHeaders }
     );
     if (!delRes.ok) {
       const err = await delRes.text();
@@ -159,7 +160,7 @@ app.post('/api/delete-document', async (req, res) => {
     if (filePath) {
       await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${filePath}`, {
         method: 'DELETE',
-        headers,
+        headers: writeHeaders,
       }).catch(() => {});
     }
 

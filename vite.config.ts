@@ -228,17 +228,18 @@ function apiPlugin(env: Record<string, string>): Plugin {
               return;
             }
 
-            const headers: Record<string, string> = {
+            const baseHeaders: Record<string, string> = {
               apikey: SUPABASE_SERVICE_ROLE_KEY,
               Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
               'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
             };
+            // 'Prefer: return=minimal' suppresses row data — only use it for writes
+            const writeHeaders = { ...baseHeaders, Prefer: 'return=minimal' };
 
-            // Verify ownership
+            // Verify ownership (no Prefer header so rows are actually returned)
             const checkRes = await fetch(
               `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}&select=id`,
-              { headers }
+              { headers: baseHeaders }
             );
             const rows = await checkRes.json();
             if (!Array.isArray(rows) || rows.length === 0) {
@@ -250,7 +251,7 @@ function apiPlugin(env: Record<string, string>): Plugin {
             // Delete from DB
             const delRes = await fetch(
               `${SUPABASE_URL}/rest/v1/documents?id=eq.${documentId}&user_id=eq.${userId}`,
-              { method: 'DELETE', headers }
+              { method: 'DELETE', headers: writeHeaders }
             );
             if (!delRes.ok) {
               const errText = await delRes.text();
@@ -261,7 +262,7 @@ function apiPlugin(env: Record<string, string>): Plugin {
             if (filePath) {
               await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${filePath}`, {
                 method: 'DELETE',
-                headers,
+                headers: writeHeaders,
               }).catch(() => {});
             }
 
