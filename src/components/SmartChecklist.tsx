@@ -376,31 +376,29 @@ export default function SmartChecklist() {
                 </div>
               )}
 
-              {/* ── 6. Official Application Portal ── */}
-              <div className="rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-                    <Globe className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold mb-0.5">{t('checklist.official_portal')}</p>
-                    {officialDomain && (
-                      <p className="text-xs text-muted-foreground font-mono mb-1 truncate">{officialDomain}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground mb-4">{t('checklist.portal_note')}</p>
-                    {officialUrl ? (
+              {/* ── 6. Official Application Portal — only shown when URL was found ── */}
+              {officialUrl && (
+                <div className="rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold mb-0.5">{t('checklist.official_portal')}</p>
+                      {officialDomain && (
+                        <p className="text-xs text-muted-foreground font-mono mb-1 truncate">{officialDomain}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mb-4">{t('checklist.portal_note')}</p>
                       <a href={officialUrl} target="_blank" rel="noopener noreferrer">
                         <Button className="bg-primary hover:bg-primary/90 gap-2">
                           {t('checklist.apply_now')}
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                       </a>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">{t('checklist.portal_note')}</p>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
             </div>
           )}

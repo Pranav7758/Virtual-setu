@@ -179,43 +179,40 @@ async function scrapeGovPage(url: string): Promise<string> {
     .slice(0, 9000);
 }
 
-// ─── Google search: find current official URL live ────────────────────────────
+// ─── DuckDuckGo search: find current official URL (plain HTML, no JS needed) ──
 
 async function searchOfficialUrl(purposeLabel: string): Promise<string | undefined> {
   const scraperKey = import.meta.env.VITE_SCRAPER_API_KEY;
   if (!scraperKey) return undefined;
   try {
-    // Use site: restrict to get only govt domains
-    const query = `${purposeLabel} official website (site:gov.in OR site:nic.in OR site:mahaonline.gov.in OR site:digitalsatbara.mahabhumi.gov.in)`;
-    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&gl=in&num=5`;
-    // render=true so Google's full HTML loads with all redirect links
-    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(googleUrl)}&render=true&country_code=in`;
-    const res = await fetch(endpoint, { signal: AbortSignal.timeout(30_000) });
+    // DuckDuckGo HTML endpoint — plain HTML, no JS rendering, minimal bot blocking
+    const query = `${purposeLabel} official website gov.in India`;
+    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const endpoint = `${SCRAPER_URL}?api_key=${scraperKey}&url=${encodeURIComponent(ddgUrl)}&render=false`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) return undefined;
     const html = await res.text();
 
-    // Pattern 1: Google /url?q= redirect links
-    const redirectMatches = html.match(/\/url\?q=(https?:\/\/[^&"' ]+)/g) ?? [];
-    // Pattern 2: Direct href links to gov domains
-    const hrefMatches = html.match(/href="(https?:\/\/[^"]*(?:gov\.in|nic\.in|mahabhumi|digitalsatbara|mahaonline)[^"]*)"/g) ?? [];
+    // DuckDuckGo HTML results contain direct href links AND uddg= encoded redirects
+    const direct = [...(html.matchAll(/href="(https?:\/\/[^"]+)"/g))]
+      .map((m) => m[1]);
+    const redirects = [...(html.matchAll(/uddg=(https?[^&">\s]+)/g))]
+      .map((m) => { try { return decodeURIComponent(m[1]); } catch { return ''; } });
 
-    const allUrls = [
-      ...redirectMatches.map((m) => {
-        try { return decodeURIComponent(m.replace('/url?q=', '').split('&')[0]); } catch { return ''; }
-      }),
-      ...hrefMatches.map((m) => m.replace(/href="/, '').replace(/"$/, '')),
-    ].filter((u) =>
+    const allUrls = [...direct, ...redirects].filter((u) =>
       u.startsWith('http') &&
+      !u.includes('duckduckgo.') &&
+      !u.includes('duck.co') &&
       !u.includes('google.') &&
-      !u.includes('webcache') &&
-      !u.includes('translate.') &&
-      !u.includes('accounts.google') &&
-      !u.includes('support.google')
+      !u.includes('facebook.') &&
+      !u.includes('twitter.')
     );
 
-    // Prefer .gov.in / .nic.in
+    // Strongly prefer .gov.in / .nic.in
     const govUrl = allUrls.find((u) => /\.(gov\.in|nic\.in)/.test(u));
-    return govUrl ?? allUrls[0] ?? undefined;
+    // Second preference: any Indian government-adjacent domain
+    const indiaUrl = allUrls.find((u) => /\.(in|gov|mahaonline|mahabhumi|digitalsatbara)/.test(u));
+    return govUrl ?? indiaUrl ?? allUrls[0] ?? undefined;
   } catch {
     return undefined;
   }
