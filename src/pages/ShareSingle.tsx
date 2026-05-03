@@ -332,42 +332,38 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
         </div>
 
         {/* Download buttons — always visible in the bar */}
-        {(doc.permission === 'download_watermark' || doc.permission === 'download_clean') && (
-          <div className="px-4 pb-2.5 flex flex-wrap gap-2">
-            <button
-              onClick={async () => {
-                isDownloading.current = true;
-                try {
-                  if (isImage) {
-                    await downloadImageWithWatermark(doc.signedUrl, doc.documentName);
-                  } else {
-                    await downloadFile(doc.signedUrl, doc.documentName);
-                  }
-                } finally {
-                  setTimeout(() => { isDownloading.current = false; }, 3000);
+        <div className="px-4 pb-2.5 flex flex-wrap gap-2">
+          <button
+            onClick={async () => {
+              isDownloading.current = true;
+              try {
+                if (isImage) {
+                  await downloadImageWithWatermark(doc.signedUrl, doc.documentName);
+                } else {
+                  await downloadFile(doc.signedUrl, doc.documentName);
                 }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white border border-white/30 rounded-sm transition-colors"
-            >
-              <Download className="h-3.5 w-3.5" /> Download with Watermark
-            </button>
-            {doc.permission === 'download_clean' && (
-              <button
-                onClick={async () => {
-                  isDownloading.current = true;
-                  try {
-                    await downloadFile(doc.signedUrl, doc.documentName);
-                  } finally {
-                    setTimeout(() => { isDownloading.current = false; }, 3000);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FF9933]/90 hover:bg-[#FF9933] text-[#003580] rounded-sm transition-colors font-bold"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
-              </button>
-            )}
-          </div>
-        )}
+              } finally {
+                setTimeout(() => { isDownloading.current = false; }, 3000);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white border border-white/30 rounded-sm transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" /> Download with Watermark
+          </button>
+          <button
+            onClick={async () => {
+              isDownloading.current = true;
+              try {
+                await downloadFile(doc.signedUrl, doc.documentName);
+              } finally {
+                setTimeout(() => { isDownloading.current = false; }, 3000);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FF9933]/90 hover:bg-[#FF9933] text-[#003580] rounded-sm transition-colors font-bold"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
+          </button>
+        </div>
       </div>
 
       {/* Document */}
