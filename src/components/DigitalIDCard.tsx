@@ -167,22 +167,20 @@ export default function DigitalIDCard({
               {/* MIDDLE — all fields, tightly packed */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
 
-                {/* Name + Blood Group on same row */}
+                {/* Name row */}
                 <div>
                   <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0, lineHeight: 1 }}>Name / नाम</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.1 }}>{name || '—'}</p>
-                    {bloodGroup && (
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 2,
-                        padding: '2px 7px', borderRadius: 20,
-                        background: '#fef2f2', border: '1px solid #fca5a5',
-                        flexShrink: 0,
-                      }}>
-                        <span style={{ fontSize: 8 }}>🩸</span>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: '#dc2626', letterSpacing: '0.05em' }}>{bloodGroup}</span>
-                      </div>
-                    )}
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '2px 0 0 0', lineHeight: 1.1 }}>{name || '—'}</p>
+                </div>
+
+                {/* Blood Group — always visible */}
+                <div>
+                  <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0, lineHeight: 1 }}>Blood Group / रक्त समूह</p>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                    <span style={{ fontSize: 10 }}>🩸</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: bloodGroup ? '#dc2626' : '#94a3b8', letterSpacing: '0.05em', lineHeight: 1 }}>
+                      {bloodGroup || '—'}
+                    </span>
                   </div>
                 </div>
 

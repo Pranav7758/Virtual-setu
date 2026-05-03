@@ -376,7 +376,7 @@ export default function Dashboard() {
                 dob={profile?.aadhaar_dob || undefined}
                 aadhaarVerified={profile?.aadhaar_verified ?? false}
                 photoUrl={profile?.photo_url || undefined}
-                bloodGroup={profile?.blood_group || undefined}
+                bloodGroup={profile?.blood_group || ''}
               />
             </div>
             {!limits.qrEmergencySharing && (
