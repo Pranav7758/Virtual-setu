@@ -398,8 +398,11 @@ export default defineConfig(({ mode }) => {
   const VITE_KEYS = [
     "VITE_SUPABASE_URL",
     "VITE_SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_URL_BACKEND",
     "VITE_GROQ_API_KEY",
-    "VITE_GEMINI_API_KEY",
+    "VITE_RAZORPAY_KEY_ID",
+    "VITE_SCRAPER_API_KEY",
+    "VITE_YOUTUBE_API_KEY",
   ];
   for (const key of VITE_KEYS) {
     const val = process.env[key] ?? env[key] ?? "";

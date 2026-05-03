@@ -96,11 +96,18 @@ Virtual Setu is an official Indian government-style secure document management p
 |--------|---------|---------|
 | `VITE_SUPABASE_URL` | Frontend + Server | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Frontend | Supabase public anon key |
-| `SUPABASE_API_KEY` | Server (`server/index.ts`, `vite.config.ts`) | Supabase service role key |
+| `VITE_SUPABASE_URL_BACKEND` | Frontend | Supabase backend URL variant |
+| `SUPABASE_API_KEY` | Server | Supabase service role key (preferred) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase service role key (fallback) |
 | `VITE_GROQ_API_KEY` | Frontend | Groq AI document verification |
-| `VITE_GEMINI_API_KEY` | Frontend | Google Gemini AI chatbot |
+| `VITE_RAZORPAY_KEY_ID` | Frontend | Razorpay checkout modal |
 | `RAZORPAY_KEY_ID` | Server | Razorpay order creation |
 | `RAZORPAY_KEY_SECRET` | Server | Razorpay signature verification |
+| `VITE_SCRAPER_API_KEY` | Frontend | ScraperAPI for smart checklist |
+| `VITE_YOUTUBE_API_KEY` | Frontend | YouTube API |
+| `SESSION_SECRET` | Server | Express session secret |
+
+> Note: No `VITE_GEMINI_API_KEY` — `AIChatbot.tsx` uses a hardcoded fallback key for Gemini Pro.
 
 ## Plan Limits
 | Plan | Documents | Features |
