@@ -72,17 +72,21 @@ function PhotoPlaceholder({ w, h }: { w: number; h: number }) {
   return (
     <div style={{
       width: w, height: h, borderRadius: 6, flexShrink: 0,
-      background: 'linear-gradient(160deg, #dce8f5 0%, #c8dced 100%)',
+      background: '#d8e4ef',
       border: '1.5px solid #93aec8',
-      overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      overflow: 'hidden', position: 'relative',
     }}>
-      <svg viewBox="0 0 100 120" width={w} height={h * 0.92} style={{ display: 'block' }}>
-        {/* head */}
-        <ellipse cx="50" cy="38" rx="22" ry="25" fill="#a0b8cc" />
+      <svg viewBox="0 0 92 116" width={w} height={h} style={{ display: 'block', position: 'absolute', bottom: 0, left: 0 }}>
+        {/* torso / shoulders — wide curved shape filling bottom */}
+        <path d="M-4,116 C-4,116 8,74 46,72 C84,72 96,116 96,116 Z" fill="#5a7a99" />
         {/* neck */}
-        <rect x="41" y="61" width="18" height="12" rx="4" fill="#a0b8cc" />
-        {/* shoulders / torso */}
-        <path d="M10,120 Q18,72 50,72 Q82,72 90,120 Z" fill="#8aafc4" />
+        <rect x="37" y="57" width="18" height="18" rx="3" fill="#5a7a99" />
+        {/* head */}
+        <ellipse cx="46" cy="40" rx="22" ry="24" fill="#5a7a99" />
+        {/* ear left */}
+        <ellipse cx="24" cy="42" rx="4" ry="5.5" fill="#5a7a99" />
+        {/* ear right */}
+        <ellipse cx="68" cy="42" rx="4" ry="5.5" fill="#5a7a99" />
       </svg>
     </div>
   );
