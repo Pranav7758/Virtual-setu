@@ -77,8 +77,8 @@ export async function scanAndVerifyAadhaar(
   enteredName: string,
   enteredAadhaar: string,
 ): Promise<AadhaarScanResult> {
-  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY as string | undefined;
-  if (!apiKey) return { success: false, error: 'Gemini API key not configured.' };
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
+  if (!apiKey) return { success: false, error: 'Groq API key not configured.' };
 
   const enteredDigits = enteredAadhaar.replace(/\D/g, '');
   if (enteredDigits.length !== 12) {
@@ -100,36 +100,46 @@ export async function scanAndVerifyAadhaar(
 
 Return ONLY the JSON object with no markdown, no explanation.`;
 
-  let geminiResponse: any;
+  let groqResponse: any;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: imageFile.type || 'image/jpeg', data: base64 } },
-              { text: prompt },
-            ],
-          }],
-          generationConfig: { temperature: 0 },
-        }),
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: { url: `data:${imageFile.type || 'image/jpeg'};base64,${base64}` },
+              },
+              { type: 'text', text: prompt },
+            ],
+          },
+        ],
+        temperature: 0.0,
+        max_tokens: 300,
+        response_format: { type: 'json_object' },
+      }),
+    });
+
     if (!res.ok) {
       const err = await res.text();
-      return { success: false, error: `Could not read Aadhaar card (Gemini ${res.status}). Please use a clear image.` };
+      return { success: false, error: `Could not read Aadhaar card (Groq ${res.status}). Please use a clear image.` };
     }
-    geminiResponse = await res.json();
+    groqResponse = await res.json();
   } catch {
     return { success: false, error: 'Network error while scanning card. Please try again.' };
   }
 
   let extracted: any = {};
   try {
-    const raw = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const raw = groqResponse?.choices?.[0]?.message?.content ?? '';
     const jsonStr = raw.replace(/```json\n?|```/g, '').trim();
     extracted = JSON.parse(jsonStr);
   } catch {
