@@ -30,19 +30,22 @@ function saveBookmarks(set: Set<string>) {
 }
 
 function StatusBadge({ status }: { status: 'active' | 'inactive' }) {
+  const { t } = useTranslation();
   return status === 'active'
-    ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-green-50 text-green-700 border border-green-200 uppercase tracking-wide"><CheckCircle className="h-2.5 w-2.5" /> Active</span>
-    : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide"><XCircle className="h-2.5 w-2.5" /> Inactive</span>;
+    ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-green-50 text-green-700 border border-green-200 uppercase tracking-wide"><CheckCircle className="h-2.5 w-2.5" /> {t('schemes_page.badge_active')}</span>
+    : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide"><XCircle className="h-2.5 w-2.5" /> {t('schemes_page.badge_inactive')}</span>;
 }
 
 function NewBadge() {
-  return <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-[#FF6200] text-white uppercase tracking-wide"><Sparkles className="h-2.5 w-2.5" /> New</span>;
+  const { t } = useTranslation();
+  return <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-[#FF6200] text-white uppercase tracking-wide"><Sparkles className="h-2.5 w-2.5" /> {t('schemes_page.badge_new')}</span>;
 }
 
 function LevelBadge({ level }: { level: 'central' | 'state' }) {
+  const { t } = useTranslation();
   return level === 'central'
-    ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-[#003580] border border-blue-200"><Building2 className="h-2.5 w-2.5" /> Central</span>
-    : <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-purple-50 text-purple-700 border border-purple-200"><Globe className="h-2.5 w-2.5" /> State</span>;
+    ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-[#003580] border border-blue-200"><Building2 className="h-2.5 w-2.5" /> {t('schemes_page.badge_central')}</span>
+    : <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-purple-50 text-purple-700 border border-purple-200"><Globe className="h-2.5 w-2.5" /> {t('schemes_page.badge_state')}</span>;
 }
 
 interface SchemeDetailProps {
@@ -55,6 +58,7 @@ interface SchemeDetailProps {
 }
 
 function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translation, translating }: SchemeDetailProps) {
+  const { t } = useTranslation();
   const T = translation;
   const labels = T?.labels;
 
@@ -72,7 +76,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
               <LevelBadge level={scheme.level} />
               {translating && (
                 <span className="inline-flex items-center gap-1 text-[10px] bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded-sm">
-                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> Translating…
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> {t('schemes_page.badge_translating')}
                 </span>
               )}
             </div>
@@ -94,7 +98,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
           {/* Ministry + Launch */}
           <div className="px-6 py-3 bg-[#f0f4fa] flex flex-wrap items-center gap-4 text-xs text-slate-600">
             <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#003580]" /> {T?.ministry ?? scheme.ministry}</span>
-            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#003580]" /> {labels?.launchedLabel ?? 'Launched'}: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#003580]" /> {labels?.launchedLabel ?? t('schemes_page.launched_label')}: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
 
           {/* Description */}
@@ -106,7 +110,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
           </div>
 
           {/* Eligibility */}
-          <Section title={labels?.eligibilityTitle ?? 'Eligibility Criteria'} icon="✅">
+          <Section title={labels?.eligibilityTitle ?? t('schemes_page.eligibility_title')} icon="✅">
             <ul className="space-y-1">
               {(T?.eligibility ?? scheme.eligibility).map((e, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-green-500 mt-0.5 shrink-0">•</span>{e}</li>
@@ -115,7 +119,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
           </Section>
 
           {/* Benefits */}
-          <Section title={labels?.benefitsTitle ?? 'Benefits & Support'} icon="🎁">
+          <Section title={labels?.benefitsTitle ?? t('schemes_page.benefits_title')} icon="🎁">
             <ul className="space-y-1">
               {(T?.benefits ?? scheme.benefits).map((b, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-[#003580] mt-0.5 shrink-0">▸</span>{b}</li>
@@ -124,7 +128,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
           </Section>
 
           {/* Required Documents */}
-          <Section title={labels?.documentsTitle ?? 'Required Documents'} icon="📄">
+          <Section title={labels?.documentsTitle ?? t('schemes_page.documents_title')} icon="📄">
             <div className="flex flex-wrap gap-1.5">
               {(T?.requiredDocuments ?? scheme.requiredDocuments).map((d, i) => (
                 <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
@@ -133,7 +137,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
           </Section>
 
           {/* Application Process */}
-          <Section title={labels?.applyTitle ?? 'How to Apply'} icon="📝">
+          <Section title={labels?.applyTitle ?? t('schemes_page.apply_title')} icon="📝">
             <ol className="space-y-2">
               {(T?.applicationProcess ?? scheme.applicationProcess).map((step, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
@@ -149,7 +153,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
             <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#003580] hover:bg-[#002060] text-white text-sm font-semibold rounded-sm transition-colors"
             >
-              <ExternalLink className="h-4 w-4" /> {labels?.applyButton ?? 'Apply / Visit Official Website'}
+              <ExternalLink className="h-4 w-4" /> {labels?.applyButton ?? t('schemes_page.apply_button')}
             </a>
           </div>
         </div>
@@ -179,6 +183,7 @@ interface SchemeCardProps {
 }
 
 function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTranslation, translating }: SchemeCardProps) {
+  const { t } = useTranslation();
   const displayName = cardTranslation?.name ?? scheme.name;
   const displayDesc = cardTranslation?.description ?? scheme.description;
 
@@ -231,7 +236,7 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTransla
           onClick={onClick}
           className="text-xs font-semibold text-[#003580] hover:underline flex items-center gap-1 shrink-0"
         >
-          View Details <ChevronDown className="h-3 w-3" />
+          {t('schemes_page.view_details')} <ChevronDown className="h-3 w-3" />
         </button>
       </div>
     </div>
@@ -239,7 +244,7 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTransla
 }
 
 export default function GovSchemes() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
   const [search, setSearch] = useState('');
@@ -344,9 +349,9 @@ export default function GovSchemes() {
   const newCount = GOV_SCHEMES.filter((s) => s.isNew).length;
 
   const QUICK_TABS = [
-    { key: 'All' as const, label: `All (${GOV_SCHEMES.length})` },
-    { key: 'New' as const, label: `🆕 New (${newCount})` },
-    { key: 'Bookmarked' as const, label: `🔖 Saved (${bookmarks.size})` },
+    { key: 'All' as const, label: t('schemes_page.tab_all', { count: GOV_SCHEMES.length }) },
+    { key: 'New' as const, label: t('schemes_page.tab_new', { count: newCount }) },
+    { key: 'Bookmarked' as const, label: t('schemes_page.tab_saved', { count: bookmarks.size }) },
   ];
 
   const hasActiveFilters = filterStatus !== 'all' || filterLevel !== 'all' || filterGender !== 'all' || filterIncome !== 'all';
@@ -354,9 +359,9 @@ export default function GovSchemes() {
   return (
     <GovLayout>
       <GovPageHeader
-        breadcrumb="Citizen Portal · Government Schemes"
-        title="Government Schemes Directory"
-        subtitle="Browse all central and state government schemes, benefits and programmes"
+        breadcrumb={t('schemes_page.breadcrumb')}
+        title={t('schemes_page.title')}
+        subtitle={t('schemes_page.subtitle')}
       />
 
       <section className="container mx-auto max-w-7xl px-4 py-6 space-y-5">
@@ -364,10 +369,10 @@ export default function GovSchemes() {
         {/* Stats bar */}
         <GovCard className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-100">
           {[
-            { value: GOV_SCHEMES.length, label: 'Total Schemes' },
-            { value: activeCount, label: 'Active Schemes' },
-            { value: newCount, label: 'Newly Launched' },
-            { value: CATEGORIES.length, label: 'Categories' },
+            { value: GOV_SCHEMES.length, label: t('schemes_page.stat_total') },
+            { value: activeCount, label: t('schemes_page.stat_active') },
+            { value: newCount, label: t('schemes_page.stat_new') },
+            { value: CATEGORIES.length, label: t('schemes_page.stat_categories') },
           ].map((s) => (
             <div key={s.label} className="px-4 py-4 text-center">
               <div className="text-2xl font-bold text-[#003580]">{s.value}+</div>
@@ -383,7 +388,7 @@ export default function GovSchemes() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search schemes by name, category, eligibility, benefit..."
+              placeholder={t('schemes_page.search_placeholder')}
               className="pl-9 pr-9 h-9 text-sm bg-white border-[#cdd3da] rounded-sm focus-visible:ring-[#003580]"
             />
             {search && (
@@ -401,7 +406,7 @@ export default function GovSchemes() {
             }`}
           >
             <Filter className="h-3.5 w-3.5" />
-            Filters {hasActiveFilters && <span className="bg-white text-[#003580] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">!</span>}
+            {t('schemes_page.filters_btn')} {hasActiveFilters && <span className="bg-white text-[#003580] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">!</span>}
           </button>
         </div>
 
@@ -409,21 +414,21 @@ export default function GovSchemes() {
         {showFilters && (
           <GovCard className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="font-semibold text-slate-900 text-sm">Advanced Filters</p>
+              <p className="font-semibold text-slate-900 text-sm">{t('schemes_page.advanced_filters')}</p>
               {hasActiveFilters && (
                 <button onClick={() => { setFilterStatus('all'); setFilterLevel('all'); setFilterGender('all'); setFilterIncome('all'); }}
-                  className="text-xs text-red-600 hover:underline">Clear all filters</button>
+                  className="text-xs text-red-600 hover:underline">{t('schemes_page.clear_all_filters')}</button>
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <FilterGroup label="Status" value={filterStatus} onChange={(v) => setFilterStatus(v as any)}
-                options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-              <FilterGroup label="Level" value={filterLevel} onChange={(v) => setFilterLevel(v as any)}
-                options={[{ value: 'all', label: 'All' }, { value: 'central', label: 'Central Govt' }, { value: 'state', label: 'State Govt' }]} />
-              <FilterGroup label="For Gender" value={filterGender} onChange={(v) => setFilterGender(v as any)}
-                options={[{ value: 'all', label: 'All' }, { value: 'female', label: 'Women Only' }, { value: 'male', label: 'Men Only' }]} />
-              <FilterGroup label="Income Group" value={filterIncome} onChange={(v) => setFilterIncome(v as any)}
-                options={[{ value: 'all', label: 'All' }, { value: 'bpl', label: 'BPL / Poor' }, { value: 'low', label: 'Low Income' }, { value: 'middle', label: 'Middle Income' }]} />
+              <FilterGroup label={t('schemes_page.filter_status')} value={filterStatus} onChange={(v) => setFilterStatus(v as any)}
+                options={[{ value: 'all', label: t('schemes_page.opt_all') }, { value: 'active', label: t('schemes_page.opt_active') }, { value: 'inactive', label: t('schemes_page.opt_inactive') }]} />
+              <FilterGroup label={t('schemes_page.filter_level')} value={filterLevel} onChange={(v) => setFilterLevel(v as any)}
+                options={[{ value: 'all', label: t('schemes_page.opt_all') }, { value: 'central', label: t('schemes_page.opt_central') }, { value: 'state', label: t('schemes_page.opt_state') }]} />
+              <FilterGroup label={t('schemes_page.filter_gender')} value={filterGender} onChange={(v) => setFilterGender(v as any)}
+                options={[{ value: 'all', label: t('schemes_page.opt_all') }, { value: 'female', label: t('schemes_page.opt_women') }, { value: 'male', label: t('schemes_page.opt_men') }]} />
+              <FilterGroup label={t('schemes_page.filter_income')} value={filterIncome} onChange={(v) => setFilterIncome(v as any)}
+                options={[{ value: 'all', label: t('schemes_page.opt_all') }, { value: 'bpl', label: t('schemes_page.opt_bpl') }, { value: 'low', label: t('schemes_page.opt_low') }, { value: 'middle', label: t('schemes_page.opt_middle') }]} />
             </div>
           </GovCard>
         )}
@@ -456,14 +461,14 @@ export default function GovSchemes() {
         {/* Results header */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-600">
-            Showing <span className="font-semibold text-slate-900">{filtered.length}</span> scheme{filtered.length !== 1 ? 's' : ''}
-            {activeCategory !== 'All' && <span className="text-[#003580]"> in <span className="font-semibold">{activeCategory}</span></span>}
-            {search && <span className="text-[#003580]"> matching <span className="font-semibold">"{search}"</span></span>}
+            {t('schemes_page.showing')} <span className="font-semibold text-slate-900">{filtered.length}</span> {filtered.length !== 1 ? t('schemes_page.scheme_plural') : t('schemes_page.scheme_singular')}
+            {activeCategory !== 'All' && <span className="text-[#003580]"> {t('schemes_page.in_label')} <span className="font-semibold">{activeCategory}</span></span>}
+            {search && <span className="text-[#003580]"> {t('schemes_page.matching')} <span className="font-semibold">"{search}"</span></span>}
           </p>
           {(activeCategory !== 'All' || search || hasActiveFilters) && (
             <button onClick={() => { setSearch(''); setActiveCategory('All'); setFilterStatus('all'); setFilterLevel('all'); setFilterGender('all'); setFilterIncome('all'); }}
               className="text-xs text-[#003580] hover:underline flex items-center gap-1">
-              <X className="h-3 w-3" /> Clear all
+              <X className="h-3 w-3" /> {t('schemes_page.clear_all')}
             </button>
           )}
         </div>
@@ -472,7 +477,7 @@ export default function GovSchemes() {
         {lang !== 'en' && translatingCards && (
           <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-sm text-xs text-amber-700">
             <Languages className="h-3.5 w-3.5 shrink-0 animate-pulse" />
-            <span>Translating all schemes to your language… please wait a moment.</span>
+            <span>{t('schemes_page.translating_banner')}</span>
           </div>
         )}
 
@@ -480,10 +485,10 @@ export default function GovSchemes() {
         {filtered.length === 0 && !aiLoading && aiResults.length === 0 ? (
           <GovCard className="py-16 text-center">
             <BadgeInfo className="h-10 w-10 mx-auto text-slate-300 mb-3" />
-            <p className="font-semibold text-slate-700">No schemes found</p>
-            <p className="text-sm text-slate-500 mt-1">Try adjusting your search or filters</p>
+            <p className="font-semibold text-slate-700">{t('schemes_page.no_results_title')}</p>
+            <p className="text-sm text-slate-500 mt-1">{t('schemes_page.no_results_sub')}</p>
             <button onClick={() => { setSearch(''); setActiveCategory('All'); setFilterStatus('all'); setFilterLevel('all'); setFilterGender('all'); setFilterIncome('all'); }}
-              className="mt-4 text-sm text-[#003580] font-semibold hover:underline">View all schemes</button>
+              className="mt-4 text-sm text-[#003580] font-semibold hover:underline">{t('schemes_page.view_all_schemes')}</button>
           </GovCard>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -513,7 +518,7 @@ export default function GovSchemes() {
                   <Zap className="h-3 w-3 text-violet-600" />
                 )}
                 <span className="text-[11px] font-semibold text-violet-700 uppercase tracking-wider">
-                  {aiLoading ? 'AI searching live…' : aiResults.length > 0 ? `${aiResults.length} AI-powered results` : 'AI Live Search'}
+                  {aiLoading ? t('schemes_page.ai_searching') : aiResults.length > 0 ? t('schemes_page.ai_results', { count: aiResults.length }) : t('schemes_page.ai_live_label')}
                 </span>
               </div>
               <div className="flex-1 h-px bg-gradient-to-l from-violet-200 to-transparent" />
@@ -542,19 +547,19 @@ export default function GovSchemes() {
 
             {!aiLoading && aiResults.length === 0 && search.trim().length >= 3 && (
               <div className="text-center py-5 text-sm text-slate-400">
-                No additional AI results found for this search.
+                {t('schemes_page.ai_no_results')}
               </div>
             )}
 
             <p className="text-[10px] text-center text-slate-400">
-              AI results are generated by Groq LLM and may contain inaccuracies. Always verify at official government portals.
+              {t('schemes_page.ai_disclaimer')}
             </p>
           </div>
         )}
 
         {/* Footer note */}
         <div className="text-[11px] text-slate-400 text-center pb-2">
-          Information sourced from official government portals. For most current details, always verify at the official scheme website. Last updated: May 2025.
+          {t('schemes_page.footer_note')}
         </div>
       </section>
 
@@ -601,6 +606,7 @@ function FilterGroup({ label, value, onChange, options }: {
 // ── AI Scheme Card ─────────────────────────────────────────────────────────────
 
 function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       className="bg-white border border-violet-200 rounded-sm shadow-sm hover:shadow-md hover:border-violet-400 transition-all group flex flex-col cursor-pointer relative"
@@ -614,7 +620,7 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
       <div className="px-4 pt-4 pb-3 flex-1">
         <div className="flex flex-wrap items-center gap-1 mb-2">
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${scheme.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
-            {scheme.status === 'active' ? '● Active' : '○ Inactive'}
+            {scheme.status === 'active' ? `● ${t('schemes_page.badge_active')}` : `○ ${t('schemes_page.badge_inactive')}`}
           </span>
           <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 font-semibold px-2 py-0.5 rounded-sm">
             {scheme.category}
@@ -637,7 +643,7 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
           <span className="line-clamp-1">{scheme.ministry}</span>
         </div>
         <button className="inline-flex items-center gap-1 text-[10px] text-violet-600 font-semibold hover:text-violet-800">
-          View Details <ChevronDown className="h-3 w-3" />
+          {t('schemes_page.view_details')} <ChevronDown className="h-3 w-3" />
         </button>
       </div>
     </div>
@@ -647,6 +653,7 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
 // ── AI Scheme Detail Modal ─────────────────────────────────────────────────────
 
 function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-sm shadow-2xl max-w-2xl w-full my-6 flex flex-col max-h-[90vh] overflow-hidden">
@@ -656,7 +663,7 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-sm flex items-center gap-1">
-                  <Zap className="h-2.5 w-2.5" /> AI-Powered Result
+                  <Zap className="h-2.5 w-2.5" /> {t('schemes_page.ai_powered_badge')}
                 </span>
                 <span className="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-sm">{scheme.category}</span>
               </div>
@@ -669,10 +676,10 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
           </div>
           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-white/80">
             <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{scheme.ministry}</span>
-            {scheme.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />Launched: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })}</span>}
+            {scheme.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{t('schemes_page.launched_label')}: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })}</span>}
             <span className="flex items-center gap-1">
               {scheme.status === 'active' ? <CheckCircle className="h-3 w-3 text-emerald-300" /> : <XCircle className="h-3 w-3 text-red-300" />}
-              {scheme.status === 'active' ? 'Active' : 'Inactive'}
+              {scheme.status === 'active' ? t('schemes_page.badge_active') : t('schemes_page.badge_inactive')}
             </span>
           </div>
         </div>
@@ -685,7 +692,7 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
 
           {scheme.eligibility.length > 0 && (
             <div className="px-6 py-4">
-              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">👥 Who Can Apply</h3>
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">👥 {t('schemes_page.who_can_apply')}</h3>
               <ul className="space-y-1">
                 {scheme.eligibility.map((e, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />{e}</li>)}
               </ul>
@@ -694,7 +701,7 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
 
           {scheme.benefits.length > 0 && (
             <div className="px-6 py-4">
-              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">🎁 Benefits</h3>
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">🎁 {t('schemes_page.benefits_label')}</h3>
               <ul className="space-y-1">
                 {scheme.benefits.map((b, i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-violet-600 mt-0.5 shrink-0">▸</span>{b}</li>)}
               </ul>
@@ -703,7 +710,7 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
 
           {scheme.requiredDocuments.length > 0 && (
             <div className="px-6 py-4">
-              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📄 Required Documents</h3>
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📄 {t('schemes_page.documents_title')}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {scheme.requiredDocuments.map((d, i) => (
                   <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
@@ -714,7 +721,7 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
 
           {scheme.applicationProcess.length > 0 && (
             <div className="px-6 py-4">
-              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📝 How to Apply</h3>
+              <h3 className="font-semibold text-slate-900 text-sm mb-3 flex items-center gap-1.5">📝 {t('schemes_page.apply_title')}</h3>
               <ol className="space-y-2">
                 {scheme.applicationProcess.map((step, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
@@ -729,14 +736,14 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
           <div className="px-6 py-4 bg-amber-50 border-t border-amber-200">
             <p className="text-[11px] text-amber-700 flex items-start gap-1.5">
               <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              This result was generated by AI and may contain inaccuracies. Please verify all information at the official government portal before applying.
+              {t('schemes_page.ai_detail_disclaimer')}
             </p>
           </div>
 
           <div className="px-6 py-4">
             <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white text-sm font-semibold rounded-sm transition-colors">
-              <ExternalLink className="h-4 w-4" /> Visit Official Website
+              <ExternalLink className="h-4 w-4" /> {t('schemes_page.visit_official')}
             </a>
           </div>
         </div>
