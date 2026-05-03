@@ -97,10 +97,57 @@ function toCache(query: string, lang: string, results: AISchemeResult[]) {
   } catch {}
 }
 
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+async function callSearchAI(systemMsg: string, userMsg: string): Promise<string> {
+  // Try Groq first
+  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (groqKey) {
+    try {
+      const res = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemMsg },
+            { role: 'user', content: userMsg },
+          ],
+          temperature: 0.2,
+          max_tokens: 3000,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const text = json.choices?.[0]?.message?.content?.trim() ?? '';
+        if (text) return text;
+      }
+    } catch { /* fall through */ }
+  }
+  // Fallback: Gemini
+  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const res = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemMsg}\n\n${userMsg}` }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 3000 },
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+      }
+    } catch { /* both failed */ }
+  }
+  return '';
+}
+
 export async function searchSchemesWithAI(query: string, lang = 'en'): Promise<AISchemeResult[]> {
   const normalizedLang = lang.split('-')[0];
-  const key = import.meta.env.VITE_GROQ_API_KEY;
-  if (!key || !query.trim()) return [];
+  if (!query.trim()) return [];
 
   const cached = fromCache(query.trim().toLowerCase(), normalizedLang);
   if (cached) return cached;
@@ -141,26 +188,8 @@ Respond ONLY with a raw JSON array (no markdown fences, no explanation). Use thi
 If no relevant Indian government schemes match the query, return: []`;
 
   try {
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemMsg },
-          { role: 'user', content: userMsg },
-        ],
-        temperature: 0.2,
-        max_tokens: 3000,
-      }),
-    });
-
-    if (!res.ok) return [];
-    const json = await res.json();
-    const text = json.choices?.[0]?.message?.content?.trim() ?? '';
+    const text = await callSearchAI(systemMsg, userMsg);
+    if (!text) return [];
 
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return [];

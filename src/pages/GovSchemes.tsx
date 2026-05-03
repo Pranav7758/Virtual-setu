@@ -334,13 +334,30 @@ export default function GovSchemes() {
   const [cardTranslations, setCardTranslations] = useState<Record<string, CardTranslation>>({});
   const [translatingCards, setTranslatingCards] = useState(false);
 
+  // Languages sharing Devanagari script — nameHindi works as instant fallback
+  const DEVANAGARI_LANGS = new Set(['hi', 'mr', 'mai', 'kok', 'ne', 'dgo', 'sa', 'brx']);
+
   useEffect(() => {
-    if (lang === 'en') { setCardTranslations({}); return; }
+    if (lang === 'en') { setCardTranslations({}); setTranslatingCards(false); return; }
     let cancelled = false;
-    setTranslatingCards(true);
-    translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
-      if (!cancelled) { setCardTranslations(res); setTranslatingCards(false); }
-    });
+
+    if (DEVANAGARI_LANGS.has(lang)) {
+      // Pre-fill names from nameHindi immediately — no loading skeletons needed
+      const immediate: Record<string, CardTranslation> = {};
+      for (const s of GOV_SCHEMES) {
+        immediate[s.id] = { name: s.nameHindi || s.name, description: s.description };
+      }
+      if (!cancelled) setCardTranslations(immediate);
+      // AI translates descriptions in the background
+      translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
+        if (!cancelled && Object.keys(res).length > 0) setCardTranslations(res);
+      });
+    } else {
+      setTranslatingCards(true);
+      translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
+        if (!cancelled) { setCardTranslations(res); setTranslatingCards(false); }
+      });
+    }
     return () => { cancelled = true; };
   }, [lang]);
 
