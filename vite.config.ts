@@ -400,7 +400,7 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       // proxy removed — API is now handled by the plugin above
     },
-    plugins: [react(), apiPlugin(env)],
+    plugins: [react(), ...(mode === "development" ? [apiPlugin(env)] : [])],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
