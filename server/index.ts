@@ -277,6 +277,48 @@ app.post('/api/get-doc-share', async (req, res) => {
   }
 });
 
+// ── AI proxy — routes Groq calls from the browser through the server ──────────
+// The browser env injection of VITE_GROQ_API_KEY can be unreliable;
+// calling from the server is always reliable (verified with curl).
+app.post('/api/ai/chat', async (req, res) => {
+  const groqKey = process.env.VITE_GROQ_API_KEY;
+  if (!groqKey) return res.status(503).json({ error: 'AI service not configured' });
+
+  const { messages, max_tokens = 4000, temperature = 0.1 } = req.body;
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'messages array required' });
+  }
+
+  try {
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        temperature,
+        max_tokens,
+      }),
+    });
+
+    if (!groqRes.ok) {
+      const errText = await groqRes.text();
+      console.error('[AI proxy] Groq error', groqRes.status, errText.slice(0, 200));
+      return res.status(groqRes.status).json({ error: errText.slice(0, 200) });
+    }
+
+    const json = await groqRes.json();
+    const text = json.choices?.[0]?.message?.content?.trim() ?? '';
+    return res.json({ text });
+  } catch (err: any) {
+    console.error('[AI proxy] fetch threw:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.API_PORT || 3001;
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);

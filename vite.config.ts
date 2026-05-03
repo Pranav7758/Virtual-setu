@@ -317,6 +317,40 @@ function apiPlugin(_env: Record<string, string>): Plugin {
           return;
         }
 
+        /* ---------- POST /api/ai/chat ---------- */
+        if (isPost && req.url === '/api/ai/chat') {
+          try {
+            const body = await parseJsonBody(req);
+            const { messages, max_tokens = 4000, temperature = 0.1 } = body;
+            const groqKey = process.env.VITE_GROQ_API_KEY;
+            if (!groqKey) {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'AI service not configured' }));
+              return;
+            }
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature, max_tokens }),
+            });
+            const groqJson = await groqRes.json();
+            if (!groqRes.ok) {
+              console.error('[AI proxy] Groq error', groqRes.status, JSON.stringify(groqJson).slice(0, 200));
+              res.writeHead(groqRes.status, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: groqJson.error?.message ?? 'Groq error' }));
+              return;
+            }
+            const text = groqJson.choices?.[0]?.message?.content?.trim() ?? '';
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text }));
+          } catch (e: any) {
+            console.error('[AI proxy] threw:', e.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
         /* ---------- POST /api/delete-document ---------- */
         if (req.url === '/api/delete-document') {
           try {

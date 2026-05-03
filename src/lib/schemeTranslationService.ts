@@ -107,55 +107,28 @@ function cacheSet<T>(key: string, data: T) {
   try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
 
-// ── AI helper — tries Groq first, falls back to Gemini ────────────────────────
+// ── AI helper — calls server-side proxy (guaranteed reliable) ─────────────────
 
 async function callAI(systemMsg: string, userMsg: string, maxTokens = 3000): Promise<string> {
-  // ── Try Groq ──────────────────────────────────────────────────────────────
-  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (groqKey) {
-    try {
-      const res = await fetch(GROQ_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemMsg },
-            { role: 'user', content: userMsg },
-          ],
-          temperature: 0.1,
-          max_tokens: maxTokens,
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        const text = json.choices?.[0]?.message?.content?.trim() ?? '';
-        if (text) return text;
-      }
-    } catch { /* fall through to Gemini */ }
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemMsg },
+          { role: 'user', content: userMsg },
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.1,
+      }),
+    });
+    if (!res.ok) return '';
+    const json = await res.json();
+    return json.text ?? '';
+  } catch {
+    return '';
   }
-
-  // ── Fallback: Gemini ───────────────────────────────────────────────────────
-  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (geminiKey) {
-    try {
-      const prompt = `${systemMsg}\n\n${userMsg}`;
-      const res = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: maxTokens },
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
-      }
-    } catch { /* both failed */ }
-  }
-
-  return '';
 }
 
 function extractJson(text: string): any {

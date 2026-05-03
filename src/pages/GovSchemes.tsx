@@ -342,16 +342,14 @@ export default function GovSchemes() {
     let cancelled = false;
 
     if (DEVANAGARI_LANGS.has(lang)) {
-      // Pre-fill names from nameHindi immediately — no loading skeletons needed
+      // For Devanagari (Hindi/Marathi etc.): names come from nameHindi instantly.
+      // Do NOT batch-translate descriptions — it burns all API quota before the
+      // detail modal can be translated (rate-limit 429 on Groq free tier).
       const immediate: Record<string, CardTranslation> = {};
       for (const s of GOV_SCHEMES) {
         immediate[s.id] = { name: s.nameHindi || s.name, description: s.description };
       }
-      if (!cancelled) setCardTranslations(immediate);
-      // AI translates descriptions in the background
-      translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
-        if (!cancelled && Object.keys(res).length > 0) setCardTranslations(res);
-      });
+      if (!cancelled) { setCardTranslations(immediate); setTranslatingCards(false); }
     } else {
       setTranslatingCards(true);
       translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
