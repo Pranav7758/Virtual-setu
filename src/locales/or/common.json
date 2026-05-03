@@ -258,7 +258,20 @@
     "benefits_label": "ସୁବିଧା",
     "ai_detail_disclaimer": "ଏହି ଫଳ AI ଦ୍ଵାରା ତିଆରି। ଆବେଦନ ପୂର୍ବରୁ ଅଧିକୃତ ପୋର୍ଟାଲରେ ଯାଞ୍ଚ କରନ୍ତୁ।",
     "visit_official": "ଅଧିକୃତ ୱେବସାଇଟ ଦେଖନ୍ତୁ",
-    "footer_note": "ତଥ୍ୟ ଅଧିକୃତ ସରକାରୀ ପୋର୍ଟାଲ ଠାରୁ ନିଆ ଯାଇଛି।"
+    "footer_note": "ତଥ୍ୟ ଅଧିକୃତ ସରକାରୀ ପୋର୍ଟାଲ ଠାରୁ ନିଆ ଯାଇଛି।",
+    "cat_Education": "ଶିକ୍ଷା",
+    "cat_Healthcare": "ସ୍ୱାସ୍ଥ୍ୟ ସେବା",
+    "cat_Agriculture": "କୃଷି",
+    "cat_Business": "ବ୍ୟବସାୟ",
+    "cat_Employment": "ନିଯୁକ୍ତି",
+    "cat_Housing": "ବାସଗୃହ",
+    "cat_Social_Welfare": "ସାମାଜିକ କଲ୍ୟାଣ",
+    "cat_Women_Children": "ମହିଳା ଓ ଶିଶୁ",
+    "cat_Senior_Citizens": "ବୟୋଜ୍ୟେଷ୍ଠ ନାଗରିକ",
+    "cat_Financial_Inclusion": "ଆର୍ଥିକ ସଂଯୁକ୍ତି",
+    "cat_Skill_Development": "କୌଶଳ ବିକାଶ",
+    "cat_Rural_Development": "ଗ୍ରାମ୍ୟ ବିକାଶ",
+    "cat_Environment_Energy": "ପରିବେଶ ଓ ଶକ୍ତି"
   },
   "errors": {
     "invalid_pin": "ଭୁଲ PIN",

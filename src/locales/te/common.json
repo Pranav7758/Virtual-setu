@@ -258,7 +258,20 @@
     "benefits_label": "ప్రయోజనాలు",
     "ai_detail_disclaimer": "ఈ ఫలితం AI ద్వారా రూపొందించబడింది. దరఖాస్తు చేయడానికి ముందు అధికారిక పోర్టల్‌లో సత్యాపించండి.",
     "visit_official": "అధికారిక వెబ్‌సైట్ చూడండి",
-    "footer_note": "సమాచారం అధికారిక ప్రభుత్వ పోర్టల్‌ల నుండి తీసుకోబడింది. తాజా సమాచారానికి అధికారిక వెబ్‌సైట్ చూడండి."
+    "footer_note": "సమాచారం అధికారిక ప్రభుత్వ పోర్టల్‌ల నుండి తీసుకోబడింది. తాజా సమాచారానికి అధికారిక వెబ్‌సైట్ చూడండి.",
+    "cat_Education": "విద్య",
+    "cat_Healthcare": "ఆరోగ్య సేవ",
+    "cat_Agriculture": "వ్యవసాయం",
+    "cat_Business": "వ్యాపారం",
+    "cat_Employment": "ఉపాధి",
+    "cat_Housing": "గృహనిర్మాణం",
+    "cat_Social_Welfare": "సామాజిక సంక్షేమం",
+    "cat_Women_Children": "మహిళలు & పిల్లలు",
+    "cat_Senior_Citizens": "వయోధికులు",
+    "cat_Financial_Inclusion": "ఆర్థిక చేరిక",
+    "cat_Skill_Development": "నైపుణ్యాభివృద్ధి",
+    "cat_Rural_Development": "గ్రామీణాభివృద్ధి",
+    "cat_Environment_Energy": "పర్యావరణం & శక్తి"
   },
   "errors": {
     "invalid_pin": "తప్పుడు PIN",

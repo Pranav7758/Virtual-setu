@@ -258,7 +258,20 @@
     "benefits_label": "सुविधाहरू",
     "ai_detail_disclaimer": "यो नतिजा AI ले बनाएको हो। आवेदन दिनुअघि आधिकारिक पोर्टलमा प्रमाणित गर्नुहोस्।",
     "visit_official": "आधिकारिक वेबसाइट हेर्नुहोस्",
-    "footer_note": "जानकारी आधिकारिक सरकारी पोर्टलहरूबाट लिइएको हो।"
+    "footer_note": "जानकारी आधिकारिक सरकारी पोर्टलहरूबाट लिइएको हो।",
+    "cat_Education": "शिक्षा",
+    "cat_Healthcare": "स्वास्थ्य सेवा",
+    "cat_Agriculture": "कृषि",
+    "cat_Business": "व्यापार",
+    "cat_Employment": "रोजगार",
+    "cat_Housing": "आवास",
+    "cat_Social_Welfare": "सामाजिक कल्याण",
+    "cat_Women_Children": "महिला र बालबालिका",
+    "cat_Senior_Citizens": "वरिष्ठ नागरिक",
+    "cat_Financial_Inclusion": "वित्तीय समावेश",
+    "cat_Skill_Development": "सीप विकास",
+    "cat_Rural_Development": "ग्रामीण विकास",
+    "cat_Environment_Energy": "वातावरण र ऊर्जा"
   },
   "errors": {
     "invalid_pin": "गलत PIN",

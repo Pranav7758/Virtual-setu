@@ -258,7 +258,20 @@
     "benefits_label": "ആനുകൂല്യങ്ങൾ",
     "ai_detail_disclaimer": "ഈ ഫലം AI ഉണ്ടാക്കിയതാണ്. അപേക്ഷിക്കുന്നതിന് മുൻപ് ഔദ്യോഗിക പോർട്ടലിൽ പരിശോധിക്കുക.",
     "visit_official": "ഔദ്യോഗിക വെബ്‌സൈറ്റ് കാണുക",
-    "footer_note": "വിവരങ്ങൾ ഔദ്യോഗിക സർക്കാർ പോർട്ടലുകളിൽ നിന്ന് ശേഖരിച്ചതാണ്. ഏറ്റവും പുതിയ വിവരങ്ങൾക്ക് ഔദ്യോഗിക വെബ്‌സൈറ്റ് കാണുക."
+    "footer_note": "വിവരങ്ങൾ ഔദ്യോഗിക സർക്കാർ പോർട്ടലുകളിൽ നിന്ന് ശേഖരിച്ചതാണ്. ഏറ്റവും പുതിയ വിവരങ്ങൾക്ക് ഔദ്യോഗിക വെബ്‌സൈറ്റ് കാണുക.",
+    "cat_Education": "വിദ്യാഭ്യാസം",
+    "cat_Healthcare": "ആരോഗ്യ സേവനം",
+    "cat_Agriculture": "കൃഷി",
+    "cat_Business": "ബിസിനസ്",
+    "cat_Employment": "തൊഴിൽ",
+    "cat_Housing": "ഭവനം",
+    "cat_Social_Welfare": "സാമൂഹ്യ ക്ഷേമം",
+    "cat_Women_Children": "സ്ത്രീകളും കുട്ടികളും",
+    "cat_Senior_Citizens": "മുതിർന്ന പൗരന്മാർ",
+    "cat_Financial_Inclusion": "സാമ്പത്തിക ഉൾപ്പെടുത്തൽ",
+    "cat_Skill_Development": "നൈപുണ്യ വികസനം",
+    "cat_Rural_Development": "ഗ്രാമ വികസനം",
+    "cat_Environment_Energy": "പരിസ്ഥിതി & ഊർജ്ജം"
   },
   "errors": {
     "invalid_pin": "തെറ്റായ PIN",

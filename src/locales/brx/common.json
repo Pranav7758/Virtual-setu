@@ -258,7 +258,20 @@
     "benefits_label": "फायदा",
     "ai_detail_disclaimer": "AI फल। आबेदन नांगौ अफिसियेल पोर्टेलनि थेजाब।",
     "visit_official": "अफिसियेल साइट नुंथि",
-    "footer_note": "मिथिंगा अफिसियेल सरकारि पोर्टेलफ्रोम।"
+    "footer_note": "मिथिंगा अफिसियेल सरकारि पोर्टेलफ्रोम।",
+    "cat_Education": "Education",
+    "cat_Healthcare": "Healthcare",
+    "cat_Agriculture": "Agriculture",
+    "cat_Business": "Business",
+    "cat_Employment": "Employment",
+    "cat_Housing": "Housing",
+    "cat_Social_Welfare": "Social Welfare",
+    "cat_Women_Children": "Women & Children",
+    "cat_Senior_Citizens": "Senior Citizens",
+    "cat_Financial_Inclusion": "Financial Inclusion",
+    "cat_Skill_Development": "Skill Development",
+    "cat_Rural_Development": "Rural Development",
+    "cat_Environment_Energy": "Environment & Energy"
   },
   "errors": {
     "invalid_pin": "PIN नायाय",

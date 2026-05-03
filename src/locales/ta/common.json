@@ -258,7 +258,20 @@
     "benefits_label": "நலன்கள்",
     "ai_detail_disclaimer": "இந்த முடிவு AI மூலம் உருவாக்கப்பட்டது. விண்ணப்பிக்கும் முன் சரிபார்க்கவும்.",
     "visit_official": "அதிகாரப்பூர்வ இணையதளம் காண்க",
-    "footer_note": "தகவல் அரசு போர்ட்டல்களில் இருந்து எடுக்கப்பட்டது. சமீபத்திய தகவலுக்கு அரசு இணையதளம் பார்க்கவும்."
+    "footer_note": "தகவல் அரசு போர்ட்டல்களில் இருந்து எடுக்கப்பட்டது. சமீபத்திய தகவலுக்கு அரசு இணையதளம் பார்க்கவும்.",
+    "cat_Education": "கல்வி",
+    "cat_Healthcare": "சுகாதாரம்",
+    "cat_Agriculture": "விவசாயம்",
+    "cat_Business": "வணிகம்",
+    "cat_Employment": "வேலைவாய்ப்பு",
+    "cat_Housing": "வீட்டுவசதி",
+    "cat_Social_Welfare": "சமூக நலன்",
+    "cat_Women_Children": "பெண்கள் & குழந்தைகள்",
+    "cat_Senior_Citizens": "மூத்த குடிமக்கள்",
+    "cat_Financial_Inclusion": "நிதி சேர்க்கை",
+    "cat_Skill_Development": "திறன் மேம்பாடு",
+    "cat_Rural_Development": "கிராம வளர்ச்சி",
+    "cat_Environment_Energy": "சுற்றுச்சூழல் & ஆற்றல்"
   },
   "errors": {
     "invalid_pin": "தவறான PIN",

@@ -258,7 +258,20 @@
     "benefits_label": "فایدہٕ",
     "ai_detail_disclaimer": "ییہٕ نتیجہٕ AI نہٕ۔ درخواست دیتھ پییٚٹھ سرکاری پورٹَلَس جَوواب کرو۔",
     "visit_official": "سرکاری سائٹ وُچھو",
-    "footer_note": "معلومات سرکاری پورٹَلَن پیٹھہٕ چھیٚ۔"
+    "footer_note": "معلومات سرکاری پورٹَلَن پیٹھہٕ چھیٚ۔",
+    "cat_Education": "تعلیم",
+    "cat_Healthcare": "صحت خدمت",
+    "cat_Agriculture": "زراعت",
+    "cat_Business": "کاروبار",
+    "cat_Employment": "روزگار",
+    "cat_Housing": "مکان",
+    "cat_Social_Welfare": "سماجی بہبود",
+    "cat_Women_Children": "خواتین اور بچے",
+    "cat_Senior_Citizens": "بزرگ شہری",
+    "cat_Financial_Inclusion": "مالی شمولیت",
+    "cat_Skill_Development": "ہنر ترقی",
+    "cat_Rural_Development": "دیہاتی ترقی",
+    "cat_Environment_Energy": "ماحول اور توانائی"
   },
   "errors": {
     "invalid_pin": "PIN غلط چھُ",

@@ -258,7 +258,20 @@
     "benefits_label": "लाभ",
     "ai_detail_disclaimer": "हें फळ AI वरवीं तयार. अर्ज करचे आदीं अधिकृत पोर्टलाचेर पडताळा.",
     "visit_official": "अधिकृत वेबसाइट पळोवा",
-    "footer_note": "म्हायती अधिकृत सरकारी पोर्टलांतल्यान घेतल्या."
+    "footer_note": "म्हायती अधिकृत सरकारी पोर्टलांतल्यान घेतल्या.",
+    "cat_Education": "शिक्षण",
+    "cat_Healthcare": "आरोग्य सेवा",
+    "cat_Agriculture": "शेती",
+    "cat_Business": "व्यवसाय",
+    "cat_Employment": "रोजगार",
+    "cat_Housing": "निवारा",
+    "cat_Social_Welfare": "सामाजिक कल्याण",
+    "cat_Women_Children": "बायल आनी भुरगें",
+    "cat_Senior_Citizens": "वरिष्ठ नागरिक",
+    "cat_Financial_Inclusion": "आर्थिक समावेश",
+    "cat_Skill_Development": "कौशल्य विकास",
+    "cat_Rural_Development": "ग्रामीण विकास",
+    "cat_Environment_Energy": "पर्यावरण आनी ऊर्जा"
   },
   "errors": {
     "invalid_pin": "चुकीचो PIN",

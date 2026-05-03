@@ -19,6 +19,22 @@ import {
 
 const BOOKMARK_KEY = 'vs_scheme_bookmarks';
 
+const CAT_I18N_KEY: Record<string, string> = {
+  'Education': 'cat_Education',
+  'Healthcare': 'cat_Healthcare',
+  'Agriculture': 'cat_Agriculture',
+  'Business': 'cat_Business',
+  'Employment': 'cat_Employment',
+  'Housing': 'cat_Housing',
+  'Social Welfare': 'cat_Social_Welfare',
+  'Women & Children': 'cat_Women_Children',
+  'Senior Citizens': 'cat_Senior_Citizens',
+  'Financial Inclusion': 'cat_Financial_Inclusion',
+  'Skill Development': 'cat_Skill_Development',
+  'Rural Development': 'cat_Rural_Development',
+  'Environment & Energy': 'cat_Environment_Energy',
+};
+
 function getBookmarks(): Set<string> {
   try {
     const raw = localStorage.getItem(BOOKMARK_KEY);
@@ -453,7 +469,7 @@ export default function GovSchemes() {
                   ? 'bg-[#003580] text-white border-[#003580]'
                   : 'bg-white text-slate-700 border-[#cdd3da] hover:border-[#003580] hover:text-[#003580]'
               }`}>
-              {CATEGORY_ICONS[cat]} {cat}
+              {CATEGORY_ICONS[cat]} {t(`schemes_page.${CAT_I18N_KEY[cat] ?? cat}`)}
             </button>
           ))}
         </div>

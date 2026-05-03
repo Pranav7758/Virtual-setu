@@ -258,7 +258,20 @@
     "benefits_label": "फायदे",
     "ai_detail_disclaimer": "एह नतीजा AI ने बनाया ऐ। अर्जी देने थमां पैह्लें सरकारी पोर्टल उप्पर परखो।",
     "visit_official": "सरकारी वेबसाइट देखो",
-    "footer_note": "जानकारी सरकारी पोर्टलें थमां लेई गेई ऐ।"
+    "footer_note": "जानकारी सरकारी पोर्टलें थमां लेई गेई ऐ।",
+    "cat_Education": "शिक्षा",
+    "cat_Healthcare": "सेहत सेवा",
+    "cat_Agriculture": "खेती",
+    "cat_Business": "कारोबार",
+    "cat_Employment": "रोजगार",
+    "cat_Housing": "घर",
+    "cat_Social_Welfare": "समाजिक भलाई",
+    "cat_Women_Children": "औरतां ते बच्चे",
+    "cat_Senior_Citizens": "बुजुर्ग नागरिक",
+    "cat_Financial_Inclusion": "वित्तीय समावेश",
+    "cat_Skill_Development": "हुनर विकास",
+    "cat_Rural_Development": "पेंडू विकास",
+    "cat_Environment_Energy": "वातावरण ते ऊर्जा"
   },
   "errors": {
     "invalid_pin": "PIN सही नेई",

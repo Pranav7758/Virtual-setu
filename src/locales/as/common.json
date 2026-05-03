@@ -258,7 +258,20 @@
     "benefits_label": "সুবিধা",
     "ai_detail_disclaimer": "এই ফলাফল AI-ৰ দ্বাৰা সৃষ্টি। আবেদনৰ আগতে চৰকাৰী পোৰ্টেলত পৰীক্ষা কৰক।",
     "visit_official": "চৰকাৰী ৱেবছাইট চাওক",
-    "footer_note": "তথ্য চৰকাৰী পোৰ্টেলৰ পৰা লোৱা হৈছে।"
+    "footer_note": "তথ্য চৰকাৰী পোৰ্টেলৰ পৰা লোৱা হৈছে।",
+    "cat_Education": "শিক্ষা",
+    "cat_Healthcare": "স্বাস্থ্য সেৱা",
+    "cat_Agriculture": "কৃষি",
+    "cat_Business": "ব্যৱসায়",
+    "cat_Employment": "নিয়োগ",
+    "cat_Housing": "গৃহ",
+    "cat_Social_Welfare": "সামাজিক কল্যাণ",
+    "cat_Women_Children": "মহিলা আৰু শিশু",
+    "cat_Senior_Citizens": "জ্যেষ্ঠ নাগৰিক",
+    "cat_Financial_Inclusion": "আৰ্থিক অন্তৰ্ভুক্তি",
+    "cat_Skill_Development": "দক্ষতা উন্নয়ন",
+    "cat_Rural_Development": "গ্ৰামীণ উন্নয়ন",
+    "cat_Environment_Energy": "পৰিৱেশ আৰু শক্তি"
   },
   "errors": {
     "invalid_pin": "ভুল PIN",

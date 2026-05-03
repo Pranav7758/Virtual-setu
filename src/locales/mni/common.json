@@ -258,7 +258,20 @@
     "benefits_label": "ꯐꯥꯏꯗ",
     "ai_detail_disclaimer": "ꯑꯩ ꯐꯜ AI ꯅ ꯇꯧꯂꯦ। ꯑꯣꯐꯤꯁꯤꯌꯦꯜ ꯄꯣꯔꯇꯦꯜꯗ ꯆꯦꯛ ꯇꯧꯕꯤꯌꯨ।",
     "visit_official": "ꯑꯣꯐꯤꯁꯤꯌꯦꯜ ꯌꯦꯡꯕꯤꯌꯨ",
-    "footer_note": "ꯑꯣꯐꯤꯁꯤꯌꯦꯜ ꯄꯣꯔꯇꯦꯜꯐ꯭ꯔꯝ ꯅꯨꯡꯉꯥꯏꯕ।"
+    "footer_note": "ꯑꯣꯐꯤꯁꯤꯌꯦꯜ ꯄꯣꯔꯇꯦꯜꯐ꯭ꯔꯝ ꯅꯨꯡꯉꯥꯏꯕ।",
+    "cat_Education": "ꯌꯥꯝꯐꯝ",
+    "cat_Healthcare": "ꯍꯥꯏꯐꯝ ꯁꯦꯕꯥ",
+    "cat_Agriculture": "ꯐꯥꯎꯒꯠ",
+    "cat_Business": "ꯆꯥꯎꯈꯠꯄ",
+    "cat_Employment": "ꯊꯕꯛ",
+    "cat_Housing": "ꯌꯨꯝ",
+    "cat_Social_Welfare": "ꯁꯃꯥꯖ ꯃꯦꯂꯥꯒꯤ ꯑꯁꯤꯒꯨꯝꯕ",
+    "cat_Women_Children": "ꯅꯨꯄꯤ & ꯀꯪꯂꯩ",
+    "cat_Senior_Citizens": "ꯃꯆꯥ ꯃꯤꯑꯣꯏꯕ",
+    "cat_Financial_Inclusion": "ꯐꯥꯏꯅꯦꯟꯁꯤꯌꯦꯜ",
+    "cat_Skill_Development": "ꯈꯛꯅꯕ ꯁꯤꯖꯤꯟꯅꯕ",
+    "cat_Rural_Development": "ꯃꯃꯥꯡ ꯁꯤꯖꯤꯟꯅꯕ",
+    "cat_Environment_Energy": "ꯐꯕꯟ & ꯁꯛꯇꯤ"
   },
   "errors": {
     "invalid_pin": "PIN ꯌꯥꯝꯅꯕꯤ",

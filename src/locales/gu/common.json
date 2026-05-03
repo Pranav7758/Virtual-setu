@@ -258,7 +258,20 @@
     "benefits_label": "લાભ",
     "ai_detail_disclaimer": "આ પરિણામ AI દ્વારા બનાવ્યો છે. અરજી કરતા પહેલા સત્તાવાર પોર્ટલ પર ચકાસો.",
     "visit_official": "અધિકૃત વેબસાઇટ જુઓ",
-    "footer_note": "માહિતી સત્તાવાર સરકારી પોર્ટલ પરથી છે. નવીનતમ માહિતી માટે સત્તાવાર વેબસાઇટ જુઓ."
+    "footer_note": "માહિતી સત્તાવાર સરકારી પોર્ટલ પરથી છે. નવીનતમ માહિતી માટે સત્તાવાર વેબસાઇટ જુઓ.",
+    "cat_Education": "શિક્ષણ",
+    "cat_Healthcare": "આરોગ્ય સેવા",
+    "cat_Agriculture": "કૃષિ",
+    "cat_Business": "વ્યવસાય",
+    "cat_Employment": "રોજગાર",
+    "cat_Housing": "આવાસ",
+    "cat_Social_Welfare": "સામાજિક કલ્યાણ",
+    "cat_Women_Children": "મહિલા અને બાળ",
+    "cat_Senior_Citizens": "વરિષ્ઠ નાગરિક",
+    "cat_Financial_Inclusion": "નાણાકીય સમાવેશ",
+    "cat_Skill_Development": "કૌશલ્ય વિકાસ",
+    "cat_Rural_Development": "ગ્રામ વિકાસ",
+    "cat_Environment_Energy": "પર્યાવરણ અને ઊર્જા"
   },
   "errors": {
     "invalid_pin": "ry.",

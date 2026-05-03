@@ -258,7 +258,20 @@
     "benefits_label": "ಸೌಲಭ್ಯಗಳು",
     "ai_detail_disclaimer": "ಈ ಫಲಿತಾಂಶ AI ಯಿಂದ ರಚಿಸಲ್ಪಟ್ಟಿದೆ. ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಮೊದಲು ಅಧಿಕೃತ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.",
     "visit_official": "ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ ನೋಡಿ",
-    "footer_note": "ಮಾಹಿತಿ ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪೋರ್ಟಲ್‌ಗಳಿಂದ ತೆಗೆದುಕೊಳ್ಳಲಾಗಿದೆ. ಇತ್ತೀಚಿನ ಮಾಹಿತಿಗೆ ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ ನೋಡಿ."
+    "footer_note": "ಮಾಹಿತಿ ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪೋರ್ಟಲ್‌ಗಳಿಂದ ತೆಗೆದುಕೊಳ್ಳಲಾಗಿದೆ. ಇತ್ತೀಚಿನ ಮಾಹಿತಿಗೆ ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ ನೋಡಿ.",
+    "cat_Education": "ಶಿಕ್ಷಣ",
+    "cat_Healthcare": "ಆರೋಗ್ಯ ಸೇವೆ",
+    "cat_Agriculture": "ಕೃಷಿ",
+    "cat_Business": "ವ್ಯಾಪಾರ",
+    "cat_Employment": "ಉದ್ಯೋಗ",
+    "cat_Housing": "ವಸತಿ",
+    "cat_Social_Welfare": "ಸಾಮಾಜಿಕ ಕಲ್ಯಾಣ",
+    "cat_Women_Children": "ಮಹಿಳೆ & ಮಕ್ಕಳು",
+    "cat_Senior_Citizens": "ಹಿರಿಯ ನಾಗರಿಕರು",
+    "cat_Financial_Inclusion": "ಆರ್ಥಿಕ ಸೇರ್ಪಡೆ",
+    "cat_Skill_Development": "ಕೌಶಲ್ಯ ಅಭಿವೃದ್ಧಿ",
+    "cat_Rural_Development": "ಗ್ರಾಮೀಣ ಅಭಿವೃದ್ಧಿ",
+    "cat_Environment_Energy": "ಪರಿಸರ & ಶಕ್ತಿ"
   },
   "errors": {
     "invalid_pin": "ತಪ್ಪಾದ PIN",

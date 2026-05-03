@@ -258,7 +258,20 @@
     "benefits_label": "সুবিধা",
     "ai_detail_disclaimer": "এই ফলাফল AI দ্বারা তৈরি। আবেদনের আগে সরকারি পোর্টালে যাচাই করুন।",
     "visit_official": "সরকারি ওয়েবসাইট দেখুন",
-    "footer_note": "তথ্য সরকারি পোর্টাল থেকে নেওয়া। সর্বশেষ তথ্যের জন্য সরকারি ওয়েবসাইট দেখুন।"
+    "footer_note": "তথ্য সরকারি পোর্টাল থেকে নেওয়া। সর্বশেষ তথ্যের জন্য সরকারি ওয়েবসাইট দেখুন।",
+    "cat_Education": "শিক্ষা",
+    "cat_Healthcare": "স্বাস্থ্যসেবা",
+    "cat_Agriculture": "কৃষি",
+    "cat_Business": "ব্যবসা",
+    "cat_Employment": "কর্মসংস্থান",
+    "cat_Housing": "আবাসন",
+    "cat_Social_Welfare": "সামাজিক কল্যাণ",
+    "cat_Women_Children": "মহিলা ও শিশু",
+    "cat_Senior_Citizens": "প্রবীণ নাগরিক",
+    "cat_Financial_Inclusion": "আর্থিক অন্তর্ভুক্তি",
+    "cat_Skill_Development": "দক্ষতা উন্নয়ন",
+    "cat_Rural_Development": "গ্রামীণ উন্নয়ন",
+    "cat_Environment_Energy": "পরিবেশ ও শক্তি"
   },
   "errors": {
     "invalid_pin": "ভুল PIN",

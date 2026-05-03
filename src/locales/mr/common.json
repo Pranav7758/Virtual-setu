@@ -258,7 +258,20 @@
     "benefits_label": "लाभ",
     "ai_detail_disclaimer": "हा परिणाम AI द्वारे तयार केला आहे. अर्ज करण्यापूर्वी अधिकृत पोर्टलवर सत्यापित करा.",
     "visit_official": "अधिकृत वेबसाईट पाहा",
-    "footer_note": "माहिती अधिकृत सरकारी पोर्टलवरून घेतली आहे. नवीनतम माहितीसाठी अधिकृत वेबसाईट पाहा."
+    "footer_note": "माहिती अधिकृत सरकारी पोर्टलवरून घेतली आहे. नवीनतम माहितीसाठी अधिकृत वेबसाईट पाहा.",
+    "cat_Education": "शिक्षण",
+    "cat_Healthcare": "आरोग्यसेवा",
+    "cat_Agriculture": "शेती",
+    "cat_Business": "व्यवसाय",
+    "cat_Employment": "रोजगार",
+    "cat_Housing": "गृहनिर्माण",
+    "cat_Social_Welfare": "सामाजिक कल्याण",
+    "cat_Women_Children": "महिला व बालके",
+    "cat_Senior_Citizens": "ज्येष्ठ नागरिक",
+    "cat_Financial_Inclusion": "आर्थिक समावेश",
+    "cat_Skill_Development": "कौशल्य विकास",
+    "cat_Rural_Development": "ग्रामीण विकास",
+    "cat_Environment_Energy": "पर्यावरण व ऊर्जा"
   },
   "errors": {
     "invalid_pin": "चुकीचा PIN",

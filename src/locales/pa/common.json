@@ -258,7 +258,20 @@
     "benefits_label": "ਲਾਭ",
     "ai_detail_disclaimer": "ਇਹ ਨਤੀਜਾ AI ਦੁਆਰਾ ਬਣਾਇਆ ਗਿਆ ਹੈ। ਅਰਜ਼ੀ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਅਧਿਕਾਰਤ ਪੋਰਟਲ ਤੇ ਤਸਦੀਕ ਕਰੋ।",
     "visit_official": "ਅਧਿਕਾਰਤ ਵੈੱਬਸਾਈਟ ਦੇਖੋ",
-    "footer_note": "ਜਾਣਕਾਰੀ ਅਧਿਕਾਰਤ ਸਰਕਾਰੀ ਪੋਰਟਲਾਂ ਤੋਂ ਲਈ ਗਈ ਹੈ। ਨਵੀਨਤਮ ਜਾਣਕਾਰੀ ਲਈ ਅਧਿਕਾਰਤ ਵੈੱਬਸਾਈਟ ਦੇਖੋ।"
+    "footer_note": "ਜਾਣਕਾਰੀ ਅਧਿਕਾਰਤ ਸਰਕਾਰੀ ਪੋਰਟਲਾਂ ਤੋਂ ਲਈ ਗਈ ਹੈ। ਨਵੀਨਤਮ ਜਾਣਕਾਰੀ ਲਈ ਅਧਿਕਾਰਤ ਵੈੱਬਸਾਈਟ ਦੇਖੋ।",
+    "cat_Education": "ਸਿੱਖਿਆ",
+    "cat_Healthcare": "ਸਿਹਤ ਸੇਵਾ",
+    "cat_Agriculture": "ਖੇਤੀਬਾੜੀ",
+    "cat_Business": "ਕਾਰੋਬਾਰ",
+    "cat_Employment": "ਰੋਜ਼ਗਾਰ",
+    "cat_Housing": "ਮਕਾਨ",
+    "cat_Social_Welfare": "ਸਮਾਜਿਕ ਭਲਾਈ",
+    "cat_Women_Children": "ਔਰਤਾਂ ਅਤੇ ਬੱਚੇ",
+    "cat_Senior_Citizens": "ਬਜ਼ੁਰਗ ਨਾਗਰਿਕ",
+    "cat_Financial_Inclusion": "ਵਿੱਤੀ ਸਮਾਵੇਸ਼",
+    "cat_Skill_Development": "ਹੁਨਰ ਵਿਕਾਸ",
+    "cat_Rural_Development": "ਪੇਂਡੂ ਵਿਕਾਸ",
+    "cat_Environment_Energy": "ਵਾਤਾਵਰਣ ਅਤੇ ਊਰਜਾ"
   },
   "errors": {
     "invalid_pin": "ਗਲਤ PIN",

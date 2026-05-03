@@ -258,7 +258,20 @@
     "benefits_label": "लाभाः",
     "ai_detail_disclaimer": "एतत् फलम् AI-निर्मितम्। आवेदनात् पूर्वम् आधिकारिकपोर्टले सत्यापयतु।",
     "visit_official": "आधिकारिकवेबसाइटं पश्यतु",
-    "footer_note": "सूचना आधिकारिकसर्कारपोर्टलेभ्यः गृहीता।"
+    "footer_note": "सूचना आधिकारिकसर्कारपोर्टलेभ्यः गृहीता।",
+    "cat_Education": "विद्या",
+    "cat_Healthcare": "स्वास्थ्यसेवा",
+    "cat_Agriculture": "कृषिः",
+    "cat_Business": "वाणिज्यम्",
+    "cat_Employment": "रोजगारः",
+    "cat_Housing": "आवासः",
+    "cat_Social_Welfare": "सामाजिककल्याणम्",
+    "cat_Women_Children": "महिला च बालकाः",
+    "cat_Senior_Citizens": "वरिष्ठनागरिकाः",
+    "cat_Financial_Inclusion": "वित्तीयसमावेशः",
+    "cat_Skill_Development": "कौशलविकासः",
+    "cat_Rural_Development": "ग्रामीणविकासः",
+    "cat_Environment_Energy": "पर्यावरणम् ऊर्जा च"
   },
   "errors": {
     "invalid_pin": "PIN अमान्यः",

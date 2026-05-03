@@ -258,7 +258,20 @@
     "benefits_label": "فائدا",
     "ai_detail_disclaimer": "هي نتيجو AI ٺاهيو آهي. درخواست کان پهريان سرڪاري پورٽل تي تصديق ڪريو.",
     "visit_official": "سرڪاري ويب سائيٽ ڏسو",
-    "footer_note": "معلومات سرڪاري پورٽلن تان ورتي وئي آهي."
+    "footer_note": "معلومات سرڪاري پورٽلن تان ورتي وئي آهي.",
+    "cat_Education": "تعليم",
+    "cat_Healthcare": "صحت",
+    "cat_Agriculture": "زراعت",
+    "cat_Business": "ڪاروبار",
+    "cat_Employment": "روزگار",
+    "cat_Housing": "رهائش",
+    "cat_Social_Welfare": "سماجي ڀلائي",
+    "cat_Women_Children": "عورتون ۽ ٻار",
+    "cat_Senior_Citizens": "پوڙها شهري",
+    "cat_Financial_Inclusion": "مالي شموليت",
+    "cat_Skill_Development": "هنر ترقي",
+    "cat_Rural_Development": "ڳوٺاڻو ترقي",
+    "cat_Environment_Energy": "ماحول ۽ توانائي"
   },
   "errors": {
     "invalid_pin": "غلط PIN",

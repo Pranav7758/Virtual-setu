@@ -258,7 +258,20 @@
     "benefits_label": "فوائد",
     "ai_detail_disclaimer": "یہ نتیجہ AI نے بنایا ہے۔ درخواست سے پہلے سرکاری پورٹل پر تصدیق کریں۔",
     "visit_official": "سرکاری ویب سائٹ دیکھیں",
-    "footer_note": "معلومات سرکاری پورٹلز سے لی گئی ہیں۔ تازہ ترین معلومات کے لیے سرکاری ویب سائٹ دیکھیں۔"
+    "footer_note": "معلومات سرکاری پورٹلز سے لی گئی ہیں۔ تازہ ترین معلومات کے لیے سرکاری ویب سائٹ دیکھیں۔",
+    "cat_Education": "تعلیم",
+    "cat_Healthcare": "صحت",
+    "cat_Agriculture": "زراعت",
+    "cat_Business": "کاروبار",
+    "cat_Employment": "روزگار",
+    "cat_Housing": "رہائش",
+    "cat_Social_Welfare": "سماجی فلاح",
+    "cat_Women_Children": "خواتین و اطفال",
+    "cat_Senior_Citizens": "بزرگ شہری",
+    "cat_Financial_Inclusion": "مالی شمولیت",
+    "cat_Skill_Development": "ہنر ترقی",
+    "cat_Rural_Development": "دیہی ترقی",
+    "cat_Environment_Energy": "ماحول و توانائی"
   },
   "errors": {
     "invalid_pin": "غلط PIN",

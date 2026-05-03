@@ -348,6 +348,19 @@
     "benefits_label": "लाभ",
     "ai_detail_disclaimer": "यह परिणाम AI द्वारा उत्पन्न है। आवेदन से पहले आधिकारिक सरकारी पोर्टल पर सत्यापित करें।",
     "visit_official": "आधिकारिक वेबसाइट देखें",
-    "footer_note": "जानकारी आधिकारिक सरकारी पोर्टल से ली गई है। नवीनतम जानकारी के लिए आधिकारिक वेबसाइट पर जाएं।"
+    "footer_note": "जानकारी आधिकारिक सरकारी पोर्टल से ली गई है। नवीनतम जानकारी के लिए आधिकारिक वेबसाइट पर जाएं।",
+    "cat_Education": "शिक्षा",
+    "cat_Healthcare": "स्वास्थ्य सेवा",
+    "cat_Agriculture": "कृषि",
+    "cat_Business": "व्यवसाय",
+    "cat_Employment": "रोजगार",
+    "cat_Housing": "आवास",
+    "cat_Social_Welfare": "सामाजिक कल्याण",
+    "cat_Women_Children": "महिला एवं बाल",
+    "cat_Senior_Citizens": "वरिष्ठ नागरिक",
+    "cat_Financial_Inclusion": "वित्तीय समावेश",
+    "cat_Skill_Development": "कौशल विकास",
+    "cat_Rural_Development": "ग्रामीण विकास",
+    "cat_Environment_Energy": "पर्यावरण एवं ऊर्जा"
   }
 }
