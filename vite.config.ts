@@ -331,7 +331,7 @@ function apiPlugin(_env: Record<string, string>): Plugin {
             const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature, max_tokens }),
+              body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages, temperature, max_tokens }),
             });
             const groqJson = await groqRes.json();
             if (!groqRes.ok) {

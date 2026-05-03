@@ -164,37 +164,35 @@ export async function translateSchemeCards(
     }
   }
 
-  // Split into chunks
-  const chunks: GovScheme[][] = [];
-  for (let i = 0; i < schemes.length; i += CHUNK_SIZE) {
-    chunks.push(schemes.slice(i, i + CHUNK_SIZE));
-  }
-
   const systemMsg = `You are a government translation assistant. Translate the given Indian government scheme content to ${scriptNote}. Keep a formal, official tone. Preserve the "id" field exactly. Respond ONLY with a JSON array — no markdown, no explanation.`;
 
-  // Translate chunks sequentially to avoid rate limits
-  for (const chunk of chunks) {
-    if (isDevanagari) {
-      // Only translate descriptions (names already filled from nameHindi)
-      const input = chunk.map(s => ({ id: s.id, description: s.description }));
-      const userMsg = `Translate only the "description" field of each item to ${langName}. Keep "id" unchanged.
+  if (isDevanagari) {
+    // For Devanagari: translate ALL descriptions in ONE API call (names already filled from nameHindi).
+    // All 56 descriptions fit easily within token limits when done in one shot.
+    const input = schemes.map(s => ({ id: s.id, description: s.description }));
+    const userMsg = `Translate only the "description" field of each item to ${langName}. Keep "id" unchanged.
 
 Input:
 ${JSON.stringify(input)}
 
 Output format: [{"id":"...","description":"...translated..."},...]`;
 
-      const raw = await callAI(systemMsg, userMsg, 2500);
-      const parsed = extractJson(raw);
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          if (item.id && item.description && result[item.id]) {
-            result[item.id].description = item.description;
-          }
+    const raw = await callAI(systemMsg, userMsg, 3500);
+    const parsed = extractJson(raw);
+    if (Array.isArray(parsed)) {
+      for (const item of parsed) {
+        if (item.id && item.description && result[item.id]) {
+          result[item.id].description = item.description;
         }
       }
-    } else {
-      // Translate both name and description
+    }
+  } else {
+    // For other scripts: translate name + description in chunks of CHUNK_SIZE
+    const chunks: GovScheme[][] = [];
+    for (let i = 0; i < schemes.length; i += CHUNK_SIZE) {
+      chunks.push(schemes.slice(i, i + CHUNK_SIZE));
+    }
+    for (const chunk of chunks) {
       const input = chunk.map(s => ({ id: s.id, name: s.name, description: s.description }));
       const userMsg = `Translate the "name" and "description" fields of each item to ${langName}. Keep "id" unchanged.
 
