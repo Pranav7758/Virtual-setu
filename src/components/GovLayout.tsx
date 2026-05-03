@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X, Landmark } from 'lucide-react';
+import { LogOut, FileText, ListChecks, CreditCard, HelpCircle, Zap, Crown, LayoutDashboard, UserCircle, Menu, X, Landmark, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
+import { useAdmin } from '@/hooks/useAdmin';
 import LanguageSelector from '@/components/LanguageSelector';
+import NotificationBell from '@/components/NotificationBell';
 
 interface GovLayoutProps {
   children: React.ReactNode;
@@ -90,7 +92,9 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
   const { t } = useTranslation('common');
   const { user, signOut } = useAuth();
   const { plan } = useUserPlan();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = React.useState(false);
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
@@ -164,6 +168,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                   ) : (
                     <PlanChip plan={plan} />
                   )}
+                  <NotificationBell />
                   <button onClick={handleSignOut}
                     className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-slate-300 rounded-sm text-slate-600 hover:bg-slate-50 transition-colors uppercase tracking-wide font-semibold"
                   >
@@ -194,9 +199,22 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
         <nav className="bg-[#f0f4fa] border-b border-[#c8d4e8] shrink-0 hidden sm:block">
           <div className="container mx-auto max-w-7xl px-4 flex items-center">
             {isLoggedIn ? (
-              CITIZEN_NAV.map(n => (
-                <CitizenNavItem key={n.to} to={n.to} label={n.label} icon={n.icon} />
-              ))
+              <>
+                {CITIZEN_NAV.map(n => (
+                  <CitizenNavItem key={n.to} to={n.to} label={n.label} icon={n.icon} />
+                ))}
+                {isAdmin && (
+                  <Link to="/admin"
+                    className={`relative flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                      location.pathname === '/admin'
+                        ? 'text-red-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-red-600'
+                        : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                    }`}
+                  >
+                    <Settings className="h-3.5 w-3.5" /> Admin
+                  </Link>
+                )}
+              </>
             ) : (
               PUBLIC_NAV.map(n => (
                 <NavLink key={n.to} to={n.to} end={n.to === '/'}
@@ -223,6 +241,13 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
                 {CITIZEN_NAV.map(n => (
                   <CitizenNavItem key={n.to} to={n.to} label={n.label} icon={n.icon} mobile onClick={() => setOpen(false)} />
                 ))}
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 py-2.5 px-3 text-sm border-b border-slate-100 text-red-600 font-semibold hover:bg-red-50"
+                  >
+                    <Settings className="h-4 w-4" /> Admin Panel
+                  </Link>
+                )}
                 <div className="flex gap-2 p-3 border-t border-slate-100">
                   {plan === 'free' ? (
                     <Link to="/pricing" onClick={() => setOpen(false)}

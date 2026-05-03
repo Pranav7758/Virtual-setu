@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
   Shield, Upload, FileText, CheckCircle, AlertCircle, Clock,
-  MessageCircle, Zap, Crown, Lock, RefreshCw, ScanLine,
+  MessageCircle, Zap, Crown, Lock, RefreshCw, ScanLine, Package, Truck, MapPin,
 } from 'lucide-react';
 import { scanAndVerifyAadhaar } from '@/lib/aadhaarVerification';
 import { toast } from 'sonner';
@@ -90,6 +90,12 @@ export default function Dashboard() {
   const [reVerifyLoading, setReVerifyLoading] = useState(false);
   const reVerifyInputRef = useRef<HTMLInputElement>(null);
 
+  const [cardOrder, setCardOrder] = useState<{ status: string; tracking_number: string | null } | null | undefined>(undefined);
+  const [showCardOrderForm, setShowCardOrderForm] = useState(false);
+  const [cardAddress, setCardAddress] = useState('');
+  const [cardPhone, setCardPhone] = useState('');
+  const [cardOrderLoading, setCardOrderLoading] = useState(false);
+
   const handleReVerifyAadhaar = async () => {
     if (!reVerifyFile || !user || !profile) return;
     setReVerifyLoading(true);
@@ -115,6 +121,32 @@ export default function Dashboard() {
 
   const tabParam = searchParams.get('tab');
   const activeTab = VALID_TABS.includes(tabParam ?? '') ? tabParam! : 'overview';
+
+  useEffect(() => {
+    if (!user || !['premium', 'platinum'].includes(plan)) return;
+    supabase.from('card_orders').select('status,tracking_number').eq('user_id', user.id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setCardOrder(data ?? null));
+  }, [user?.id, plan]);
+
+  const handleCardOrderRequest = async () => {
+    if (!user || !profile) return;
+    if (!cardAddress.trim()) { toast.error('Please enter your delivery address'); return; }
+    setCardOrderLoading(true);
+    const { error } = await supabase.from('card_orders').insert({
+      user_id: user.id,
+      full_name: profile.full_name,
+      address: cardAddress.trim(),
+      phone: cardPhone.trim() || profile.phone || '',
+      plan,
+    });
+    if (error) { toast.error('Could not place order. Please try again.'); setCardOrderLoading(false); return; }
+    setCardOrder({ status: 'pending', tracking_number: null });
+    setShowCardOrderForm(false);
+    setCardAddress(''); setCardPhone('');
+    toast.success('Physical card order placed! We will notify you when it is dispatched.');
+    setCardOrderLoading(false);
+  };
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
@@ -472,6 +504,113 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* Physical ID Card Order */}
+            {(plan === 'premium' || plan === 'platinum') && (
+              <div className="mx-5 mb-5 border border-slate-200 rounded">
+                {cardOrder ? (
+                  /* Order exists — show status */
+                  <div className="px-4 py-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4 text-[#003580]" />
+                      <p className="text-sm font-semibold text-slate-800">Physical ID Card Order</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold border capitalize ${
+                        cardOrder.status === 'delivered'  ? 'bg-green-100 text-green-800 border-green-300' :
+                        cardOrder.status === 'dispatched' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                        cardOrder.status === 'processing' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                        cardOrder.status === 'cancelled'  ? 'bg-red-100 text-red-700 border-red-300' :
+                        'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        <Truck className="h-3 w-3" /> {cardOrder.status}
+                      </span>
+                      {cardOrder.tracking_number && (
+                        <p className="text-xs text-slate-600 font-mono">
+                          India Post: <span className="font-bold">{cardOrder.tracking_number}</span>
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {cardOrder.status === 'pending'    && 'Your order is being reviewed. You will be notified when processing begins.'}
+                      {cardOrder.status === 'processing' && 'Your card is being printed and prepared for dispatch.'}
+                      {cardOrder.status === 'dispatched' && 'Your card is on the way via India Post. Track using the number above.'}
+                      {cardOrder.status === 'delivered'  && 'Your physical ID card has been delivered!'}
+                      {cardOrder.status === 'cancelled'  && 'Your order was cancelled. Contact support for assistance.'}
+                    </p>
+                  </div>
+                ) : (
+                  /* No order yet — show request form toggle */
+                  <>
+                    <button
+                      onClick={() => setShowCardOrderForm(v => !v)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-[#003580]" />
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">Order Physical ID Card</p>
+                          <p className="text-xs text-slate-500">Get a laminated card delivered to your address via India Post</p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-[#003580] font-medium shrink-0">
+                        {showCardOrderForm ? 'Cancel' : 'Order →'}
+                      </span>
+                    </button>
+                    {showCardOrderForm && (
+                      <div className="px-4 pb-4 border-t border-slate-100 pt-3 space-y-3">
+                        <div>
+                          <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                            <MapPin className="h-3 w-3 inline mr-1" />Delivery Address
+                          </Label>
+                          <textarea
+                            value={cardAddress}
+                            onChange={e => setCardAddress(e.target.value)}
+                            placeholder="House/Flat No., Street, City, State, PIN code"
+                            rows={3}
+                            className="mt-1 w-full text-sm border border-slate-300 rounded-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#003580] resize-none"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                            Phone (optional)
+                          </Label>
+                          <Input
+                            value={cardPhone}
+                            onChange={e => setCardPhone(e.target.value)}
+                            placeholder={profile?.phone || 'Contact number for delivery'}
+                            className="mt-1 border-slate-300 rounded-sm focus-visible:ring-[#003580]"
+                          />
+                        </div>
+                        <p className="text-xs text-slate-400 bg-slate-50 rounded p-2 border border-slate-200">
+                          Your laminated Virtual Setu ID card will be dispatched within 5–7 working days via India Post Speed Post. You will receive notifications at each step.
+                        </p>
+                        <Button
+                          onClick={handleCardOrderRequest}
+                          disabled={!cardAddress.trim() || cardOrderLoading}
+                          className="w-full bg-[#003580] hover:bg-[#002060] text-white text-sm"
+                        >
+                          {cardOrderLoading
+                            ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Placing Order…</>
+                            : <><Package className="h-4 w-4 mr-2" /> Confirm Order</>}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Upsell for free plan */}
+            {plan === 'free' && (
+              <div className="mx-5 mb-5 p-3 rounded border border-dashed border-slate-300 bg-slate-50 flex items-center gap-2">
+                <Package className="h-4 w-4 text-slate-400" />
+                <p className="text-sm text-slate-500">
+                  Physical ID card delivery available on{' '}
+                  <Link to="/pricing" className="text-[#0B3D91] underline font-semibold">Premium &amp; Platinum</Link>
+                </p>
+              </div>
+            )}
 
             {!limits.qrEmergencySharing && (
               <div className="mx-5 mb-5 p-3 rounded border border-slate-200 bg-slate-50 flex items-center gap-2">

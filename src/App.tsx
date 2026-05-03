@@ -19,6 +19,7 @@ import About from "./pages/About";
 import Scan from "./pages/Scan";
 import Help from "./pages/Help";
 import GovSchemes from "./pages/GovSchemes";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/schemes" element={<GovSchemes />} />
               <Route path="/i/:uid" element={<Share />} />
               <Route path="/s/:token" element={<ShareSingle />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

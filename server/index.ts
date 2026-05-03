@@ -69,6 +69,128 @@ app.use(express.json());
   }
 })();
 
+// ── Run Admin + Card Orders + Notifications migration ──────────────────────
+(async () => {
+  const url = process.env.VITE_SUPABASE_URL_BACKEND || process.env.DATABASE_URL;
+  if (!url) return;
+  try {
+    const { Pool } = pg;
+    const pool = new Pool({ connectionString: url, ssl: url.includes('supabase') ? { rejectUnauthorized: false } : undefined });
+
+    // is_admin flag
+    await pool.query(`ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false`);
+
+    // is_admin() helper function
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION public.is_admin()
+      RETURNS BOOLEAN AS $$
+        SELECT COALESCE(
+          (SELECT is_admin FROM public.profiles WHERE user_id = auth.uid() LIMIT 1),
+          false
+        );
+      $$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public
+    `);
+
+    // Admin RLS policies (skip if already exist)
+    const policySQL = `
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all profiles' AND tablename = 'profiles') THEN
+          CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can update all profiles' AND tablename = 'profiles') THEN
+          CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all documents' AND tablename = 'documents') THEN
+          CREATE POLICY "Admins can view all documents" ON public.documents FOR SELECT TO authenticated USING (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can update all documents' AND tablename = 'documents') THEN
+          CREATE POLICY "Admins can update all documents" ON public.documents FOR UPDATE TO authenticated USING (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all subscriptions' AND tablename = 'subscriptions') THEN
+          CREATE POLICY "Admins can view all subscriptions" ON public.subscriptions FOR SELECT TO authenticated USING (public.is_admin());
+        END IF;
+      END $$
+    `;
+    await pool.query(policySQL);
+
+    // card_orders table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS public.card_orders (
+        id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+        full_name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        phone TEXT,
+        plan TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','dispatched','delivered','cancelled')),
+        tracking_number TEXT,
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query(`ALTER TABLE public.card_orders ENABLE ROW LEVEL SECURITY`);
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view their own card orders' AND tablename = 'card_orders') THEN
+          CREATE POLICY "Users can view their own card orders" ON public.card_orders FOR SELECT USING (auth.uid() = user_id);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own card orders' AND tablename = 'card_orders') THEN
+          CREATE POLICY "Users can insert their own card orders" ON public.card_orders FOR INSERT WITH CHECK (auth.uid() = user_id);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all card orders' AND tablename = 'card_orders') THEN
+          CREATE POLICY "Admins can view all card orders" ON public.card_orders FOR SELECT TO authenticated USING (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can update all card orders' AND tablename = 'card_orders') THEN
+          CREATE POLICY "Admins can update all card orders" ON public.card_orders FOR UPDATE TO authenticated USING (public.is_admin());
+        END IF;
+      END $$
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_card_orders_updated_at') THEN
+          CREATE TRIGGER update_card_orders_updated_at BEFORE UPDATE ON public.card_orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+        END IF;
+      END $$
+    `);
+
+    // notifications table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS public.notifications (
+        id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info','success','warning','delivery')),
+        read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query(`ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY`);
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view their own notifications' AND tablename = 'notifications') THEN
+          CREATE POLICY "Users can view their own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own notifications' AND tablename = 'notifications') THEN
+          CREATE POLICY "Users can update their own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can insert notifications' AND tablename = 'notifications') THEN
+          CREATE POLICY "Admins can insert notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (public.is_admin());
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all notifications' AND tablename = 'notifications') THEN
+          CREATE POLICY "Admins can view all notifications" ON public.notifications FOR SELECT TO authenticated USING (public.is_admin());
+        END IF;
+      END $$
+    `);
+
+    await pool.end();
+    console.log('[migration] Admin + card_orders + notifications applied successfully');
+  } catch (e: any) {
+    console.warn('[migration] Could not apply admin migration:', e.message?.slice(0, 200));
+  }
+})();
+
 /* ── In-memory share store ── */
 interface ShareEntry {
   documentId: string; userId: string; pinHash: string;
