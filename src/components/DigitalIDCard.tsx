@@ -308,21 +308,6 @@ export default function DigitalIDCard({
 
                 {/* Right info stack */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  {/* Blood group — big prominent badge */}
-                  {bloodGroup && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '5px 12px', borderRadius: 8,
-                      background: '#fef2f2', border: '1.5px solid #fca5a5',
-                      boxShadow: '0 1px 4px rgba(220,38,38,0.12)',
-                    }}>
-                      <span style={{ fontSize: 13 }}>🩸</span>
-                      <div>
-                        <p style={{ fontSize: 5.5, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0, lineHeight: 1 }}>Blood Group</p>
-                        <p style={{ fontSize: 16, fontWeight: 800, color: '#dc2626', margin: '1px 0 0 0', lineHeight: 1, letterSpacing: '0.04em' }}>{bloodGroup}</p>
-                      </div>
-                    </div>
-                  )}
                   {/* Validity badge */}
                   <div style={{
                     padding: '3px 9px', borderRadius: 20,
