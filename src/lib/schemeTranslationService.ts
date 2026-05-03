@@ -72,22 +72,66 @@ function cacheSet<T>(key: string, data: T) {
   try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
 
-// ── Sarvam AI translate — calls server-side proxy ─────────────────────────────
-// Sends an array of texts, gets back array of translated texts in same order.
+// ── Sarvam AI translate ────────────────────────────────────────────────────────
+// Calls Sarvam directly from the browser when VITE_SARVAM_API_KEY is set
+// (works on Vercel and everywhere), with proxy fallback for dev without the key.
+
+const SARVAM_LANG_MAP: Record<string, string> = {
+  hi: 'hi-IN', mr: 'mr-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN',
+  kn: 'kn-IN', ml: 'ml-IN', pa: 'pa-IN', gu: 'gu-IN', or: 'od-IN',
+  as: 'as-IN', ur: 'ur-IN', mai: 'mai-IN', kok: 'kok-IN', ne: 'ne-IN',
+  mni: 'mni-IN', brx: 'brx-IN', dgo: 'dgo-IN', ks: 'ks-IN',
+  sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN',
+};
+
+async function translateOneDirect(text: string, sarvamLang: string, apiKey: string): Promise<string> {
+  if (!text || !text.trim()) return text;
+  try {
+    const r = await fetch('https://api.sarvam.ai/translate', {
+      method: 'POST',
+      headers: { 'api-subscription-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: text,
+        source_language_code: 'en-IN',
+        target_language_code: sarvamLang,
+        model: 'mayura:v1',
+        mode: 'formal',
+      }),
+    });
+    if (!r.ok) return text;
+    const j = await r.json();
+    return j.translated_text || text;
+  } catch { return text; }
+}
+
 async function callSarvam(texts: string[], lang: string): Promise<string[]> {
+  const sarvamLang = SARVAM_LANG_MAP[lang];
+  if (!sarvamLang) return texts;
+
+  // Prefer direct browser call (works on Vercel without any proxy)
+  const directKey = (import.meta as any).env?.VITE_SARVAM_API_KEY as string | undefined;
+  if (directKey) {
+    const BATCH = 5;
+    const translations: string[] = new Array(texts.length).fill('');
+    for (let i = 0; i < texts.length; i += BATCH) {
+      const batch = texts.slice(i, i + BATCH);
+      const results = await Promise.all(batch.map(t => translateOneDirect(t, sarvamLang, directKey)));
+      results.forEach((t, j) => { translations[i + j] = t; });
+      if (i + BATCH < texts.length) await new Promise(r => setTimeout(r, 150));
+    }
+    return translations;
+  }
+
+  // Fallback: server-side proxy (dev server / Express)
   try {
     const res = await fetch('/api/sarvam/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ texts, target_lang: lang }),
     });
-    if (!res.ok) {
-      console.error('[Sarvam] proxy error', res.status, await res.text());
-      return texts;
-    }
+    if (!res.ok) { console.error('[Sarvam] proxy error', res.status); return texts; }
     const json = await res.json();
-    const translations: string[] = json.translations ?? texts;
-    return translations;
+    return json.translations ?? texts;
   } catch (e: any) {
     console.error('[Sarvam] fetch threw:', e.message);
     return texts;

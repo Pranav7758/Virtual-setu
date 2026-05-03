@@ -59,3 +59,8 @@ externalPort = 80
 localPort = 5001
 externalPort = 3001
 
+[userenv]
+
+[userenv.shared]
+VITE_SARVAM_API_KEY = "sk_utnraagu_Jy941qrpQnTRaBqlNML1VJ9x"
+
