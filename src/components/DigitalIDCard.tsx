@@ -163,18 +163,18 @@ export default function DigitalIDCard({
             </div>
 
             {/* ── Body: photo | fields | QR ── */}
-            <div style={{ flex: 1, display: 'flex', gap: 10, padding: '6px 13px 6px 13px', minHeight: 0, alignItems: 'stretch' }}>
+            <div style={{ flex: 1, display: 'flex', gap: 10, padding: '6px 13px 6px 13px', minHeight: 0, alignItems: 'center' }}>
 
-              {/* LEFT — fixed portrait photo, centred vertically */}
-              <div style={{ flexShrink: 0, width: 105, display: 'flex', alignItems: 'center' }}>
+              {/* LEFT — fixed portrait photo */}
+              <div style={{ flexShrink: 0 }}>
                 {photoUrl
                   ? <img src={photoUrl} alt={name} style={{ width: 105, height: 130, objectFit: 'cover', objectPosition: 'center top', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
                   : <PhotoPlaceholder w={105} h={130} />
                 }
               </div>
 
-              {/* MIDDLE — fields spread evenly top-to-bottom */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+              {/* MIDDLE — 5 fields spread across exactly photo height */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 130, minWidth: 0 }}>
 
                 {/* Name */}
                 <div>
@@ -211,8 +211,8 @@ export default function DigitalIDCard({
 
               </div>
 
-              {/* RIGHT — QR code, vertically centred */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0 }}>
+              {/* RIGHT — QR code, top-aligned to match photo top */}
+              <div style={{ height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: 3, flexShrink: 0 }}>
                 <div style={{ padding: 4, background: WHITE, borderRadius: 6, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
                   <QRCode data={qrData} size={86} errorCorrectionLevel="M" />
                 </div>
