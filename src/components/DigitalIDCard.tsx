@@ -46,14 +46,8 @@ function Header() {
       background: `linear-gradient(90deg, ${NAVY} 0%, ${BLUE} 100%)`,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: '50%',
-          border: '1.5px solid rgba(255,255,255,0.7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(255,255,255,0.1)', flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 13, lineHeight: 1, color: 'rgba(255,255,255,0.9)' }}>☸</span>
-        </div>
+        <img src="/emblem-india.png" alt="Emblem of India"
+          style={{ width: 26, height: 32, objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }} />
         <div>
           <p style={{ color: WHITE, fontWeight: 800, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Virtual Setu</p>
           <p style={{ color: '#93c5fd', fontSize: 6, letterSpacing: '0.04em', margin: '2px 0 0 0', lineHeight: 1 }}>Digital Identity Authority of India</p>
@@ -212,11 +206,15 @@ export default function DigitalIDCard({
               </div>
 
               {/* RIGHT — QR code, top-aligned to match photo top */}
-              <div style={{ height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: 3, flexShrink: 0 }}>
-                <div style={{ padding: 4, background: WHITE, borderRadius: 6, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                  <QRCode data={qrData} size={86} errorCorrectionLevel="M" />
+              <div style={{ height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: 4, flexShrink: 0 }}>
+                <div style={{
+                  padding: 5, background: WHITE, borderRadius: 7,
+                  border: '2px solid #2563eb',
+                  boxShadow: '0 2px 10px rgba(37,99,235,0.18)',
+                }}>
+                  <QRCode data={qrData} size={96} errorCorrectionLevel="M" />
                 </div>
-                <p style={{ fontSize: 5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>Scan to verify</p>
+                <p style={{ fontSize: 5, color: '#5b7fa6', fontWeight: 600, textAlign: 'center', margin: 0, letterSpacing: '0.06em' }}>SCAN TO VERIFY</p>
               </div>
             </div>
 
@@ -248,10 +246,7 @@ export default function DigitalIDCard({
               background: 'rgba(0,53,128,0.04)', borderTop: '1px solid rgba(0,53,128,0.09)',
             }}>
               <p style={{ fontSize: 5.5, color: '#94a3b8', margin: 0 }}>ID: VS-{shortId}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e' }} />
-                <p style={{ fontSize: 6, color: '#16a34a', fontWeight: 600, margin: 0 }}>Active</p>
-              </div>
+              <p style={{ fontSize: 5.5, color: '#94a3b8', margin: 0, fontStyle: 'italic' }}>Issued by Virtual Setu · भारत सरकार</p>
               <p style={{ fontSize: 5.5, color: '#94a3b8', margin: 0 }}>Click to view back →</p>
             </div>
 
