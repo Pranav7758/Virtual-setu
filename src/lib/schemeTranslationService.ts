@@ -84,9 +84,19 @@ const SARVAM_LANG_MAP: Record<string, string> = {
   sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN',
 };
 
-// Translate one text with retry on 429 (rate limit)
+// Collect all available Sarvam keys (support up to 3 for round-robin)
+function getSarvamKeys(): string[] {
+  const env = (import.meta as any).env ?? {};
+  const keys: string[] = [];
+  if (env.VITE_SARVAM_API_KEY)   keys.push(env.VITE_SARVAM_API_KEY);
+  if (env.VITE_SARVAM_API_KEY_2) keys.push(env.VITE_SARVAM_API_KEY_2);
+  if (env.VITE_SARVAM_API_KEY_3) keys.push(env.VITE_SARVAM_API_KEY_3);
+  return keys;
+}
+
+// Translate one text — tries keys round-robin, retries on 429 with next key
 async function translateOneDirect(
-  text: string, sarvamLang: string, apiKey: string, retries = 3,
+  text: string, sarvamLang: string, keys: string[], keyIndex: number,
 ): Promise<string> {
   if (!text || !text.trim()) return text;
   const body = JSON.stringify({
@@ -96,24 +106,29 @@ async function translateOneDirect(
     model: 'mayura:v1',
     mode: 'formal',
   });
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  // Try each key in turn (starting from keyIndex), then wait and retry
+  const maxAttempts = keys.length * 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const key = keys[(keyIndex + attempt) % keys.length];
     try {
       const r = await fetch('https://api.sarvam.ai/translate', {
         method: 'POST',
-        headers: { 'api-subscription-key': apiKey, 'Content-Type': 'application/json' },
+        headers: { 'api-subscription-key': key, 'Content-Type': 'application/json' },
         body,
       });
       if (r.status === 429) {
-        // Rate limited — back off before next attempt
-        const wait = 2000 * (attempt + 1);
-        console.warn(`[Sarvam] 429 rate limit, retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
-        await new Promise(res => setTimeout(res, wait));
+        // All keys exhausted for this round — wait before cycling again
+        if ((attempt + 1) % keys.length === 0) {
+          const wait = 2000 * (Math.floor(attempt / keys.length) + 1);
+          console.warn(`[Sarvam] all ${keys.length} key(s) rate-limited, waiting ${wait}ms`);
+          await new Promise(res => setTimeout(res, wait));
+        }
         continue;
       }
       if (!r.ok) return text;
       const j = await r.json();
       return j.translated_text || text;
-    } catch { /* network error — fall through to return original */ }
+    } catch { /* network error — try next key */ }
   }
   return text;
 }
@@ -123,15 +138,18 @@ async function callSarvam(texts: string[], lang: string): Promise<string[]> {
   if (!sarvamLang) return texts;
 
   // Prefer direct browser call (works on Vercel without any proxy)
-  const directKey = (import.meta as any).env?.VITE_SARVAM_API_KEY as string | undefined;
-  if (directKey) {
-    // Batch of 3 with 500ms inter-batch delay — stays comfortably within Sarvam rate limits
-    const BATCH = 3;
-    const DELAY = 500;
+  const keys = getSarvamKeys();
+  if (keys.length > 0) {
+    // With N keys, run N requests concurrently (one per key), stagger batches by 300ms
+    const BATCH = Math.max(keys.length, 3);
+    const DELAY = Math.max(600 - keys.length * 150, 150); // fewer ms needed with more keys
     const translations: string[] = new Array(texts.length).fill('');
     for (let i = 0; i < texts.length; i += BATCH) {
       const batch = texts.slice(i, i + BATCH);
-      const results = await Promise.all(batch.map(t => translateOneDirect(t, sarvamLang, directKey)));
+      // Assign each request a starting key index in round-robin order
+      const results = await Promise.all(
+        batch.map((t, j) => translateOneDirect(t, sarvamLang, keys, (i + j) % keys.length)),
+      );
       results.forEach((t, j) => { translations[i + j] = t; });
       if (i + BATCH < texts.length) await new Promise(r => setTimeout(r, DELAY));
     }
