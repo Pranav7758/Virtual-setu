@@ -55,8 +55,8 @@ export interface DetailTranslation {
   };
 }
 
-function cardsCacheKey(lang: string) { return `vs_scheme_cards_trans_v4_${lang}`; }
-function detailCacheKey(lang: string, id: string) { return `vs_scheme_detail_trans_v4_${lang}_${id}`; }
+function cardsCacheKey(lang: string) { return `vs_scheme_cards_trans_v5_${lang}`; }
+function detailCacheKey(lang: string, id: string) { return `vs_scheme_detail_trans_v5_${lang}_${id}`; }
 
 function cacheGet<T>(key: string): T | null {
   try {
@@ -84,24 +84,38 @@ const SARVAM_LANG_MAP: Record<string, string> = {
   sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN',
 };
 
-async function translateOneDirect(text: string, sarvamLang: string, apiKey: string): Promise<string> {
+// Translate one text with retry on 429 (rate limit)
+async function translateOneDirect(
+  text: string, sarvamLang: string, apiKey: string, retries = 3,
+): Promise<string> {
   if (!text || !text.trim()) return text;
-  try {
-    const r = await fetch('https://api.sarvam.ai/translate', {
-      method: 'POST',
-      headers: { 'api-subscription-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: text,
-        source_language_code: 'en-IN',
-        target_language_code: sarvamLang,
-        model: 'mayura:v1',
-        mode: 'formal',
-      }),
-    });
-    if (!r.ok) return text;
-    const j = await r.json();
-    return j.translated_text || text;
-  } catch { return text; }
+  const body = JSON.stringify({
+    input: text,
+    source_language_code: 'en-IN',
+    target_language_code: sarvamLang,
+    model: 'mayura:v1',
+    mode: 'formal',
+  });
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch('https://api.sarvam.ai/translate', {
+        method: 'POST',
+        headers: { 'api-subscription-key': apiKey, 'Content-Type': 'application/json' },
+        body,
+      });
+      if (r.status === 429) {
+        // Rate limited — back off before next attempt
+        const wait = 2000 * (attempt + 1);
+        console.warn(`[Sarvam] 429 rate limit, retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
+        await new Promise(res => setTimeout(res, wait));
+        continue;
+      }
+      if (!r.ok) return text;
+      const j = await r.json();
+      return j.translated_text || text;
+    } catch { /* network error — fall through to return original */ }
+  }
+  return text;
 }
 
 async function callSarvam(texts: string[], lang: string): Promise<string[]> {
@@ -111,13 +125,15 @@ async function callSarvam(texts: string[], lang: string): Promise<string[]> {
   // Prefer direct browser call (works on Vercel without any proxy)
   const directKey = (import.meta as any).env?.VITE_SARVAM_API_KEY as string | undefined;
   if (directKey) {
-    const BATCH = 5;
+    // Batch of 3 with 500ms inter-batch delay — stays comfortably within Sarvam rate limits
+    const BATCH = 3;
+    const DELAY = 500;
     const translations: string[] = new Array(texts.length).fill('');
     for (let i = 0; i < texts.length; i += BATCH) {
       const batch = texts.slice(i, i + BATCH);
       const results = await Promise.all(batch.map(t => translateOneDirect(t, sarvamLang, directKey)));
       results.forEach((t, j) => { translations[i + j] = t; });
-      if (i + BATCH < texts.length) await new Promise(r => setTimeout(r, 150));
+      if (i + BATCH < texts.length) await new Promise(r => setTimeout(r, DELAY));
     }
     return translations;
   }
@@ -162,22 +178,30 @@ export async function translateSchemeCards(
         description: translated[i] || schemes[i].description,
       };
     }
+    // Only cache if descriptions actually got translated (not silently English-fallback)
+    const successCount = translated.filter((t, i) => t !== descriptions[i]).length;
+    if (successCount >= descriptions.length * 0.8) {
+      cacheSet(cardsCacheKey(lang), result);
+    }
   } else {
-    // Translate both names and descriptions in one parallel batch
+    // Translate names and descriptions separately to avoid rate-limit on a single huge batch
     const names = schemes.map(s => s.name);
     const descs = schemes.map(s => s.description);
-    const translated = await callSarvam([...names, ...descs], lang);
+    const translatedNames = await callSarvam(names, lang);
+    const translatedDescs = await callSarvam(descs, lang);
     const n = schemes.length;
     for (let i = 0; i < n; i++) {
       result[schemes[i].id] = {
-        name: translated[i] || schemes[i].name,
-        description: translated[n + i] || schemes[i].description,
+        name: translatedNames[i] || schemes[i].name,
+        description: translatedDescs[i] || schemes[i].description,
       };
     }
-  }
-
-  if (Object.keys(result).length > 0) {
-    cacheSet(cardsCacheKey(lang), result);
+    // Only cache if both names AND descriptions actually got translated
+    const nameSuccess = translatedNames.filter((t, i) => t !== names[i]).length;
+    const descSuccess = translatedDescs.filter((t, i) => t !== descs[i]).length;
+    if (nameSuccess >= n * 0.8 && descSuccess >= n * 0.8) {
+      cacheSet(cardsCacheKey(lang), result);
+    }
   }
   return result;
 }
