@@ -67,17 +67,23 @@ function Header() {
   );
 }
 
-/* Initials block shown when no photo uploaded */
-function InitialsAvatar({ name, w, h }: { name: string; w: number; h: number }) {
-  const initials = name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('');
+/* Silhouette placeholder — shown when no photo uploaded */
+function PhotoPlaceholder({ w, h }: { w: number; h: number }) {
   return (
     <div style={{
       width: w, height: h, borderRadius: 6, flexShrink: 0,
-      background: `linear-gradient(135deg, ${NAVY} 0%, ${BLUE} 100%)`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(160deg, #dce8f5 0%, #c8dced 100%)',
       border: '1.5px solid #93aec8',
+      overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
-      <span style={{ color: WHITE, fontSize: w * 0.34, fontWeight: 700, letterSpacing: '0.04em' }}>{initials || '?'}</span>
+      <svg viewBox="0 0 100 120" width={w} height={h * 0.92} style={{ display: 'block' }}>
+        {/* head */}
+        <ellipse cx="50" cy="38" rx="22" ry="25" fill="#a0b8cc" />
+        {/* neck */}
+        <rect x="41" y="61" width="18" height="12" rx="4" fill="#a0b8cc" />
+        {/* shoulders / torso */}
+        <path d="M10,120 Q18,72 50,72 Q82,72 90,120 Z" fill="#8aafc4" />
+      </svg>
     </div>
   );
 }
@@ -160,7 +166,7 @@ export default function DigitalIDCard({
               <div style={{ flexShrink: 0 }}>
                 {photoUrl
                   ? <img src={photoUrl} alt={name} style={{ width: PW, height: PH, objectFit: 'cover', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
-                  : <InitialsAvatar name={name} w={PW} h={PH} />
+                  : <PhotoPlaceholder w={PW} h={PH} />
                 }
               </div>
 
