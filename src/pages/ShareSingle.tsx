@@ -311,23 +311,63 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
       onContextMenu={(e) => { e.preventDefault(); notifyBlocked(); }}
     >
       {/* Viewer top bar */}
-      <div className="bg-[#003580] text-white px-4 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <ShieldCheck className="h-5 w-5 text-[#FF9933] shrink-0" />
-          <div className="min-w-0">
-            <p className="text-[10px] tracking-widest uppercase text-blue-200">Virtual Setu · Secure View</p>
-            <p className="font-semibold truncate text-sm">{doc.documentName}</p>
+      <div className="bg-[#003580] text-white shrink-0">
+        <div className="px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <ShieldCheck className="h-5 w-5 text-[#FF9933] shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] tracking-widest uppercase text-blue-200">Virtual Setu · Secure View</p>
+              <p className="font-semibold truncate text-sm">{doc.documentName}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="ghost" size="sm" onClick={requestFs} className="text-white hover:bg-white/15 hidden sm:inline-flex text-xs">
+              Fullscreen
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => window.location.reload()} className="text-white hover:bg-white/15 text-xs">
+              <X className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Close</span>
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={requestFs} className="text-white hover:bg-white/15 hidden sm:inline-flex text-xs">
-            Fullscreen
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => window.location.reload()} className="text-white hover:bg-white/15 text-xs">
-            <X className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Close</span>
-          </Button>
-        </div>
+
+        {/* Download buttons — always visible in the bar */}
+        {(doc.permission === 'download_watermark' || doc.permission === 'download_clean') && (
+          <div className="px-4 pb-2.5 flex flex-wrap gap-2">
+            <button
+              onClick={async () => {
+                isDownloading.current = true;
+                try {
+                  if (isImage) {
+                    await downloadImageWithWatermark(doc.signedUrl, doc.documentName);
+                  } else {
+                    await downloadFile(doc.signedUrl, doc.documentName);
+                  }
+                } finally {
+                  setTimeout(() => { isDownloading.current = false; }, 3000);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white border border-white/30 rounded-sm transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Download with Watermark
+            </button>
+            {doc.permission === 'download_clean' && (
+              <button
+                onClick={async () => {
+                  isDownloading.current = true;
+                  try {
+                    await downloadFile(doc.signedUrl, doc.documentName);
+                  } finally {
+                    setTimeout(() => { isDownloading.current = false; }, 3000);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FF9933]/90 hover:bg-[#FF9933] text-[#003580] rounded-sm transition-colors font-bold"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Document */}
@@ -368,44 +408,6 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
             </div>
           )}
         </div>
-
-        {/* Download bar — shown when permission allows */}
-        {(doc.permission === 'download_watermark' || doc.permission === 'download_clean') && (
-          <div className="mt-3 mx-auto flex flex-wrap justify-center gap-2 px-2" style={{ maxWidth: 900 }}>
-            <button
-              onClick={async () => {
-                isDownloading.current = true;
-                try {
-                  if (isImage) {
-                    await downloadImageWithWatermark(doc.signedUrl, doc.documentName);
-                  } else {
-                    await downloadFile(doc.signedUrl, doc.documentName);
-                  }
-                } finally {
-                  setTimeout(() => { isDownloading.current = false; }, 3000);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#003580] hover:bg-[#002060] text-white rounded-sm transition-colors"
-            >
-              <Download className="h-3.5 w-3.5" /> Download with Watermark
-            </button>
-            {doc.permission === 'download_clean' && (
-              <button
-                onClick={async () => {
-                  isDownloading.current = true;
-                  try {
-                    await downloadFile(doc.signedUrl, doc.documentName);
-                  } finally {
-                    setTimeout(() => { isDownloading.current = false; }, 3000);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-white hover:bg-slate-50 text-[#003580] border border-[#003580] rounded-sm transition-colors"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
-              </button>
-            )}
-          </div>
-        )}
 
         <div className="text-center text-[11px] text-blue-200/70 mt-3 px-2">
           {doc.permission === 'view'
