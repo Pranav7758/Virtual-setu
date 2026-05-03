@@ -99,7 +99,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
   const PUBLIC_NAV = [
     { to: '/', label: t('nav.home') },
     { to: '/features', label: t('nav.features') },
-    { to: '/schemes', label: 'Schemes' },
+    { to: '/schemes', label: t('nav.schemes') },
     { to: '/pricing', label: t('nav.pricing') },
     { to: '/about', label: t('nav.about') },
     { to: '/scan', label: t('nav.verify') },
@@ -111,7 +111,7 @@ export default function GovLayout({ children, minimal = false }: GovLayoutProps)
     { to: '/dashboard?tab=documents', label: t('nav.my_documents'), icon: FileText },
     { to: '/dashboard?tab=checklist', label: t('nav.checklist'), icon: ListChecks },
     { to: '/dashboard?tab=digital-id', label: t('nav.digital_id'), icon: CreditCard },
-    { to: '/schemes', label: 'Schemes', icon: Landmark },
+    { to: '/schemes', label: t('nav.schemes'), icon: Landmark },
     { to: '/dashboard?tab=profile', label: t('nav.profile'), icon: UserCircle },
     { to: '/help', label: t('nav.help'), icon: HelpCircle },
   ];

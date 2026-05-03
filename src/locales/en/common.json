@@ -13,7 +13,8 @@
     "my_documents": "My Documents",
     "checklist": "Checklist",
     "digital_id": "Digital ID",
-    "profile": "Profile"
+    "profile": "Profile",
+    "schemes": "Schemes"
   },
   "status": {
     "verified": "Verified",
