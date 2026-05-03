@@ -63,12 +63,10 @@ function namesMatch(entered: string, extracted: string): boolean {
   return ratio >= 0.6;
 }
 
-export async function checkAadhaarUnique(hash: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('aadhaar_hash', hash)
-    .maybeSingle();
+export async function checkAadhaarUnique(hash: string, excludeUserId?: string): Promise<boolean> {
+  let query = supabase.from('profiles').select('user_id').eq('aadhaar_hash', hash);
+  if (excludeUserId) query = query.neq('user_id', excludeUserId);
+  const { data } = await query.maybeSingle();
   return !data;
 }
 
@@ -76,6 +74,7 @@ export async function scanAndVerifyAadhaar(
   imageFile: File,
   enteredName: string,
   enteredAadhaar: string,
+  excludeUserId?: string,
 ): Promise<AadhaarScanResult> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
   if (!apiKey) return { success: false, error: 'Groq API key not configured.' };
@@ -180,7 +179,7 @@ Return ONLY the JSON object with no markdown, no explanation.`;
   }
 
   const hash = await hashAadhaar(enteredDigits);
-  const isUnique = await checkAadhaarUnique(hash);
+  const isUnique = await checkAadhaarUnique(hash, excludeUserId);
   if (!isUnique) {
     return {
       success: false,

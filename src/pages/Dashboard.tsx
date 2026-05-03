@@ -94,7 +94,7 @@ export default function Dashboard() {
     if (!reVerifyFile || !user || !profile) return;
     setReVerifyLoading(true);
     try {
-      const result = await scanAndVerifyAadhaar(reVerifyFile, profile.full_name, reVerifyAadhaar);
+      const result = await scanAndVerifyAadhaar(reVerifyFile, profile.full_name, reVerifyAadhaar, user.id);
       if (!result.success) { toast.error(result.error || 'Verification failed'); return; }
       const { error } = await supabase.from('profiles').update({
         aadhaar_number: result.extractedAadhaar,
