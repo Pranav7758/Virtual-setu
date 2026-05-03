@@ -163,13 +163,13 @@ export default function DigitalIDCard({
             </div>
 
             {/* ── Body: photo | fields | QR ── */}
-            <div style={{ flex: 1, display: 'flex', gap: 10, padding: '7px 13px 7px 13px', minHeight: 0, alignItems: 'stretch' }}>
+            <div style={{ flex: 1, display: 'flex', gap: 10, padding: '6px 13px 6px 13px', minHeight: 0, alignItems: 'stretch' }}>
 
-              {/* LEFT — photo stretches full body height */}
-              <div style={{ flexShrink: 0, width: 100 }}>
+              {/* LEFT — fixed portrait photo, centred vertically */}
+              <div style={{ flexShrink: 0, width: 105, display: 'flex', alignItems: 'center' }}>
                 {photoUrl
-                  ? <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
-                  : <PhotoPlaceholder w={100} h={0} stretch />
+                  ? <img src={photoUrl} alt={name} style={{ width: 105, height: 130, objectFit: 'cover', objectPosition: 'center top', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
+                  : <PhotoPlaceholder w={105} h={130} />
                 }
               </div>
 
@@ -213,8 +213,8 @@ export default function DigitalIDCard({
 
               {/* RIGHT — QR code, vertically centred */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0 }}>
-                <div style={{ padding: 3, background: WHITE, borderRadius: 5, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                  <QRCode data={qrData} size={76} errorCorrectionLevel="M" />
+                <div style={{ padding: 4, background: WHITE, borderRadius: 6, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                  <QRCode data={qrData} size={86} errorCorrectionLevel="M" />
                 </div>
                 <p style={{ fontSize: 5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>Scan to verify</p>
               </div>
