@@ -356,9 +356,18 @@ export default function GovSchemes() {
         }
       });
     } else {
-      setTranslatingCards(true);
+      // Phase 1 — instant: show English content so cards are never blank
+      const immediate: Record<string, CardTranslation> = {};
+      for (const s of GOV_SCHEMES) {
+        immediate[s.id] = { name: s.name, description: s.description };
+      }
+      if (!cancelled) { setCardTranslations(immediate); setTranslatingCards(true); }
+      // Phase 2 — background: translate names + descriptions via Sarvam
       translateSchemeCards(GOV_SCHEMES, lang).then((res) => {
-        if (!cancelled) { setCardTranslations(res); setTranslatingCards(false); }
+        if (!cancelled && Object.keys(res).length > 0) {
+          setCardTranslations(res);
+          setTranslatingCards(false);
+        }
       });
     }
     return () => { cancelled = true; };
