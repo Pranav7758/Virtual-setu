@@ -24,13 +24,65 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
-function cacheKey(query: string) {
-  return `${CACHE_PREFIX}${query.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
+const LANG_NAMES: Record<string, string> = {
+  en: 'English',
+  hi: 'Hindi (हिन्दी)',
+  mr: 'Marathi (मराठी)',
+  bn: 'Bengali (বাংলা)',
+  ta: 'Tamil (தமிழ்)',
+  te: 'Telugu (తెలుగు)',
+  kn: 'Kannada (ಕನ್ನಡ)',
+  ml: 'Malayalam (മലയാളം)',
+  pa: 'Punjabi (ਪੰਜਾਬੀ)',
+  gu: 'Gujarati (ગુજરાતી)',
+  or: 'Odia (ଓଡ଼ିଆ)',
+  as: 'Assamese (অসমীয়া)',
+  ur: 'Urdu (اردو)',
+  mai: 'Maithili (मैथिली)',
+  kok: 'Konkani (कोंकणी)',
+  sd: 'Sindhi (سنڌي)',
+  ne: 'Nepali (नेपाली)',
+  mni: 'Meitei/Manipuri (মৈতৈলোন্)',
+  brx: 'Bodo (बड़ो)',
+  dgo: 'Dogri (डोगरी)',
+  ks: 'Kashmiri (کٲشُر)',
+  sa: 'Sanskrit (संस्कृतम्)',
+  sat: 'Santali (ᱥᱟᱱᱛᱟᱲᱤ)',
+};
+
+// Scripts used per language (for explicit prompt instructions)
+const LANG_SCRIPTS: Record<string, string> = {
+  hi: 'Devanagari script (देवनागरी)',
+  mr: 'Devanagari script (देवनागरी)',
+  mai: 'Devanagari script (देवनागरी)',
+  kok: 'Devanagari script (देवनागरी)',
+  ne: 'Devanagari script (देवनागरी)',
+  dgo: 'Devanagari script (देवनागरी)',
+  sa: 'Devanagari script (देवनागरी)',
+  brx: 'Devanagari script',
+  bn: 'Bengali script (বাংলা হরফ)',
+  as: 'Bengali script (অসমীয়া)',
+  ta: 'Tamil script (தமிழ் எழுத்து)',
+  te: 'Telugu script (తెలుగు లిపి)',
+  kn: 'Kannada script (ಕನ್ನಡ ಲಿಪಿ)',
+  ml: 'Malayalam script (മലയാളം ലിപി)',
+  pa: 'Gurmukhi script (ਗੁਰਮੁਖੀ)',
+  gu: 'Gujarati script (ગુજરાતી લિપિ)',
+  or: 'Odia script (ଓଡ଼ିଆ ଅକ୍ଷର)',
+  ur: 'Nastaliq/Urdu script (اردو)',
+  sd: 'Sindhi/Arabic script (سنڌي)',
+  ks: 'Kashmiri/Arabic script (کٲشُر)',
+  mni: 'Meitei Mayek script',
+  sat: 'Ol Chiki script (ᱥᱟᱱᱛᱟᱲᱤ)',
+};
+
+function cacheKey(query: string, lang: string) {
+  return `${CACHE_PREFIX}${query.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}__${lang}`;
 }
 
-function fromCache(cacheQ: string): AISchemeResult[] | null {
+function fromCache(query: string, lang: string): AISchemeResult[] | null {
   try {
-    const raw = localStorage.getItem(cacheKey(cacheQ));
+    const raw = localStorage.getItem(cacheKey(query, lang));
     if (!raw) return null;
     const entry: CacheEntry = JSON.parse(raw);
     if (Date.now() - entry.fetchedAt > CACHE_TTL) return null;
@@ -38,59 +90,61 @@ function fromCache(cacheQ: string): AISchemeResult[] | null {
   } catch { return null; }
 }
 
-function toCache(cacheQ: string, results: AISchemeResult[]) {
+function toCache(query: string, lang: string, results: AISchemeResult[]) {
   try {
     const entry: CacheEntry = { results, fetchedAt: Date.now() };
-    localStorage.setItem(cacheKey(cacheQ), JSON.stringify(entry));
+    localStorage.setItem(cacheKey(query, lang), JSON.stringify(entry));
   } catch {}
 }
 
 export async function searchSchemesWithAI(query: string, lang = 'en'): Promise<AISchemeResult[]> {
+  const normalizedLang = lang.split('-')[0];
   const key = import.meta.env.VITE_GROQ_API_KEY;
   if (!key || !query.trim()) return [];
 
-  const cacheQ = `${query.trim().toLowerCase()}__${lang}`;
-  const cached = fromCache(cacheQ);
+  const cached = fromCache(query.trim().toLowerCase(), normalizedLang);
   if (cached) return cached;
 
-  const LANG_NAMES: Record<string, string> = {
-    en: 'English', hi: 'Hindi (हिन्दी, Devanagari)', mr: 'Marathi (मराठी, Devanagari)',
-    bn: 'Bengali (বাংলা)', ta: 'Tamil (தமிழ்)', te: 'Telugu (తెలుగు)',
-    kn: 'Kannada (ಕನ್ನಡ)', ml: 'Malayalam (മലയാളം)', pa: 'Punjabi (ਪੰਜਾਬੀ, Gurmukhi)',
-    gu: 'Gujarati (ગુજરાતી)', or: 'Odia (ଓଡ଼ିଆ)', as: 'Assamese (অসমীয়া)',
-    ur: 'Urdu (اردو)', mai: 'Maithili (मैथिली)', kok: 'Konkani (कोंकणी)',
-    sd: 'Sindhi (سنڌي)', ne: 'Nepali (नेपाली)', mni: 'Meitei/Manipuri (মৈতৈলোন্)',
-    brx: 'Bodo (बड़ो)', dgo: 'Dogri (डोगरी)', ks: 'Kashmiri (کٲشُر)',
-    sa: 'Sanskrit (संस्कृतम्)', sat: 'Santali (ᱥᱟᱱᱛᱟᱲᱤ)',
-  };
-  const langName = LANG_NAMES[lang] ?? 'English';
-  const inLang = lang !== 'en' ? ` Write ALL text fields in ${langName} using the correct script.` : '';
+  const langName = LANG_NAMES[normalizedLang] ?? 'English';
+  const script = LANG_SCRIPTS[normalizedLang];
+  const isNonEnglish = normalizedLang !== 'en';
 
-  const prompt = `You are an expert on Indian government schemes and welfare programmes. The user is searching for: "${query}"
+  const langInstruction = isNonEnglish
+    ? `
+⚠️ LANGUAGE REQUIREMENT — MANDATORY:
+The user speaks ${langName}${script ? ` (uses ${script})` : ''}.
+You MUST write EVERY text field in ${langName} using the correct native script.
+This includes: name, ministry, description, every item in eligibility[], benefits[], requiredDocuments[], and applicationProcess[].
+Do NOT use English for any of these fields.
+Only "nameHindi" must remain in Hindi Devanagari (हिन्दी देवनागरी).
+Only "category", "status", "launchDate", "officialUrl", and "id" may be in English/Latin.`
+    : '';
 
-Find up to 4 relevant Indian government schemes matching this search. Include schemes from 2023, 2024 and 2025 if relevant. Focus on schemes NOT commonly known, or recently launched ones.${inLang}
+  const prompt = `You are an expert on Indian government schemes and welfare programmes.${langInstruction}
 
-Respond ONLY with a valid JSON array. No markdown, no explanation, just raw JSON.
+The user is searching for: "${query}"
 
-Format:
-[
-  {
-    "name": "Full scheme name${lang !== 'en' ? ` in ${langName}` : ''}",
-    "nameHindi": "हिन्दी में नाम",
-    "category": "one of: Education|Healthcare|Agriculture|Business|Employment|Housing|Social Welfare|Women & Children|Senior Citizens|Financial Inclusion|Skill Development|Rural Development|Environment & Energy",
-    "ministry": "Ministry name${lang !== 'en' ? ` in ${langName}` : ''}",
-    "launchDate": "YYYY-MM-DD",
-    "status": "active",
-    "description": "2-3 sentence description${lang !== 'en' ? ` in ${langName}` : ''}",
-    "eligibility": ["criterion 1", "criterion 2", "criterion 3"],
-    "benefits": ["benefit 1", "benefit 2", "benefit 3"],
-    "requiredDocuments": ["doc 1", "doc 2"],
-    "applicationProcess": ["step 1", "step 2", "step 3"],
-    "officialUrl": "https://..."
-  }
-]
+Find up to 4 relevant Indian government schemes that match this search. Include recent schemes from 2023, 2024, 2025 if relevant. Focus on schemes that are less commonly known or recently launched.
 
-If no relevant Indian govt schemes match "${query}", return an empty array: []`;
+Respond ONLY with a valid JSON array. No markdown, no explanation, just raw JSON starting with [ and ending with ].
+
+Each object in the array must have exactly these fields:
+{
+  "name": "Full scheme name${isNonEnglish ? ` written in ${langName}` : ''}",
+  "nameHindi": "योजना का नाम हिन्दी देवनागरी में",
+  "category": "one of: Education|Healthcare|Agriculture|Business|Employment|Housing|Social Welfare|Women & Children|Senior Citizens|Financial Inclusion|Skill Development|Rural Development|Environment & Energy",
+  "ministry": "Ministry name${isNonEnglish ? ` in ${langName}` : ' in English'}",
+  "launchDate": "YYYY-MM-DD",
+  "status": "active",
+  "description": "2-3 sentence description${isNonEnglish ? ` in ${langName}` : ' in English'}",
+  "eligibility": ["${isNonEnglish ? `each item in ${langName}` : 'criterion 1'}", "${isNonEnglish ? '' : 'criterion 2'}"],
+  "benefits": ["${isNonEnglish ? `each item in ${langName}` : 'benefit 1'}"],
+  "requiredDocuments": ["${isNonEnglish ? `each item in ${langName}` : 'doc 1'}"],
+  "applicationProcess": ["${isNonEnglish ? `each step in ${langName}` : 'step 1'}"],
+  "officialUrl": "https://..."
+}
+
+If no relevant Indian government schemes match "${query}", return an empty array: []`;
 
   try {
     const res = await fetch(GROQ_URL, {
@@ -103,7 +157,7 @@ If no relevant Indian govt schemes match "${query}", return an empty array: []`;
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 2000,
+        max_tokens: 2500,
       }),
     });
 
@@ -111,7 +165,6 @@ If no relevant Indian govt schemes match "${query}", return an empty array: []`;
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content?.trim() ?? '';
 
-    // Extract JSON array from response
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return [];
 
@@ -133,7 +186,7 @@ If no relevant Indian govt schemes match "${query}", return an empty array: []`;
       isAI: true,
     }));
 
-    toCache(cacheQ, results);
+    toCache(query.trim().toLowerCase(), normalizedLang, results);
     return results;
   } catch {
     return [];

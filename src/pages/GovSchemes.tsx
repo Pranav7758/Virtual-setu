@@ -75,7 +75,7 @@ interface SchemeDetailProps {
 
 function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translation, translating }: SchemeDetailProps) {
   const { t, i18n } = useTranslation();
-  const isEn = i18n.language === 'en';
+  const isEn = i18n.language.split('-')[0] === 'en';
   const T = translation;
   const labels = T?.labels;
 
@@ -201,7 +201,7 @@ interface SchemeCardProps {
 
 function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTranslation, translating }: SchemeCardProps) {
   const { t, i18n } = useTranslation();
-  const isEn = i18n.language === 'en';
+  const isEn = i18n.language.split('-')[0] === 'en';
   const displayName = cardTranslation?.name ?? (isEn ? scheme.name : (scheme.nameHindi || scheme.name));
   const displayDesc = cardTranslation?.description ?? scheme.description;
 
@@ -263,7 +263,7 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTransla
 
 export default function GovSchemes() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const lang = i18n.language.split('-')[0];
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<SchemeCategory | 'All' | 'Bookmarked' | 'New'>('All');
@@ -625,7 +625,7 @@ function FilterGroup({ label, value, onChange, options }: {
 
 function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: () => void }) {
   const { t, i18n } = useTranslation();
-  const isEn = i18n.language === 'en';
+  const isEn = i18n.language.split('-')[0] === 'en';
   return (
     <div
       className="bg-white border border-violet-200 rounded-sm shadow-sm hover:shadow-md hover:border-violet-400 transition-all group flex flex-col cursor-pointer relative"
@@ -673,7 +673,7 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
 
 function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: () => void }) {
   const { t, i18n } = useTranslation();
-  const isEn = i18n.language === 'en';
+  const isEn = i18n.language.split('-')[0] === 'en';
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-sm shadow-2xl max-w-2xl w-full my-6 flex flex-col max-h-[90vh] overflow-hidden">
