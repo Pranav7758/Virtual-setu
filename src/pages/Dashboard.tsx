@@ -86,6 +86,7 @@ export default function Dashboard() {
 
   const [showReVerify, setShowReVerify] = useState(false);
   const [reVerifyFile, setReVerifyFile] = useState<File | null>(null);
+  const [reVerifyAadhaar, setReVerifyAadhaar] = useState('');
   const [reVerifyLoading, setReVerifyLoading] = useState(false);
   const reVerifyInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,7 +94,7 @@ export default function Dashboard() {
     if (!reVerifyFile || !user || !profile) return;
     setReVerifyLoading(true);
     try {
-      const result = await scanAndVerifyAadhaar(reVerifyFile, profile.full_name, profile.aadhaar_number?.replace(/\D/g, '') || '');
+      const result = await scanAndVerifyAadhaar(reVerifyFile, profile.full_name, reVerifyAadhaar);
       if (!result.success) { toast.error(result.error || 'Verification failed'); return; }
       const { error } = await supabase.from('profiles').update({
         aadhaar_number: result.extractedAadhaar,
@@ -412,7 +413,7 @@ export default function Dashboard() {
             {/* Re-verify Aadhaar */}
             <div className="mx-5 mb-5 border border-slate-200 rounded">
               <button
-                onClick={() => setShowReVerify(v => !v)}
+                onClick={() => { setShowReVerify(v => !v); setReVerifyFile(null); setReVerifyAadhaar(''); }}
                 className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-center gap-2">
@@ -434,6 +435,17 @@ export default function Dashboard() {
                     className="hidden"
                     onChange={e => setReVerifyFile(e.target.files?.[0] ?? null)}
                   />
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Your 12-digit Aadhaar Number</Label>
+                    <Input
+                      inputMode="numeric"
+                      placeholder="e.g. 1234 5678 9012"
+                      maxLength={14}
+                      value={reVerifyAadhaar}
+                      onChange={e => setReVerifyAadhaar(e.target.value.replace(/[^0-9\s]/g, ''))}
+                      className="mt-1 border-slate-300 rounded-sm focus-visible:ring-[#003580] font-mono tracking-widest"
+                    />
+                  </div>
                   <div
                     onClick={() => reVerifyInputRef.current?.click()}
                     className="border-2 border-dashed border-slate-300 rounded p-4 text-center cursor-pointer hover:border-[#003580] hover:bg-blue-50/30 transition-colors"
@@ -450,7 +462,7 @@ export default function Dashboard() {
                   </div>
                   <Button
                     onClick={handleReVerifyAadhaar}
-                    disabled={!reVerifyFile || reVerifyLoading}
+                    disabled={!reVerifyFile || reVerifyLoading || reVerifyAadhaar.replace(/\D/g,'').length !== 12}
                     className="w-full bg-[#003580] hover:bg-[#002060] text-white text-sm"
                   >
                     {reVerifyLoading
