@@ -400,9 +400,18 @@ export default defineConfig(({ mode }) => {
     "VITE_SUPABASE_ANON_KEY",
     "VITE_SUPABASE_URL_BACKEND",
     "VITE_GROQ_API_KEY",
+    "VITE_GEMINI_API_KEY",
     "VITE_RAZORPAY_KEY_ID",
     "VITE_SCRAPER_API_KEY",
     "VITE_YOUTUBE_API_KEY",
+    "VITE_FIREBASE_API_KEY",
+    "VITE_FIREBASE_AUTH_DOMAIN",
+    "VITE_FIREBASE_DATABASE_URL",
+    "VITE_FIREBASE_PROJECT_ID",
+    "VITE_FIREBASE_STORAGE_BUCKET",
+    "VITE_FIREBASE_MESSAGING_SENDER_ID",
+    "VITE_FIREBASE_APP_ID",
+    "VITE_FIREBASE_MEASUREMENT_ID",
   ];
   for (const key of VITE_KEYS) {
     const val = process.env[key] ?? env[key] ?? "";

@@ -21,6 +21,8 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
 // SUPABASE_API_KEY is the actual service role key in this project
 const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!;
+// SESSION_SECRET is used to HMAC-sign share tokens for tamper detection
+const SESSION_SECRET = process.env.SESSION_SECRET || 'fallback-dev-secret-change-in-production';
 
 const PLAN_PRICES: Record<string, number> = {
   premium: 29900,
