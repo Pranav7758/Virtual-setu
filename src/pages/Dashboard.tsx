@@ -30,6 +30,10 @@ interface Profile {
   pin_hash: string;
   emergency_contact: string;
   created_at: string;
+  aadhaar_number: string | null;
+  aadhaar_address: string | null;
+  aadhaar_dob: string | null;
+  aadhaar_verified: boolean | null;
 }
 
 interface Document {
@@ -361,11 +365,14 @@ export default function Dashboard() {
             <div className="flex justify-center py-6 px-4">
               <DigitalIDCard
                 name={profile?.full_name || ''}
-                email={user?.email || ''}
                 phone={profile?.phone || ''}
                 userId={user?.id || 'unknown'}
                 memberSince={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }) : undefined}
                 shareUrl={`${window.location.origin}/i/${user?.id}`}
+                aadhaarMasked={profile?.aadhaar_number || undefined}
+                aadhaarAddress={profile?.aadhaar_address || undefined}
+                dob={profile?.aadhaar_dob || undefined}
+                aadhaarVerified={profile?.aadhaar_verified ?? false}
               />
             </div>
             {!limits.qrEmergencySharing && (

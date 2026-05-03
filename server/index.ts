@@ -1,8 +1,64 @@
 import express from 'express';
 import crypto from 'crypto';
+import pg from 'pg';
 
 const app = express();
 app.use(express.json());
+
+// ── Run Aadhaar migration on startup (idempotent) ──────────────────────────
+(async () => {
+  const url = process.env.VITE_SUPABASE_URL_BACKEND || process.env.DATABASE_URL;
+  if (!url) return;
+  try {
+    const { Pool } = pg;
+    const pool = new Pool({ connectionString: url, ssl: url.includes('supabase') ? { rejectUnauthorized: false } : undefined });
+    await pool.query(`
+      ALTER TABLE public.profiles
+        ADD COLUMN IF NOT EXISTS aadhaar_number   TEXT,
+        ADD COLUMN IF NOT EXISTS aadhaar_hash     TEXT,
+        ADD COLUMN IF NOT EXISTS aadhaar_address  TEXT,
+        ADD COLUMN IF NOT EXISTS aadhaar_dob      TEXT,
+        ADD COLUMN IF NOT EXISTS aadhaar_verified BOOLEAN DEFAULT FALSE
+    `);
+    // Add unique constraint if not already there
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'profiles_aadhaar_hash_unique'
+        ) THEN
+          ALTER TABLE public.profiles
+            ADD CONSTRAINT profiles_aadhaar_hash_unique UNIQUE (aadhaar_hash);
+        END IF;
+      END $$
+    `);
+    // Update trigger to propagate aadhaar fields from auth metadata
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION public.handle_new_user()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        INSERT INTO public.profiles (
+          user_id, full_name, phone,
+          aadhaar_number, aadhaar_hash, aadhaar_address, aadhaar_dob, aadhaar_verified
+        ) VALUES (
+          NEW.id,
+          COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+          COALESCE(NEW.raw_user_meta_data ->> 'phone', ''),
+          NEW.raw_user_meta_data ->> 'aadhaar_number',
+          NEW.raw_user_meta_data ->> 'aadhaar_hash',
+          NEW.raw_user_meta_data ->> 'aadhaar_address',
+          NEW.raw_user_meta_data ->> 'aadhaar_dob',
+          COALESCE((NEW.raw_user_meta_data ->> 'aadhaar_verified')::boolean, false)
+        ) ON CONFLICT (user_id) DO NOTHING;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+    `);
+    await pool.end();
+    console.log('[migration] Aadhaar columns applied successfully');
+  } catch (e: any) {
+    console.warn('[migration] Could not apply Aadhaar migration (may need manual Supabase run):', e.message?.slice(0, 120));
+  }
+})();
 
 /* ── In-memory share store ── */
 interface ShareEntry {
