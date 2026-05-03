@@ -20,16 +20,23 @@ interface DocShare {
   permission: Permission;
 }
 
-/* ── Canvas-based watermark download for images ── */
+/* ── Download helpers ── */
 async function downloadImageWithWatermark(url: string, fileName: string) {
   try {
+    // Fetch as blob first so canvas won't be CORS-tainted
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = reject;
-      img.src = url;
+      img.src = blobUrl;
     });
+    URL.revokeObjectURL(blobUrl);
+
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth || 800;
     canvas.height = img.naturalHeight || 600;
@@ -38,7 +45,7 @@ async function downloadImageWithWatermark(url: string, fileName: string) {
     ctx.save();
     ctx.globalAlpha = 0.18;
     ctx.fillStyle = '#003580';
-    ctx.font = `bold ${Math.max(20, Math.floor(canvas.width / 22))}px Arial`;
+    ctx.font = `bold ${Math.max(18, Math.floor(canvas.width / 22))}px Arial`;
     ctx.rotate(-Math.PI / 6);
     const step = Math.floor(canvas.width / 2.5);
     for (let y = -canvas.height; y < canvas.height * 2; y += 120) {
@@ -48,29 +55,38 @@ async function downloadImageWithWatermark(url: string, fileName: string) {
       }
     }
     ctx.restore();
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/jpeg', 0.92);
-    a.download = `${fileName.replace(/\.[^.]+$/, '')}_watermarked.jpg`;
-    a.click();
+
+    canvas.toBlob((b) => {
+      if (!b) { window.open(url, '_blank'); return; }
+      const a = document.createElement('a');
+      const objUrl = URL.createObjectURL(b);
+      a.href = objUrl;
+      a.download = `${(fileName || 'document').replace(/\.[^.]+$/, '')}_watermarked.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+    }, 'image/jpeg', 0.92);
   } catch {
-    toast.error('Could not apply watermark. Please try again.');
+    window.open(url, '_blank');
   }
 }
 
 async function downloadFile(url: string, fileName: string) {
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch file');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
+    a.href = objUrl;
+    a.download = fileName || 'document';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
   } catch {
-    toast.error('Download failed. Please try again.');
+    window.open(url, '_blank');
   }
 }
 
@@ -214,6 +230,7 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
   const [hideReason, setHideReason] = useState('Viewing paused for safety');
   const rootRef = useRef<HTMLDivElement>(null);
   const blockedToast = useRef(0);
+  const isDownloading = useRef(false);
   const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
   const notifyBlocked = () => {
@@ -243,10 +260,17 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
       }
     };
     const onCopy = (e: ClipboardEvent) => { e.preventDefault(); notifyBlocked(); };
-    const onVis = () => { if (document.visibilityState !== 'visible') { setHideReason('Viewing paused — return to this tab'); setHidden(true); } else setHidden(false); };
-    const onBlur = () => { setHideReason('Viewing paused for safety'); setHidden(true); };
+    const onVis = () => {
+      if (isDownloading.current) return;
+      if (document.visibilityState !== 'visible') { setHideReason('Viewing paused — return to this tab'); setHidden(true); } else setHidden(false);
+    };
+    const onBlur = () => {
+      if (isDownloading.current) return;
+      setHideReason('Viewing paused for safety'); setHidden(true);
+    };
     const onFocus = () => setHidden(false);
     const onFs = () => {
+      if (isDownloading.current) return;
       const fsEl = document.fullscreenElement || (document as any).webkitFullscreenElement;
       if (!fsEl) { setHideReason('Fullscreen exited — viewing paused'); setHidden(true); } else setHidden(false);
     };
@@ -349,11 +373,16 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
         {(doc.permission === 'download_watermark' || doc.permission === 'download_clean') && (
           <div className="mt-3 mx-auto flex flex-wrap justify-center gap-2 px-2" style={{ maxWidth: 900 }}>
             <button
-              onClick={() => {
-                if (isImage) {
-                  downloadImageWithWatermark(doc.signedUrl, doc.documentName);
-                } else {
-                  downloadFile(doc.signedUrl, doc.documentName);
+              onClick={async () => {
+                isDownloading.current = true;
+                try {
+                  if (isImage) {
+                    await downloadImageWithWatermark(doc.signedUrl, doc.documentName);
+                  } else {
+                    await downloadFile(doc.signedUrl, doc.documentName);
+                  }
+                } finally {
+                  setTimeout(() => { isDownloading.current = false; }, 3000);
                 }
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#003580] hover:bg-[#002060] text-white rounded-sm transition-colors"
@@ -362,7 +391,14 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
             </button>
             {doc.permission === 'download_clean' && (
               <button
-                onClick={() => downloadFile(doc.signedUrl, doc.documentName)}
+                onClick={async () => {
+                  isDownloading.current = true;
+                  try {
+                    await downloadFile(doc.signedUrl, doc.documentName);
+                  } finally {
+                    setTimeout(() => { isDownloading.current = false; }, 3000);
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-white hover:bg-slate-50 text-[#003580] border border-[#003580] rounded-sm transition-colors"
               >
                 <Sparkles className="h-3.5 w-3.5" /> Download without Watermark

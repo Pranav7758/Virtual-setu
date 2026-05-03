@@ -7,16 +7,23 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, Lock, ShieldCheck, ArrowLeft, X, Loader2, Download, Sparkles } from 'lucide-react';
 
-/* ── Canvas watermark download (QR scan always has both options) ── */
+/* ── Download helpers ── */
 async function downloadImageWithWatermark(url: string, fileName: string) {
   try {
+    // Fetch as blob first so the canvas won't be CORS-tainted
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = reject;
-      img.src = url;
+      img.src = blobUrl;
     });
+    URL.revokeObjectURL(blobUrl);
+
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth || 800;
     canvas.height = img.naturalHeight || 600;
@@ -25,7 +32,7 @@ async function downloadImageWithWatermark(url: string, fileName: string) {
     ctx.save();
     ctx.globalAlpha = 0.18;
     ctx.fillStyle = '#003580';
-    ctx.font = `bold ${Math.max(20, Math.floor(canvas.width / 22))}px Arial`;
+    ctx.font = `bold ${Math.max(18, Math.floor(canvas.width / 22))}px Arial`;
     ctx.rotate(-Math.PI / 6);
     const step = Math.floor(canvas.width / 2.5);
     for (let y = -canvas.height; y < canvas.height * 2; y += 120) {
@@ -35,29 +42,39 @@ async function downloadImageWithWatermark(url: string, fileName: string) {
       }
     }
     ctx.restore();
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/jpeg', 0.92);
-    a.download = `${(fileName || 'document').replace(/\.[^.]+$/, '')}_watermarked.jpg`;
-    a.click();
+
+    canvas.toBlob((b) => {
+      if (!b) { window.open(url, '_blank'); return; }
+      const a = document.createElement('a');
+      const objUrl = URL.createObjectURL(b);
+      a.href = objUrl;
+      a.download = `${(fileName || 'document').replace(/\.[^.]+$/, '')}_watermarked.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+    }, 'image/jpeg', 0.92);
   } catch {
-    toast.error('Could not apply watermark. Please try again.');
+    // Fallback: open URL directly
+    window.open(url, '_blank');
   }
 }
 
 async function downloadFile(url: string, fileName: string) {
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch file');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = objUrl;
     a.download = fileName || 'document';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
   } catch {
-    toast.error('Download failed. Please try again.');
+    window.open(url, '_blank');
   }
 }
 
@@ -321,6 +338,7 @@ function SecureViewer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const blockedToast = useRef(0);
+  const isDownloading = useRef(false);
 
   const notifyBlocked = () => {
     const now = Date.now();
@@ -384,6 +402,7 @@ function SecureViewer({
     };
 
     const onVisibility = () => {
+      if (isDownloading.current) return;
       if (document.visibilityState !== 'visible') {
         setHideReason('Viewing paused — return to this tab to continue');
         setHidden(true);
@@ -392,12 +411,14 @@ function SecureViewer({
       }
     };
     const onBlur = () => {
+      if (isDownloading.current) return;
       setHideReason('Viewing paused for safety');
       setHidden(true);
     };
     const onFocus = () => setHidden(false);
 
     const onFsChange = () => {
+      if (isDownloading.current) return;
       const fsEl =
         document.fullscreenElement ||
         (document as any).webkitFullscreenElement ||
@@ -405,7 +426,6 @@ function SecureViewer({
       const inFs = !!fsEl;
       setIsFullscreen(inFs);
       if (!inFs) {
-        // User exited fullscreen — blur and warn
         setHideReason('Fullscreen exited — viewing paused');
         setHidden(true);
       } else {
@@ -555,12 +575,17 @@ function SecureViewer({
         {/* Download bar — QR scan always offers both download options */}
         <div className="mt-3 mx-auto flex flex-wrap justify-center gap-2 px-2" style={{ maxWidth: 900 }}>
           <button
-            onClick={() => {
-              const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(doc.signed_url);
-              if (isImage) {
-                downloadImageWithWatermark(doc.signed_url, doc.document_name);
-              } else {
-                downloadFile(doc.signed_url, doc.document_name);
+            onClick={async () => {
+              isDownloading.current = true;
+              try {
+                const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(doc.signed_url);
+                if (isImage) {
+                  await downloadImageWithWatermark(doc.signed_url, doc.document_name);
+                } else {
+                  await downloadFile(doc.signed_url, doc.document_name);
+                }
+              } finally {
+                setTimeout(() => { isDownloading.current = false; }, 3000);
               }
             }}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#00266e] hover:bg-[#001b52] text-white rounded transition-colors"
@@ -568,7 +593,14 @@ function SecureViewer({
             <Download className="h-3.5 w-3.5" /> Download with Watermark
           </button>
           <button
-            onClick={() => downloadFile(doc.signed_url, doc.document_name)}
+            onClick={async () => {
+              isDownloading.current = true;
+              try {
+                await downloadFile(doc.signed_url, doc.document_name);
+              } finally {
+                setTimeout(() => { isDownloading.current = false; }, 3000);
+              }
+            }}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5" /> Download without Watermark

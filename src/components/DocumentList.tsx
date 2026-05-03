@@ -248,6 +248,11 @@ export default function DocumentList({ documents, onDelete }: DocumentListProps)
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('doclist.search_placeholder')}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              name="doc-search"
               className="pl-8 pr-8 h-8 text-sm bg-slate-50 border-slate-200 rounded-sm focus-visible:ring-[#003580]"
             />
             {search && (
