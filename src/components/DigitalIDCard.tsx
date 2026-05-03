@@ -68,24 +68,22 @@ function Header() {
 }
 
 /* Silhouette placeholder — shown when no photo uploaded */
-function PhotoPlaceholder({ w, h }: { w: number; h: number }) {
+function PhotoPlaceholder({ w, h, stretch }: { w: number; h: number; stretch?: boolean }) {
   return (
     <div style={{
-      width: w, height: h, borderRadius: 6, flexShrink: 0,
+      width: stretch ? '100%' : w,
+      height: stretch ? '100%' : h,
+      borderRadius: 6, flexShrink: 0,
       background: '#d8e4ef',
       border: '1.5px solid #93aec8',
       overflow: 'hidden', position: 'relative',
     }}>
-      <svg viewBox="0 0 92 116" width={w} height={h} style={{ display: 'block', position: 'absolute', bottom: 0, left: 0 }}>
-        {/* torso / shoulders — wide curved shape filling bottom */}
+      <svg viewBox="0 0 92 116" preserveAspectRatio="xMidYMax meet"
+        style={{ display: 'block', position: 'absolute', bottom: 0, left: 0, width: '100%', height: '100%' }}>
         <path d="M-4,116 C-4,116 8,74 46,72 C84,72 96,116 96,116 Z" fill="#5a7a99" />
-        {/* neck */}
         <rect x="37" y="57" width="18" height="18" rx="3" fill="#5a7a99" />
-        {/* head */}
         <ellipse cx="46" cy="40" rx="22" ry="24" fill="#5a7a99" />
-        {/* ear left */}
         <ellipse cx="24" cy="42" rx="4" ry="5.5" fill="#5a7a99" />
-        {/* ear right */}
         <ellipse cx="68" cy="42" rx="4" ry="5.5" fill="#5a7a99" />
       </svg>
     </div>
@@ -154,74 +152,71 @@ export default function DigitalIDCard({
             <Tricolor />
             <Header />
 
-            {/* DIGITAL IDENTITY CARD pill */}
-            <div style={{ textAlign: 'center', padding: '3px 0 2px', flexShrink: 0 }}>
-              <span style={{
-                display: 'inline-block', fontSize: 6, fontWeight: 700,
-                letterSpacing: '0.3em', textTransform: 'uppercase',
-                color: WHITE, background: NAVY, borderRadius: 20, padding: '2px 10px',
-              }}>Digital Identity Card</span>
+            {/* thin separator with "DIGITAL IDENTITY CARD" label */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '0 13px', flexShrink: 0, height: 14,
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(0,53,128,0.12)' }} />
+              <span style={{ fontSize: 5.5, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#5b7fa6', whiteSpace: 'nowrap' }}>Digital Identity Card</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(0,53,128,0.12)' }} />
             </div>
 
             {/* ── Body: photo | fields | QR ── */}
-            <div style={{ flex: 1, display: 'flex', gap: 11, padding: '7px 13px 6px 13px', minHeight: 0, alignItems: 'center' }}>
+            <div style={{ flex: 1, display: 'flex', gap: 10, padding: '7px 13px 7px 13px', minHeight: 0, alignItems: 'stretch' }}>
 
-              {/* LEFT — photo only */}
-              <div style={{ flexShrink: 0 }}>
+              {/* LEFT — photo stretches full body height */}
+              <div style={{ flexShrink: 0, width: 100 }}>
                 {photoUrl
-                  ? <img src={photoUrl} alt={name} style={{ width: PW, height: PH, objectFit: 'cover', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
-                  : <PhotoPlaceholder w={PW} h={PH} />
+                  ? <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6, border: '1.5px solid #93aec8', display: 'block' }} />
+                  : <PhotoPlaceholder w={100} h={0} stretch />
                 }
               </div>
 
-              {/* MIDDLE — all fields, tightly packed */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+              {/* MIDDLE — fields spread evenly top-to-bottom */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
 
-                {/* Name row */}
+                {/* Name */}
                 <div>
-                  <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0, lineHeight: 1 }}>Name / नाम</p>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '2px 0 0 0', lineHeight: 1.1 }}>{name || '—'}</p>
+                  <p style={{ fontSize: 5, color: '#7a92a8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, lineHeight: 1 }}>Name / नाम</p>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: '#0f172a', margin: '1.5px 0 0 0', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || '—'}</p>
                 </div>
 
-                {/* Blood Group — always visible */}
+                {/* Blood Group */}
                 <div>
-                  <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0, lineHeight: 1 }}>Blood Group / रक्त समूह</p>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                    <span style={{ fontSize: 10 }}>🩸</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: bloodGroup ? '#dc2626' : '#94a3b8', letterSpacing: '0.05em', lineHeight: 1 }}>
-                      {bloodGroup || '—'}
-                    </span>
+                  <p style={{ fontSize: 5, color: '#7a92a8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, lineHeight: 1 }}>Blood Group / रक्त समूह</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1.5 }}>
+                    <span style={{ fontSize: 9 }}>🩸</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: bloodGroup ? '#dc2626' : '#94a3b8', letterSpacing: '0.04em', lineHeight: 1 }}>{bloodGroup || '—'}</span>
                   </div>
                 </div>
 
-                {/* DOB + Mobile row */}
-                <div style={{ display: 'flex', gap: 16 }}>
-                  {dob && (
-                    <div>
-                      <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, lineHeight: 1 }}>Date of Birth / जन्म तिथि</p>
-                      <p style={{ fontSize: 8.5, fontWeight: 500, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{dob}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, lineHeight: 1 }}>Mobile / मोबाइल</p>
-                    <p style={{ fontSize: 8.5, fontWeight: 500, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{phone || '—'}</p>
-                  </div>
+                {/* Date of Birth */}
+                <div>
+                  <p style={{ fontSize: 5, color: '#7a92a8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, lineHeight: 1 }}>Date of Birth / जन्म तिथि</p>
+                  <p style={{ fontSize: 9, fontWeight: 600, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{dob || '—'}</p>
+                </div>
+
+                {/* Mobile */}
+                <div>
+                  <p style={{ fontSize: 5, color: '#7a92a8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, lineHeight: 1 }}>Mobile / मोबाइल</p>
+                  <p style={{ fontSize: 9, fontWeight: 600, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{phone || '—'}</p>
                 </div>
 
                 {/* Enrolled */}
                 <div>
-                  <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, lineHeight: 1 }}>Enrolled Since / नामांकन</p>
-                  <p style={{ fontSize: 8.5, fontWeight: 500, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{memberSince || '—'}</p>
+                  <p style={{ fontSize: 5, color: '#7a92a8', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, lineHeight: 1 }}>Enrolled Since / नामांकन</p>
+                  <p style={{ fontSize: 9, fontWeight: 600, color: '#1e3a5f', margin: '1.5px 0 0 0', lineHeight: 1 }}>{memberSince || '—'}</p>
                 </div>
 
               </div>
 
-              {/* RIGHT — QR code */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-                <div style={{ padding: 4, background: WHITE, borderRadius: 6, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                  <QRCode data={qrData} size={82} errorCorrectionLevel="M" />
+              {/* RIGHT — QR code, vertically centred */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0 }}>
+                <div style={{ padding: 3, background: WHITE, borderRadius: 5, border: '1.5px solid #93c5e8', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                  <QRCode data={qrData} size={76} errorCorrectionLevel="M" />
                 </div>
-                <p style={{ fontSize: 5.5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>Scan to verify</p>
+                <p style={{ fontSize: 5, color: '#9ca3af', textAlign: 'center', margin: 0 }}>Scan to verify</p>
               </div>
             </div>
 
