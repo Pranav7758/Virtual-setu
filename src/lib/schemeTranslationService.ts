@@ -1,9 +1,6 @@
 import type { GovScheme } from '@/data/govSchemes';
 
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
-const CHUNK_SIZE = 15; // max schemes per API call to stay within token limits
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
 export const LANG_NAMES: Record<string, string> = {
   en: 'English',
@@ -31,33 +28,7 @@ export const LANG_NAMES: Record<string, string> = {
   sat: 'Santali (ᱥᱟᱱᱛᱟᱲᱤ)',
 };
 
-// Languages that use Devanagari — scheme names are already in nameHindi
-const DEVANAGARI_LANGS = new Set(['hi', 'mr', 'mai', 'kok', 'ne', 'dgo', 'sa', 'brx']);
-
-const SCRIPT_NOTES: Record<string, string> = {
-  hi: 'Hindi using Devanagari script (देवनागरी)',
-  mr: 'Marathi using Devanagari script (देवनागरी)',
-  mai: 'Maithili using Devanagari script',
-  kok: 'Konkani using Devanagari script',
-  ne: 'Nepali using Devanagari script',
-  dgo: 'Dogri using Devanagari script',
-  sa: 'Sanskrit using Devanagari script',
-  brx: 'Bodo using Devanagari script',
-  bn: 'Bengali using Bengali script (বাংলা)',
-  as: 'Assamese using Bengali/Assamese script',
-  ta: 'Tamil using Tamil script (தமிழ்)',
-  te: 'Telugu using Telugu script (తెలుగు)',
-  kn: 'Kannada using Kannada script (ಕನ್ನಡ)',
-  ml: 'Malayalam using Malayalam script (മലയാളം)',
-  pa: 'Punjabi using Gurmukhi script (ਗੁਰਮੁਖੀ)',
-  gu: 'Gujarati using Gujarati script (ગુજરાતી)',
-  or: 'Odia using Odia script (ଓଡ଼ିଆ)',
-  ur: 'Urdu using Urdu/Nastaliq script (اردو)',
-  sd: 'Sindhi using Arabic/Sindhi script',
-  ks: 'Kashmiri using Arabic script',
-  mni: 'Meitei using Meitei Mayek script',
-  sat: 'Santali using Ol Chiki script (ᱥᱟᱱᱛᱟᱲᱤ)',
-};
+export const DEVANAGARI_LANGS = new Set(['hi', 'mr', 'mai', 'kok', 'ne', 'dgo', 'sa', 'brx']);
 
 export interface CardTranslation {
   name: string;
@@ -84,14 +55,8 @@ export interface DetailTranslation {
   };
 }
 
-// ── Cache helpers ──────────────────────────────────────────────────────────────
-
-function cardsCacheKey(lang: string) {
-  return `vs_scheme_cards_trans_v3_${lang}`;
-}
-function detailCacheKey(lang: string, id: string) {
-  return `vs_scheme_detail_trans_v3_${lang}_${id}`;
-}
+function cardsCacheKey(lang: string) { return `vs_scheme_cards_trans_v4_${lang}`; }
+function detailCacheKey(lang: string, id: string) { return `vs_scheme_detail_trans_v4_${lang}_${id}`; }
 
 function cacheGet<T>(key: string): T | null {
   try {
@@ -107,40 +72,29 @@ function cacheSet<T>(key: string, data: T) {
   try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
 
-// ── AI helper — calls server-side proxy (guaranteed reliable) ─────────────────
-
-async function callAI(systemMsg: string, userMsg: string, maxTokens = 3000): Promise<string> {
+// ── Sarvam AI translate — calls server-side proxy ─────────────────────────────
+// Sends an array of texts, gets back array of translated texts in same order.
+async function callSarvam(texts: string[], lang: string): Promise<string[]> {
   try {
-    const res = await fetch('/api/ai/chat', {
+    const res = await fetch('/api/sarvam/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemMsg },
-          { role: 'user', content: userMsg },
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.1,
-      }),
+      body: JSON.stringify({ texts, target_lang: lang }),
     });
-    if (!res.ok) return '';
+    if (!res.ok) {
+      console.error('[Sarvam] proxy error', res.status, await res.text());
+      return texts;
+    }
     const json = await res.json();
-    return json.text ?? '';
-  } catch {
-    return '';
+    const translations: string[] = json.translations ?? texts;
+    return translations;
+  } catch (e: any) {
+    console.error('[Sarvam] fetch threw:', e.message);
+    return texts;
   }
 }
 
-function extractJson(text: string): any {
-  const match = text.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
-  if (!match) return null;
-  try { return JSON.parse(match[0]); } catch { return null; }
-}
-
 // ── Batch card translation ─────────────────────────────────────────────────────
-// Splits into chunks of CHUNK_SIZE to avoid token-limit failures.
-// For Devanagari languages (hi, mr, etc.) scheme names come from nameHindi immediately;
-// only descriptions are translated via AI.
 
 export async function translateSchemeCards(
   schemes: GovScheme[],
@@ -151,65 +105,30 @@ export async function translateSchemeCards(
   const cached = cacheGet<Record<string, CardTranslation>>(cardsCacheKey(lang));
   if (cached) return cached;
 
-  const langName = LANG_NAMES[lang] ?? lang;
-  const scriptNote = SCRIPT_NOTES[lang] ?? `${langName}`;
   const isDevanagari = DEVANAGARI_LANGS.has(lang);
-
   const result: Record<string, CardTranslation> = {};
 
-  // Pre-fill names for Devanagari languages from existing nameHindi field (instant, no AI needed)
   if (isDevanagari) {
-    for (const s of schemes) {
-      result[s.id] = { name: s.nameHindi || s.name, description: s.description };
-    }
-  }
-
-  const systemMsg = `You are a government translation assistant. Translate the given Indian government scheme content to ${scriptNote}. Keep a formal, official tone. Preserve the "id" field exactly. Respond ONLY with a JSON array — no markdown, no explanation.`;
-
-  if (isDevanagari) {
-    // For Devanagari: translate ALL descriptions in ONE API call (names already filled from nameHindi).
-    // All 56 descriptions fit easily within token limits when done in one shot.
-    const input = schemes.map(s => ({ id: s.id, description: s.description }));
-    const userMsg = `Translate only the "description" field of each item to ${langName}. Keep "id" unchanged.
-
-Input:
-${JSON.stringify(input)}
-
-Output format: [{"id":"...","description":"...translated..."},...]`;
-
-    const raw = await callAI(systemMsg, userMsg, 3500);
-    const parsed = extractJson(raw);
-    if (Array.isArray(parsed)) {
-      for (const item of parsed) {
-        if (item.id && item.description && result[item.id]) {
-          result[item.id].description = item.description;
-        }
-      }
+    // Names come from nameHindi — only translate descriptions
+    const descriptions = schemes.map(s => s.description);
+    const translated = await callSarvam(descriptions, lang);
+    for (let i = 0; i < schemes.length; i++) {
+      result[schemes[i].id] = {
+        name: schemes[i].nameHindi || schemes[i].name,
+        description: translated[i] || schemes[i].description,
+      };
     }
   } else {
-    // For other scripts: translate name + description in chunks of CHUNK_SIZE
-    const chunks: GovScheme[][] = [];
-    for (let i = 0; i < schemes.length; i += CHUNK_SIZE) {
-      chunks.push(schemes.slice(i, i + CHUNK_SIZE));
-    }
-    for (const chunk of chunks) {
-      const input = chunk.map(s => ({ id: s.id, name: s.name, description: s.description }));
-      const userMsg = `Translate the "name" and "description" fields of each item to ${langName}. Keep "id" unchanged.
-
-Input:
-${JSON.stringify(input)}
-
-Output format: [{"id":"...","name":"...translated...","description":"...translated..."},...]`;
-
-      const raw = await callAI(systemMsg, userMsg, 2500);
-      const parsed = extractJson(raw);
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          if (item.id && item.name) {
-            result[item.id] = { name: item.name, description: item.description ?? '' };
-          }
-        }
-      }
+    // Translate both names and descriptions in one parallel batch
+    const names = schemes.map(s => s.name);
+    const descs = schemes.map(s => s.description);
+    const translated = await callSarvam([...names, ...descs], lang);
+    const n = schemes.length;
+    for (let i = 0; i < n; i++) {
+      result[schemes[i].id] = {
+        name: translated[i] || schemes[i].name,
+        description: translated[n + i] || schemes[i].description,
+      };
     }
   }
 
@@ -230,54 +149,67 @@ export async function translateSchemeDetail(
   const cached = cacheGet<DetailTranslation>(detailCacheKey(lang, scheme.id));
   if (cached) return cached;
 
-  const langName = LANG_NAMES[lang] ?? lang;
-  const scriptNote = SCRIPT_NOTES[lang] ?? `${langName}`;
+  const isDevanagari = DEVANAGARI_LANGS.has(lang);
 
-  const systemMsg = `You are a government translation assistant. Translate all content to ${scriptNote}. Keep a formal, official government tone. Respond ONLY with a valid JSON object — no markdown, no explanation.`;
+  const eligibility = scheme.eligibility ?? [];
+  const benefits = scheme.benefits ?? [];
+  const requiredDocuments = scheme.requiredDocuments ?? [];
+  const applicationProcess = scheme.applicationProcess ?? [];
 
-  const userMsg = `Translate ALL of these fields to ${langName}. Return a JSON object with the same keys.
+  const labelTexts = [
+    'Eligibility Criteria',
+    'Benefits & Support',
+    'Required Documents',
+    'How to Apply',
+    'Apply / Visit Official Website',
+    'Launched',
+    'Ministry',
+  ];
 
-{
-  "name": ${JSON.stringify(scheme.name)},
-  "description": ${JSON.stringify(scheme.description)},
-  "objective": ${JSON.stringify(scheme.objective ?? '')},
-  "ministry": ${JSON.stringify(scheme.ministry)},
-  "eligibility": ${JSON.stringify(scheme.eligibility)},
-  "benefits": ${JSON.stringify(scheme.benefits)},
-  "requiredDocuments": ${JSON.stringify(scheme.requiredDocuments)},
-  "applicationProcess": ${JSON.stringify(scheme.applicationProcess)},
-  "labels": {
-    "eligibilityTitle": "Eligibility Criteria",
-    "benefitsTitle": "Benefits & Support",
-    "documentsTitle": "Required Documents",
-    "applyTitle": "How to Apply",
-    "applyButton": "Apply / Visit Official Website",
-    "launchedLabel": "Launched",
-    "ministryLabel": "Ministry"
-  }
-}`;
+  // Build flat array of all texts to translate in one parallel batch
+  const sourceTexts = [
+    scheme.name,
+    scheme.description,
+    scheme.objective ?? '',
+    scheme.ministry,
+    ...eligibility,
+    ...benefits,
+    ...requiredDocuments,
+    ...applicationProcess,
+    ...labelTexts,
+  ];
 
-  const raw = await callAI(systemMsg, userMsg, 4000);
-  const parsed = extractJson(raw);
-  if (!parsed || typeof parsed !== 'object') return null;
+  const translated = await callSarvam(sourceTexts, lang);
+
+  // Walk the result array with an index pointer
+  let i = 0;
+  const nameT        = translated[i++] || scheme.name;
+  const descT        = translated[i++] || scheme.description;
+  const objectiveT   = translated[i++] || (scheme.objective ?? '');
+  const ministryT    = translated[i++] || scheme.ministry;
+  const eligibilityT = eligibility.map(e => translated[i++] || e);
+  const benefitsT    = benefits.map(b => translated[i++] || b);
+  const docsT        = requiredDocuments.map(d => translated[i++] || d);
+  const stepsT       = applicationProcess.map(s => translated[i++] || s);
+  const labT         = labelTexts.map(l => translated[i++] || l);
 
   const result: DetailTranslation = {
-    name: parsed.name ?? (DEVANAGARI_LANGS.has(lang) ? scheme.nameHindi : scheme.name),
-    description: parsed.description ?? scheme.description,
-    objective: parsed.objective ?? scheme.objective ?? '',
-    ministry: parsed.ministry ?? scheme.ministry,
-    eligibility: Array.isArray(parsed.eligibility) ? parsed.eligibility : scheme.eligibility,
-    benefits: Array.isArray(parsed.benefits) ? parsed.benefits : scheme.benefits,
-    requiredDocuments: Array.isArray(parsed.requiredDocuments) ? parsed.requiredDocuments : scheme.requiredDocuments,
-    applicationProcess: Array.isArray(parsed.applicationProcess) ? parsed.applicationProcess : scheme.applicationProcess,
+    name: isDevanagari ? (scheme.nameHindi || nameT) : nameT,
+    description: descT,
+    objective: objectiveT,
+    ministry: ministryT,
+    eligibility: eligibilityT,
+    benefits: benefitsT,
+    requiredDocuments: docsT,
+    applicationProcess: stepsT,
     labels: {
-      eligibilityTitle: parsed.labels?.eligibilityTitle ?? 'Eligibility Criteria',
-      benefitsTitle: parsed.labels?.benefitsTitle ?? 'Benefits & Support',
-      documentsTitle: parsed.labels?.documentsTitle ?? 'Required Documents',
-      applyTitle: parsed.labels?.applyTitle ?? 'How to Apply',
-      applyButton: parsed.labels?.applyButton ?? 'Apply / Visit Official Website',
-      launchedLabel: parsed.labels?.launchedLabel ?? 'Launched',
-      ministryLabel: parsed.labels?.ministryLabel ?? 'Ministry',
+      eligibilityTitle: labT[0],
+      benefitsTitle:    labT[1],
+      documentsTitle:   labT[2],
+      applyTitle:       labT[3],
+      applyButton:      labT[4],
+      launchedLabel:    labT[5],
+      ministryLabel:    labT[6],
     },
   };
 

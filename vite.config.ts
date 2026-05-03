@@ -317,6 +317,67 @@ function apiPlugin(_env: Record<string, string>): Plugin {
           return;
         }
 
+        /* ---------- POST /api/sarvam/translate ---------- */
+        if (isPost && req.url === '/api/sarvam/translate') {
+          try {
+            const body = await parseJsonBody(req);
+            const { texts, target_lang } = body;
+            const sarvamKey = process.env.SARVAM_API_KEY;
+            if (!sarvamKey) {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Sarvam service not configured' }));
+              return;
+            }
+            if (!Array.isArray(texts) || !target_lang) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'texts[] and target_lang required' }));
+              return;
+            }
+            const SARVAM_LANG_MAP: Record<string, string> = {
+              hi: 'hi-IN', mr: 'mr-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN',
+              kn: 'kn-IN', ml: 'ml-IN', pa: 'pa-IN', gu: 'gu-IN', or: 'od-IN',
+              as: 'as-IN', ur: 'ur-IN', mai: 'mai-IN', kok: 'kok-IN', ne: 'ne-IN',
+              mni: 'mni-IN', brx: 'brx-IN', dgo: 'dgo-IN', ks: 'ks-IN',
+              sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN',
+            };
+            const sarvamLang = SARVAM_LANG_MAP[target_lang];
+            if (!sarvamLang) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: `Unsupported language: ${target_lang}` }));
+              return;
+            }
+            const BATCH = 5;
+            const allTexts = texts as string[];
+            const translations: string[] = new Array(allTexts.length).fill('');
+            const translateOne = async (text: string): Promise<string> => {
+              if (!text || !text.trim()) return text;
+              try {
+                const r = await fetch('https://api.sarvam.ai/translate', {
+                  method: 'POST',
+                  headers: { 'api-subscription-key': sarvamKey, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ input: text, source_language_code: 'en-IN', target_language_code: sarvamLang, model: 'mayura:v1', mode: 'formal' }),
+                });
+                if (!r.ok) { console.error('[Sarvam proxy] item error', r.status); return text; }
+                const json = await r.json();
+                return json.translated_text || text;
+              } catch (e: any) { console.error('[Sarvam proxy] item threw:', e.message); return text; }
+            };
+            for (let i = 0; i < allTexts.length; i += BATCH) {
+              const batch = allTexts.slice(i, i + BATCH);
+              const results = await Promise.all(batch.map(translateOne));
+              results.forEach((t, j) => { translations[i + j] = t; });
+              if (i + BATCH < allTexts.length) await new Promise(r => setTimeout(r, 150));
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ translations }));
+          } catch (e: any) {
+            console.error('[Sarvam proxy] threw:', e.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
         /* ---------- POST /api/ai/chat ---------- */
         if (isPost && req.url === '/api/ai/chat') {
           try {

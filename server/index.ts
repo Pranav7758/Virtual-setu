@@ -277,6 +277,52 @@ app.post('/api/get-doc-share', async (req, res) => {
   }
 });
 
+// ── Sarvam AI translate proxy ─────────────────────────────────────────────────
+const SARVAM_LANG_MAP: Record<string, string> = {
+  hi: 'hi-IN', mr: 'mr-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN',
+  kn: 'kn-IN', ml: 'ml-IN', pa: 'pa-IN', gu: 'gu-IN', or: 'od-IN',
+  as: 'as-IN', ur: 'ur-IN', mai: 'mai-IN', kok: 'kok-IN', ne: 'ne-IN',
+  mni: 'mni-IN', brx: 'brx-IN', dgo: 'dgo-IN', ks: 'ks-IN',
+  sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN',
+};
+
+app.post('/api/sarvam/translate', async (req, res) => {
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (!sarvamKey) return res.status(503).json({ error: 'Sarvam service not configured' });
+  const { texts, target_lang } = req.body;
+  if (!Array.isArray(texts) || !target_lang) return res.status(400).json({ error: 'texts[] and target_lang required' });
+  const sarvamLang = SARVAM_LANG_MAP[target_lang];
+  if (!sarvamLang) return res.status(400).json({ error: `Unsupported language: ${target_lang}` });
+  const BATCH = 5;
+  const allTexts = texts as string[];
+  const translateOne = async (text: string): Promise<string> => {
+    if (!text || !text.trim()) return text;
+    try {
+      const r = await fetch('https://api.sarvam.ai/translate', {
+        method: 'POST',
+        headers: { 'api-subscription-key': sarvamKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: text, source_language_code: 'en-IN', target_language_code: sarvamLang, model: 'mayura:v1', mode: 'formal' }),
+      });
+      if (!r.ok) { console.error('[Sarvam proxy] item error', r.status); return text; }
+      const j = await r.json();
+      return j.translated_text || text;
+    } catch { return text; }
+  };
+  try {
+    const translations: string[] = new Array(allTexts.length).fill('');
+    for (let i = 0; i < allTexts.length; i += BATCH) {
+      const batch = allTexts.slice(i, i + BATCH);
+      const results = await Promise.all(batch.map(translateOne));
+      results.forEach((t, j) => { translations[i + j] = t; });
+      if (i + BATCH < allTexts.length) await new Promise(r => setTimeout(r, 150));
+    }
+    return res.json({ translations });
+  } catch (err: any) {
+    console.error('[Sarvam proxy] threw:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ── AI proxy — routes Groq calls from the browser through the server ──────────
 // The browser env injection of VITE_GROQ_API_KEY can be unreliable;
 // calling from the server is always reliable (verified with curl).
