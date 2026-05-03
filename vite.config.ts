@@ -390,16 +390,29 @@ function apiPlugin(_env: Record<string, string>): Plugin {
 /*  Vite config                                                       */
 /* ------------------------------------------------------------------ */
 export default defineConfig(({ mode }) => {
-  // loadEnv with '' prefix loads ALL .env variables (not just VITE_*)
   const env = loadEnv(mode, process.cwd(), "");
+
+  // Expose VITE_* secrets from process.env (Replit secrets) to the browser
+  // by merging them into Vite's define map.
+  const viteEnvDefines: Record<string, string> = {};
+  const VITE_KEYS = [
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VITE_GROQ_API_KEY",
+    "VITE_GEMINI_API_KEY",
+  ];
+  for (const key of VITE_KEYS) {
+    const val = process.env[key] ?? env[key] ?? "";
+    viteEnvDefines[`import.meta.env.${key}`] = JSON.stringify(val);
+  }
 
   return {
     server: {
       host: "0.0.0.0",
       port: 5000,
       allowedHosts: true,
-      // proxy removed — API is now handled by the plugin above
     },
+    define: viteEnvDefines,
     plugins: [react(), ...(mode === "development" ? [apiPlugin(env)] : [])],
     resolve: {
       alias: {

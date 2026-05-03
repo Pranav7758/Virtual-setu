@@ -82,39 +82,25 @@ Virtual Setu is an official Indian government-style secure document management p
 | `/i/:uid` | Share | All-documents public share view |
 | `/s/:token` | ShareSingle | Per-document emergency share (PIN protected, time-limited) |
 
-## Workflows (Replit dev only)
-- **Start application**: `npm run dev` → port 5000 (Vite frontend)
-- **API server**: `npm run server` → port 3001 (Express backend)
+## Workflows (Replit)
+- **Start application**: `npm run dev` → port 5000 (Vite frontend + API middleware plugin)
+- **API server**: `npm run server` → port 3001 (Express backend for all `/api/*` routes)
 
-## Vercel Deployment
-- **Build command**: `npm run build`
-- **Output directory**: `dist`
-- **Framework**: Vite
-- **API**: `api/*.ts` files auto-detected as Node.js serverless functions (maxDuration: 30s)
-- **SPA routing**: catch-all rewrite `/(.*) → /index.html` in `vercel.json`
-- **Excluded files**: `server/`, `supabase/`, `.local/` (via `.vercelignore`)
-- **Required migration**: Run `supabase/migrations/20260502000002_doc_shares.sql` in Supabase SQL Editor before deploying
+## Replit Environment Setup
+- `VITE_*` secrets from Replit Secrets are bridged to `import.meta.env` via `vite.config.ts` `define` map
+  (Replit stores secrets in `process.env`, not `.env` files — Vite's `loadEnv` won't see them without this bridge)
+- Both workflows must be running for full functionality
 
-### Vercel Environment Variables (set in Vercel dashboard)
-| Variable | Where used | Notes |
-|----------|-----------|-------|
-| `RAZORPAY_KEY_ID` | Server (api/) | Secret — never expose to client |
-| `RAZORPAY_KEY_SECRET` | Server (api/) | Secret — never expose to client |
-| `SUPABASE_API_KEY` | Server (api/) | Service role key — never expose to client |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server (api/) | Fallback for SUPABASE_API_KEY |
-| `VITE_SUPABASE_URL` | Server + Client | Used by both api/ functions and frontend |
-| `VITE_SUPABASE_ANON_KEY` | Client (bundled) | Public anon key |
-| `VITE_GROQ_API_KEY` | Client (bundled) | AI features |
-| `VITE_RAZORPAY_KEY_ID` | Client (bundled) | Razorpay checkout modal |
-| `VITE_SCRAPER_API_KEY` | Client (bundled) | Smart checklist scraping |
-
-## Environment Secrets
-- `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` — Razorpay payment keys (server-only)
-- `VITE_RAZORPAY_KEY_ID` — Razorpay key (client-side for modal init)
-- `SUPABASE_API_KEY` — Supabase service role key (server-only, preferred over SUPABASE_SERVICE_ROLE_KEY)
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — Supabase client credentials
-- `VITE_GROQ_API_KEY` — Groq AI for document verification
-- `VITE_SCRAPER_API_KEY` — ScraperAPI for checklist scraping
+## Environment Secrets (set in Replit Secrets)
+| Secret | Used By | Purpose |
+|--------|---------|---------|
+| `VITE_SUPABASE_URL` | Frontend + Server | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Frontend | Supabase public anon key |
+| `SUPABASE_API_KEY` | Server (`server/index.ts`, `vite.config.ts`) | Supabase service role key |
+| `VITE_GROQ_API_KEY` | Frontend | Groq AI document verification |
+| `VITE_GEMINI_API_KEY` | Frontend | Google Gemini AI chatbot |
+| `RAZORPAY_KEY_ID` | Server | Razorpay order creation |
+| `RAZORPAY_KEY_SECRET` | Server | Razorpay signature verification |
 
 ## Plan Limits
 | Plan | Documents | Features |
