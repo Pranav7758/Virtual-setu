@@ -1,13 +1,12 @@
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-const PLAN_PRICES = { premium: 29900, platinum: 59900 };
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+export default async function handler(req) {
+  if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
   try {
-    const { plan } = req.body;
-    if (!plan || !PLAN_PRICES[plan]) return res.status(400).json({ error: 'Invalid plan' });
-    const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+    const { plan } = await req.json();
+    const PLAN_PRICES = { premium: 29900, platinum: 59900 };
+    if (!plan || !PLAN_PRICES[plan]) return new Response(JSON.stringify({ error: 'Invalid plan' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    const auth = btoa(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`);
     const r = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
@@ -15,8 +14,8 @@ export default async function handler(req, res) {
     });
     if (!r.ok) { const e = await r.json(); throw new Error(e.error?.description || 'Razorpay error'); }
     const order = await r.json();
-    res.json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: RAZORPAY_KEY_ID });
+    return new Response(JSON.stringify({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: process.env.RAZORPAY_KEY_ID }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Internal server error' });
+    return new Response(JSON.stringify({ error: err.message || 'Internal server error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
