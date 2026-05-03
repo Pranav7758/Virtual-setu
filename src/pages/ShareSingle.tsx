@@ -109,6 +109,7 @@ export default function ShareSingle() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid PIN or link expired');
+      console.log('[ShareSingle] API response:', data);
       setDoc({ ...data, permission: data.permission || 'view' });
     } catch (e: any) {
       setError(e.message || 'Invalid PIN or link expired');
@@ -318,6 +319,8 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
             <div className="min-w-0">
               <p className="text-[10px] tracking-widest uppercase text-blue-200">Virtual Setu · Secure View</p>
               <p className="font-semibold truncate text-sm">{doc.documentName}</p>
+              {/* DEBUG — remove after confirming */}
+              <p className="text-[10px] text-yellow-300 font-mono">perm: {doc.permission}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
