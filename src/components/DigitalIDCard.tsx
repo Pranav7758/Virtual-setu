@@ -47,7 +47,7 @@ function Header() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <img src="/emblem-india-clean.png" alt="Emblem of India"
-          style={{ width: 28, height: 34, objectFit: 'contain', flexShrink: 0, background: 'transparent' }} />
+          style={{ width: 28, height: 34, objectFit: 'contain', flexShrink: 0, filter: 'brightness(0) invert(1)' }} />
         <div>
           <p style={{ color: WHITE, fontWeight: 800, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Virtual Setu</p>
           <p style={{ color: '#93c5fd', fontSize: 6, letterSpacing: '0.04em', margin: '2px 0 0 0', lineHeight: 1 }}>Digital Identity Authority of India</p>

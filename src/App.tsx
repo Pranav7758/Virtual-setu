@@ -19,17 +19,7 @@ import About from "./pages/About";
 import Scan from "./pages/Scan";
 import Help from "./pages/Help";
 import GovSchemes from "./pages/GovSchemes";
-import DigitalIDCard from "./components/DigitalIDCard";
-function CardPreview() {
-  return (
-    <div style={{ padding: 40, background: '#e2e8f0', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <DigitalIDCard name="Pranav Amit Borse" phone="+91 77580 40552" userId="abcd1234efgh5678"
-        memberSince="May 2026" aadhaarMasked="XXXX XXXX 1234" dob="15/08/1998" aadhaarVerified={true}
-        photoUrl="https://i.pravatar.cc/240?img=3" bloodGroup="B+"
-        aadhaarAddress="42, Shivaji Nagar, Near State Bank, Pune, Maharashtra - 411005" />
-    </div>
-  );
-}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1 },
@@ -56,7 +46,6 @@ const App = () => (
               <Route path="/scan" element={<Scan />} />
               <Route path="/help" element={<Help />} />
               <Route path="/schemes" element={<GovSchemes />} />
-              <Route path="/card-preview" element={<CardPreview />} />
               <Route path="/i/:uid" element={<Share />} />
               <Route path="/s/:token" element={<ShareSingle />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
