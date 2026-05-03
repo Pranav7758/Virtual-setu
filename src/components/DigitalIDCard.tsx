@@ -98,8 +98,16 @@ export default function DigitalIDCard({
   }, [_forceFlipped]);
 
   const qrData         = shareUrl || `${window.location.origin}/i/${userId}`;
-  const displayAadhaar = aadhaarMasked || 'XXXX XXXX XXXX';
   const shortId        = userId.slice(0, 8).toUpperCase();
+
+  /* Format 12 digits as "XXXX XXXX XXXX", or show as-is if already formatted */
+  function formatAadhaar(raw?: string): string {
+    if (!raw) return '—';
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length === 12) return `${digits.slice(0,4)} ${digits.slice(4,8)} ${digits.slice(8)}`;
+    return raw;
+  }
+  const displayAadhaar = formatAadhaar(aadhaarMasked);
 
   const CARD: React.CSSProperties = {
     width: W, height: H, borderRadius: 12,
@@ -117,7 +125,11 @@ export default function DigitalIDCard({
     if (!ref.current) return;
     try {
       const { toPng } = await import('html-to-image');
-      const url = await toPng(ref.current, { pixelRatio: 4, cacheBust: true });
+      const el = ref.current;
+      const prev = el.style.transform;
+      if (side === 'back') el.style.transform = 'rotateY(0deg)';
+      const url = await toPng(el, { pixelRatio: 4, cacheBust: true });
+      if (side === 'back') el.style.transform = prev;
       const a = document.createElement('a');
       a.download = `VirtualSetu_ID_${side}_${shortId}.png`;
       a.href = url; a.click();

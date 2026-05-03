@@ -193,7 +193,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       const { error } = await signUp(form.email, form.password, {
         full_name: form.fullName, phone: form.phone, pin: form.pin,
         blood_group: form.bloodGroup, photo_url: photoDataUrl,
-        aadhaar_number: scanResult.maskedAadhaar,
+        aadhaar_number: scanResult.extractedAadhaar,
         aadhaar_hash: scanResult.aadhaarHash,
         aadhaar_address: scanResult.extractedAddress,
         aadhaar_dob: scanResult.extractedDob,
