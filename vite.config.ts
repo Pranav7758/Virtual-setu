@@ -120,6 +120,7 @@ function apiPlugin(_env: Record<string, string>): Plugin {
     documentId: string; userId: string; pinHash: string;
     documentName: string; documentType: string;
     signedUrl: string; expiresAt: number;
+    permission: 'view' | 'download_watermark' | 'download_clean';
   }
   const shareStore = new Map<string, ShareEntry>();
   setInterval(() => {
@@ -165,17 +166,20 @@ function apiPlugin(_env: Record<string, string>): Plugin {
         /* ---------- POST /api/create-doc-share ---------- */
         if (isPost && req.url === '/api/create-doc-share') {
           try {
-            const { documentId, userId, pin, durationHours } = await parseJsonBody(req);
+            const { documentId, userId, pin, durationHours, permission = 'view' } = await parseJsonBody(req);
             if (!documentId || !userId || !pin || !durationHours) throw new Error('Missing fields');
             const docInfo = await getSignedUrlForDoc(userId, documentId);
             if (!docInfo) { res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Document not found or access denied' })); return; }
             const token = crypto.randomBytes(24).toString('hex');
             const pinHash = crypto.createHash('sha256').update(pin).digest('hex');
+            const resolvedPermission: 'view' | 'download_watermark' | 'download_clean' =
+              ['view', 'download_watermark', 'download_clean'].includes(permission) ? permission : 'view';
             shareStore.set(token, {
               documentId, userId, pinHash,
               documentName: docInfo.name, documentType: docInfo.type,
               signedUrl: docInfo.url,
               expiresAt: Date.now() + durationHours * 3_600_000,
+              permission: resolvedPermission,
             });
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ token }));
@@ -195,7 +199,13 @@ function apiPlugin(_env: Record<string, string>): Plugin {
             const pinHash = crypto.createHash('sha256').update(pin || '').digest('hex');
             if (pinHash !== entry.pinHash) { res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Invalid PIN' })); return; }
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ documentName: entry.documentName, documentType: entry.documentType, signedUrl: entry.signedUrl, expiresAt: entry.expiresAt }));
+            res.end(JSON.stringify({
+              documentName: entry.documentName,
+              documentType: entry.documentType,
+              signedUrl: entry.signedUrl,
+              expiresAt: entry.expiresAt,
+              permission: entry.permission || 'view',
+            }));
           } catch (e: any) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: e.message }));
