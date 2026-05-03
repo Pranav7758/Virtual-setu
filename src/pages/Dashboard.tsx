@@ -34,6 +34,8 @@ interface Profile {
   aadhaar_address: string | null;
   aadhaar_dob: string | null;
   aadhaar_verified: boolean | null;
+  photo_url: string | null;
+  blood_group: string | null;
 }
 
 interface Document {
@@ -373,6 +375,8 @@ export default function Dashboard() {
                 aadhaarAddress={profile?.aadhaar_address || undefined}
                 dob={profile?.aadhaar_dob || undefined}
                 aadhaarVerified={profile?.aadhaar_verified ?? false}
+                photoUrl={profile?.photo_url || undefined}
+                bloodGroup={profile?.blood_group || undefined}
               />
             </div>
             {!limits.qrEmergencySharing && (

@@ -5,18 +5,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Mail, Lock, User, Phone, Shield, Eye, EyeOff, Loader2,
-  Upload, CheckCircle, XCircle, CreditCard, ScanLine,
+  Upload, CheckCircle, XCircle, CreditCard, ScanLine, Camera,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { scanAndVerifyAadhaar, AadhaarScanResult } from '@/lib/aadhaarVerification';
 
-interface SignupFormProps {
-  onSuccess?: () => void;
-}
-
+interface SignupFormProps { onSuccess?: () => void; }
 type Step = 'info' | 'aadhaar' | 'done';
 type ScanState = 'idle' | 'scanning' | 'verified' | 'failed';
+
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+/* Resize + compress photo to 240×300 JPEG data-URL (≈ 20–40 KB) */
+async function compressPhoto(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 240; canvas.height = 300;
+      const ctx = canvas.getContext('2d')!;
+      /* Fill white then draw centered-crop */
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fillRect(0, 0, 240, 300);
+      const srcAr = img.width / img.height;
+      const dstAr = 240 / 300;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (srcAr > dstAr) { sw = img.height * dstAr; sx = (img.width - sw) / 2; }
+      else                { sh = img.width / dstAr;  sy = (img.height - sh) / 2; }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 240, 300);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 export default function SignupForm({ onSuccess }: SignupFormProps) {
   const { t } = useTranslation('common');
@@ -28,21 +51,23 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [scanResult, setScanResult] = useState<AadhaarScanResult | null>(null);
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
   const [aadhaarPreview, setAadhaarPreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '',
     password: '', confirmPassword: '', pin: '',
-    aadhaarNumber: '',
+    aadhaarNumber: '', bloodGroup: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'aadhaarNumber') {
       const digits = value.replace(/\D/g, '').slice(0, 12);
       const formatted = digits.replace(/(\d{4})(\d{0,4})(\d{0,4})/, (_, a, b, c) =>
-        [a, b, c].filter(Boolean).join(' '),
-      );
+        [a, b, c].filter(Boolean).join(' '));
       setForm(prev => ({ ...prev, aadhaarNumber: formatted }));
       if (scanState !== 'idle') { setScanState('idle'); setScanResult(null); }
     } else {
@@ -50,26 +75,32 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     }
   };
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be smaller than 10MB'); return; }
+    setPhotoPreview(URL.createObjectURL(file));
+    try {
+      const compressed = await compressPhoto(file);
+      setPhotoDataUrl(compressed);
+    } catch { toast.error('Could not process photo'); }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file (JPG, PNG, etc.)');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be smaller than 10MB');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be smaller than 10MB'); return; }
     setAadhaarFile(file);
-    const url = URL.createObjectURL(file);
-    setAadhaarPreview(url);
-    setScanState('idle');
-    setScanResult(null);
+    setAadhaarPreview(URL.createObjectURL(file));
+    setScanState('idle'); setScanResult(null);
   };
 
   const handleInfoNext = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!photoDataUrl) { toast.error('Please upload your photo'); return; }
+    if (!form.bloodGroup) { toast.error('Please select your blood group'); return; }
     if (form.password !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
     if (form.password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
     if (form.pin.length !== 4 || !/^\d{4}$/.test(form.pin)) { toast.error('PIN must be exactly 4 digits'); return; }
@@ -80,9 +111,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     if (!aadhaarFile) { toast.error('Please upload your Aadhaar card image'); return; }
     const digits = form.aadhaarNumber.replace(/\D/g, '');
     if (digits.length !== 12) { toast.error('Please enter your complete 12-digit Aadhaar number'); return; }
-
-    setScanState('scanning');
-    setScanResult(null);
+    setScanState('scanning'); setScanResult(null);
     const result = await scanAndVerifyAadhaar(aadhaarFile, form.fullName, digits);
     setScanResult(result);
     setScanState(result.success ? 'verified' : 'failed');
@@ -97,6 +126,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         full_name: form.fullName,
         phone: form.phone,
         pin: form.pin,
+        blood_group: form.bloodGroup,
+        photo_url: photoDataUrl,
         aadhaar_number: scanResult.maskedAadhaar,
         aadhaar_hash: scanResult.aadhaarHash,
         aadhaar_address: scanResult.extractedAddress,
@@ -150,62 +181,114 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       {/* ── STEP 1: Basic Info ── */}
       {step === 'info' && (
         <form onSubmit={handleInfoNext} className="space-y-4">
+
+          {/* Photo upload */}
           <div>
-            <Label htmlFor="signup-name" className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.full_name')}</span>
+            <Label className="flex items-center space-x-2 mb-1">
+              <Camera className="h-4 w-4 text-[#0B3D91]" />
+              <span>Your Photo <span className="text-red-500 text-xs">*required</span></span>
             </Label>
-            <Input id="signup-name" name="fullName" type="text" required autoComplete="name"
-              value={form.fullName} onChange={handleChange}
-              className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="Rahul Sharma" />
-          </div>
-          <div>
-            <Label htmlFor="signup-email" className="flex items-center space-x-2">
-              <Mail className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.email')}</span>
-            </Label>
-            <Input id="signup-email" name="email" type="email" required autoComplete="email"
-              value={form.email} onChange={handleChange}
-              className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="your.email@example.com" />
-          </div>
-          <div>
-            <Label htmlFor="signup-phone" className="flex items-center space-x-2">
-              <Phone className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.phone')}</span>
-            </Label>
-            <Input id="signup-phone" name="phone" type="tel" required autoComplete="tel"
-              value={form.phone} onChange={handleChange}
-              className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="+91 98765 43210" />
-          </div>
-          <div>
-            <Label htmlFor="signup-password" className="flex items-center space-x-2">
-              <Lock className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.password')}</span>
-            </Label>
-            <div className="relative mt-1">
-              <Input id="signup-password" name="password" type={showPassword ? 'text' : 'password'}
-                required autoComplete="new-password" value={form.password} onChange={handleChange}
-                className="bg-white border-slate-300 focus:border-[#0B3D91] pr-10" placeholder="Min. 8 characters" />
-              <button type="button" onClick={() => setShowPassword(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+            <p className="text-xs text-muted-foreground mb-2">
+              Upload a clear, front-facing photo — this will appear on your Digital ID card.
+            </p>
+            <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+            <div
+              onClick={() => photoInputRef.current?.click()}
+              className={`cursor-pointer border-2 border-dashed rounded-lg transition-colors flex items-center gap-4 p-3 ${
+                photoDataUrl ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50 hover:border-[#0B3D91] hover:bg-blue-50'
+              }`}
+            >
+              {photoPreview ? (
+                <>
+                  <img src={photoPreview} alt="Your photo" className="w-16 h-20 object-cover rounded border border-slate-300 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-700">✓ Photo selected</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Click to change</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-1 py-3 w-full">
+                  <Camera className="h-7 w-7 text-slate-400" />
+                  <p className="text-sm text-slate-600">Click to upload photo</p>
+                  <p className="text-xs text-slate-400">JPG or PNG — max 10MB</p>
+                </div>
+              )}
             </div>
           </div>
-          <div>
-            <Label htmlFor="signup-confirm" className="flex items-center space-x-2">
-              <Lock className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.confirm_password')}</span>
-            </Label>
-            <Input id="signup-confirm" name="confirmPassword" type="password" required autoComplete="new-password"
-              value={form.confirmPassword} onChange={handleChange}
-              className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="Re-enter password" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Label htmlFor="signup-name" className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.full_name')}</span>
+              </Label>
+              <Input id="signup-name" name="fullName" type="text" required autoComplete="name"
+                value={form.fullName} onChange={handleChange}
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="Rahul Sharma" />
+            </div>
+            <div>
+              <Label htmlFor="signup-email" className="flex items-center space-x-2">
+                <Mail className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.email')}</span>
+              </Label>
+              <Input id="signup-email" name="email" type="email" required autoComplete="email"
+                value={form.email} onChange={handleChange}
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="your.email@example.com" />
+            </div>
+            <div>
+              <Label htmlFor="signup-phone" className="flex items-center space-x-2">
+                <Phone className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.phone')}</span>
+              </Label>
+              <Input id="signup-phone" name="phone" type="tel" required autoComplete="tel"
+                value={form.phone} onChange={handleChange}
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="+91 98765 43210" />
+            </div>
+            <div>
+              <Label htmlFor="signup-blood" className="flex items-center space-x-2 text-sm font-medium">
+                <span className="text-[#0B3D91] font-bold text-base">🩸</span>
+                <span>Blood Group <span className="text-red-500 text-xs">*required</span></span>
+              </Label>
+              <select
+                id="signup-blood" name="bloodGroup" required
+                value={form.bloodGroup} onChange={handleChange}
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0B3D91] focus:outline-none focus:ring-1 focus:ring-[#0B3D91]"
+              >
+                <option value="">Select blood group</option>
+                {BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="signup-password" className="flex items-center space-x-2">
+                <Lock className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.password')}</span>
+              </Label>
+              <div className="relative mt-1">
+                <Input id="signup-password" name="password" type={showPassword ? 'text' : 'password'}
+                  required autoComplete="new-password" value={form.password} onChange={handleChange}
+                  className="bg-white border-slate-300 focus:border-[#0B3D91] pr-10" placeholder="Min. 8 characters" />
+                <button type="button" onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="signup-confirm" className="flex items-center space-x-2">
+                <Lock className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.confirm_password')}</span>
+              </Label>
+              <Input id="signup-confirm" name="confirmPassword" type="password" required autoComplete="new-password"
+                value={form.confirmPassword} onChange={handleChange}
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91]" placeholder="Re-enter password" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="signup-pin" className="flex items-center space-x-2">
+                <Shield className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.pin_label')}</span>
+              </Label>
+              <Input id="signup-pin" name="pin" type="password" inputMode="numeric" pattern="[0-9]*"
+                required maxLength={4} value={form.pin} onChange={handleChange}
+                className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91] tracking-widest text-center text-lg"
+                placeholder="••••" />
+              <p className="text-xs text-muted-foreground mt-1">{t('auth.pin_hint')}</p>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="signup-pin" className="flex items-center space-x-2">
-              <Shield className="h-4 w-4 text-[#0B3D91]" /><span>{t('auth.pin_label')}</span>
-            </Label>
-            <Input id="signup-pin" name="pin" type="password" inputMode="numeric" pattern="[0-9]*"
-              required maxLength={4} value={form.pin} onChange={handleChange}
-              className="mt-1 bg-white border-slate-300 focus:border-[#0B3D91] tracking-widest text-center text-lg"
-              placeholder="••••" />
-            <p className="text-xs text-muted-foreground mt-1">{t('auth.pin_hint')}</p>
-          </div>
+
           <Button type="submit" className="w-full bg-[#0B3D91] hover:bg-[#082c6c] text-white" size="lg">
             Continue to Aadhaar Verification →
           </Button>
@@ -219,7 +302,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             <strong>Why Aadhaar is required:</strong> We verify your identity to prevent duplicate accounts and ensure each user has a single, authentic account. Your Aadhaar details are stored securely and never shared.
           </div>
 
-          {/* Aadhaar number */}
           <div>
             <Label htmlFor="aadhaar-number" className="flex items-center space-x-2">
               <CreditCard className="h-4 w-4 text-[#0B3D91]" />
@@ -233,7 +315,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             <p className="text-xs text-muted-foreground mt-1">Enter your 12-digit Aadhaar number</p>
           </div>
 
-          {/* Upload Aadhaar image */}
           <div>
             <Label className="flex items-center space-x-2">
               <Upload className="h-4 w-4 text-[#0B3D91]" />
@@ -244,18 +325,13 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             <div
               onClick={() => fileInputRef.current?.click()}
               className={`mt-1 cursor-pointer border-2 border-dashed rounded-lg transition-colors ${
-                aadhaarPreview
-                  ? 'border-green-400 bg-green-50'
-                  : 'border-slate-300 bg-slate-50 hover:border-[#0B3D91] hover:bg-blue-50'
+                aadhaarPreview ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50 hover:border-[#0B3D91] hover:bg-blue-50'
               }`}
             >
               {aadhaarPreview ? (
                 <div className="relative p-2">
-                  <img src={aadhaarPreview} alt="Aadhaar preview"
-                    className="w-full h-32 object-contain rounded" />
-                  <p className="text-center text-xs text-green-700 mt-1 font-medium">
-                    ✓ {aadhaarFile?.name}
-                  </p>
+                  <img src={aadhaarPreview} alt="Aadhaar preview" className="w-full h-32 object-contain rounded" />
+                  <p className="text-center text-xs text-green-700 mt-1 font-medium">✓ {aadhaarFile?.name}</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-6">
@@ -267,7 +343,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             </div>
           </div>
 
-          {/* Scan result feedback */}
           {scanState === 'verified' && scanResult?.success && (
             <div className="p-3 bg-green-50 border border-green-300 rounded-lg space-y-1">
               <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
@@ -294,14 +369,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             </div>
           )}
 
-          <Button
-            type="button"
-            onClick={handleScanAadhaar}
+          <Button type="button" onClick={handleScanAadhaar}
             disabled={scanState === 'scanning' || !aadhaarFile}
-            variant="outline"
-            className="w-full border-[#0B3D91] text-[#0B3D91] hover:bg-blue-50"
-            size="lg"
-          >
+            variant="outline" className="w-full border-[#0B3D91] text-[#0B3D91] hover:bg-blue-50" size="lg">
             {scanState === 'scanning'
               ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning Aadhaar Card...</>
               : scanState === 'verified'
@@ -310,16 +380,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           </Button>
 
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => setStep('info')} className="flex-1">
-              ← Back
-            </Button>
-            <Button
-              type="button"
-              onClick={handleFinalSubmit}
+            <Button type="button" variant="outline" onClick={() => setStep('info')} className="flex-1">← Back</Button>
+            <Button type="button" onClick={handleFinalSubmit}
               disabled={scanState !== 'verified' || isLoading}
-              className="flex-1 bg-[#0B3D91] hover:bg-[#082c6c] text-white"
-              size="lg"
-            >
+              className="flex-1 bg-[#0B3D91] hover:bg-[#082c6c] text-white" size="lg">
               {isLoading
                 ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating Account...</>
                 : 'Create Account'}
