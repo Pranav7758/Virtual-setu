@@ -15,6 +15,7 @@ interface DigitalIDCardProps {
   aadhaarVerified?: boolean;
   photoUrl?: string;
   bloodGroup?: string;
+  _forceFlipped?: boolean;
 }
 
 /* ISO ID-1 = 85.6 × 54 mm  →  480 × 302 px */
@@ -84,11 +85,15 @@ function InitialsAvatar({ name, w, h }: { name: string; w: number; h: number }) 
 export default function DigitalIDCard({
   name, phone, userId, memberSince, shareUrl,
   aadhaarMasked, aadhaarAddress, dob, aadhaarVerified,
-  photoUrl, bloodGroup,
+  photoUrl, bloodGroup, _forceFlipped,
 }: DigitalIDCardProps) {
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef  = useRef<HTMLDivElement>(null);
-  const [flipped, setFlipped] = useState(false);
+  const [flipped, setFlipped] = useState(_forceFlipped ?? false);
+
+  React.useEffect(() => {
+    if (_forceFlipped !== undefined) setFlipped(_forceFlipped);
+  }, [_forceFlipped]);
 
   const qrData         = shareUrl || `${window.location.origin}/i/${userId}`;
   const displayAadhaar = aadhaarMasked || 'XXXX XXXX XXXX';
@@ -253,58 +258,88 @@ export default function DigitalIDCard({
           {/* ══════════════ BACK ══════════════ */}
           <div ref={backRef} style={{
             ...CARD,
-            background: 'linear-gradient(150deg, #f5f8ff 0%, #eaf0fa 60%, #dde8f5 100%)',
+            background: 'linear-gradient(150deg, #f0f6ff 0%, #e4eefa 60%, #d6e8f7 100%)',
             transform: 'rotateY(180deg)',
+            position: 'relative',
           }}>
+            {/* Watermark Ashoka Chakra */}
+            <div style={{
+              position: 'absolute', right: 18, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 110, color: 'rgba(0,53,128,0.05)', lineHeight: 1,
+              pointerEvents: 'none', userSelect: 'none', zIndex: 0,
+            }}>☸</div>
+
             <Tricolor />
             <Header />
 
-            {/* Magnetic stripe */}
-            <div style={{
-              height: 26, flexShrink: 0,
-              background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%)',
-              margin: '5px 0 0 0',
-              display: 'flex', alignItems: 'center', padding: '0 12px', justifyContent: 'flex-end',
-            }}>
-              <p style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.2em', margin: 0, textTransform: 'uppercase' }}>Virtual Setu · Digital ID</p>
-            </div>
+            {/* Body */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '9px 14px 7px 14px', gap: 8, position: 'relative', zIndex: 1, minHeight: 0 }}>
 
-            {/* Address */}
-            <div style={{ flex: 1, padding: '7px 13px 0 13px', minHeight: 0 }}>
-              <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.14em', margin: 0, fontWeight: 600 }}>
-                Registered Address / पंजीकृत पता
-              </p>
-              <p style={{ fontSize: 9, color: '#1e3a5f', margin: '4px 0 0 0', lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {aadhaarAddress || 'Address not available — complete Aadhaar verification to populate.'}
-              </p>
-            </div>
-
-            {/* Signature + Validity */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '6px 13px 0 13px', flexShrink: 0 }}>
-              <div>
-                <div style={{ width: 100, height: 20, borderBottom: '1px solid #94a3b8', marginBottom: 3, display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
-                  <p style={{ fontSize: 11, color: '#475569', margin: 0, fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1 }}>Virtual Setu</p>
+              {/* Address block */}
+              <div style={{
+                background: 'rgba(0,53,128,0.05)', border: '1px solid rgba(0,53,128,0.13)',
+                borderRadius: 7, padding: '7px 10px', flex: 1,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: 9 }}>📍</span>
+                  <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 700, margin: 0 }}>
+                    Registered Address / पंजीकृत पता
+                  </p>
                 </div>
-                <p style={{ fontSize: 6, color: '#6b7280', margin: 0 }}>Authorised Signatory</p>
-                <p style={{ fontSize: 5.5, color: '#9ca3af', margin: '1px 0 0 0' }}>Digital Identity Authority of India</p>
+                <p style={{
+                  fontSize: 9.5, color: '#1e3a5f', margin: 0, lineHeight: 1.6,
+                  display: '-webkit-box', WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>
+                  {aadhaarAddress || 'Address will appear here after Aadhaar verification is complete.'}
+                </p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, marginBottom: 4, background: 'rgba(19,136,8,0.08)', border: '1px solid rgba(19,136,8,0.2)' }}>
-                  <p style={{ fontSize: 7, color: GREEN, fontWeight: 700, margin: 0, letterSpacing: '0.08em' }}>LIFETIME VALIDITY</p>
+
+              {/* Bottom row: signature left, info right */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexShrink: 0 }}>
+
+                {/* Signature */}
+                <div>
+                  <p style={{ fontSize: 13, color: NAVY, margin: 0, fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.1 }}>Virtual Setu</p>
+                  <div style={{ width: 110, height: 1, background: 'rgba(0,53,128,0.25)', margin: '4px 0 3px 0' }} />
+                  <p style={{ fontSize: 6, color: '#475569', margin: 0, fontWeight: 600 }}>Authorised Signatory</p>
+                  <p style={{ fontSize: 5.5, color: '#94a3b8', margin: '1px 0 0 0' }}>Digital Identity Authority of India</p>
                 </div>
-                <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Valid From</p>
-                <p style={{ fontSize: 8.5, color: NAVY, fontWeight: 600, margin: '1px 0 0 0' }}>{memberSince || '—'}</p>
+
+                {/* Right info stack */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                  {/* Validity badge */}
+                  <div style={{
+                    padding: '3px 9px', borderRadius: 20,
+                    background: 'rgba(19,136,8,0.09)', border: '1px solid rgba(19,136,8,0.25)',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
+                    <p style={{ fontSize: 7, color: '#15803d', fontWeight: 700, margin: 0, letterSpacing: '0.07em' }}>LIFETIME VALID</p>
+                  </div>
+                  {/* Member since */}
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Valid From</p>
+                    <p style={{ fontSize: 9, color: NAVY, fontWeight: 700, margin: '1px 0 0 0', lineHeight: 1 }}>{memberSince || '—'}</p>
+                  </div>
+                  {/* Helpline */}
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 5.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Helpline</p>
+                    <p style={{ fontSize: 8, color: NAVY, fontWeight: 600, margin: '1px 0 0 0', lineHeight: 1 }}>1800-XXX-XXXX</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Bottom row */}
+            {/* Footer */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '4px 13px', flexShrink: 0, marginTop: 5,
-              background: 'rgba(0,53,128,0.04)', borderTop: '1px solid rgba(0,53,128,0.09)',
+              padding: '3px 13px', flexShrink: 0,
+              background: 'rgba(0,53,128,0.05)', borderTop: '1px solid rgba(0,53,128,0.1)',
+              position: 'relative', zIndex: 1,
             }}>
               <p style={{ fontSize: 5.5, color: '#94a3b8', margin: 0 }}>ID: VS-{shortId}</p>
-              <p style={{ fontSize: 5.5, color: '#6b7280', margin: 0, fontStyle: 'italic' }}>If found, return to nearest Govt. office</p>
+              <p style={{ fontSize: 5.5, color: '#6b7280', margin: 0, fontStyle: 'italic' }}>यदि मिले तो निकटतम सरकारी कार्यालय में जमा करें</p>
               <p style={{ fontSize: 5.5, color: '#94a3b8', margin: 0 }}>virtualsetu.gov.in</p>
             </div>
 
