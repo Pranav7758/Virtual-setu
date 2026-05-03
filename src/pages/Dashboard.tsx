@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import GovLayout, { GovCard, GovPageHeader } from '@/components/GovLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Shield, Upload, FileText, CheckCircle, AlertCircle, Clock,
-  MessageCircle, Zap, Crown, Lock,
+  MessageCircle, Zap, Crown, Lock, RefreshCw, ScanLine,
 } from 'lucide-react';
+import { scanAndVerifyAadhaar } from '@/lib/aadhaarVerification';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +83,34 @@ export default function Dashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChatbot, setShowChatbot] = useState(false);
+
+  const [showReVerify, setShowReVerify] = useState(false);
+  const [reVerifyFile, setReVerifyFile] = useState<File | null>(null);
+  const [reVerifyLoading, setReVerifyLoading] = useState(false);
+  const reVerifyInputRef = useRef<HTMLInputElement>(null);
+
+  const handleReVerifyAadhaar = async () => {
+    if (!reVerifyFile || !user || !profile) return;
+    setReVerifyLoading(true);
+    try {
+      const result = await scanAndVerifyAadhaar(reVerifyFile, profile.full_name, profile.aadhaar_number?.replace(/\D/g, '') || '');
+      if (!result.success) { toast.error(result.error || 'Verification failed'); return; }
+      const { error } = await supabase.from('profiles').update({
+        aadhaar_number: result.extractedAadhaar,
+        aadhaar_hash: result.aadhaarHash,
+        aadhaar_address: result.extractedAddress || profile.aadhaar_address,
+        aadhaar_dob: result.extractedDob || profile.aadhaar_dob,
+        aadhaar_verified: true,
+      }).eq('user_id', user.id);
+      if (error) { toast.error('Failed to update profile'); return; }
+      await fetchProfile();
+      setShowReVerify(false);
+      setReVerifyFile(null);
+      toast.success('Aadhaar number updated — your card now shows the full number');
+    } finally {
+      setReVerifyLoading(false);
+    }
+  };
 
   const tabParam = searchParams.get('tab');
   const activeTab = VALID_TABS.includes(tabParam ?? '') ? tabParam! : 'overview';
@@ -379,6 +409,58 @@ export default function Dashboard() {
                 bloodGroup={profile?.blood_group || ''}
               />
             </div>
+            {/* Re-verify Aadhaar */}
+            <div className="mx-5 mb-5 border border-slate-200 rounded">
+              <button
+                onClick={() => setShowReVerify(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-[#003580]" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Update Aadhaar Number</p>
+                    <p className="text-xs text-slate-500">Re-scan your card to store the full 12-digit number</p>
+                  </div>
+                </div>
+                <span className="text-xs text-[#003580] font-medium">{showReVerify ? 'Cancel' : 'Update →'}</span>
+              </button>
+
+              {showReVerify && (
+                <div className="px-4 pb-4 border-t border-slate-100 pt-3 space-y-3">
+                  <input
+                    ref={reVerifyInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => setReVerifyFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div
+                    onClick={() => reVerifyInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-300 rounded p-4 text-center cursor-pointer hover:border-[#003580] hover:bg-blue-50/30 transition-colors"
+                  >
+                    {reVerifyFile ? (
+                      <p className="text-sm font-medium text-[#003580]">{reVerifyFile.name}</p>
+                    ) : (
+                      <>
+                        <ScanLine className="h-6 w-6 text-slate-400 mx-auto mb-1" />
+                        <p className="text-sm text-slate-600">Click to upload your Aadhaar card image</p>
+                        <p className="text-xs text-slate-400 mt-0.5">JPG or PNG, front side</p>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleReVerifyAadhaar}
+                    disabled={!reVerifyFile || reVerifyLoading}
+                    className="w-full bg-[#003580] hover:bg-[#002060] text-white text-sm"
+                  >
+                    {reVerifyLoading
+                      ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Scanning…</>
+                      : <><ScanLine className="h-4 w-4 mr-2" /> Scan & Update</>}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {!limits.qrEmergencySharing && (
               <div className="mx-5 mb-5 p-3 rounded border border-slate-200 bg-slate-50 flex items-center gap-2">
                 <Lock className="h-4 w-4 text-slate-500" />
