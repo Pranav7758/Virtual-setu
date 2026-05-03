@@ -112,57 +112,108 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
 
         <div className="divide-y divide-slate-100 max-h-[75vh] overflow-y-auto">
 
+          {/* Translating banner */}
+          {translating && !T && (
+            <div className="px-6 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 text-amber-600 animate-spin shrink-0" />
+              <span className="text-xs text-amber-700 font-medium">{t('schemes_page.badge_translating')}…</span>
+            </div>
+          )}
+
           {/* Ministry + Launch */}
           <div className="px-6 py-3 bg-[#f0f4fa] flex flex-wrap items-center gap-4 text-xs text-slate-600">
-            <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#003580]" /> {T?.ministry ?? scheme.ministry}</span>
+            {translating && !T
+              ? <span className="h-3 w-48 bg-slate-200 rounded animate-pulse" />
+              : <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#003580]" /> {T?.ministry ?? scheme.ministry}</span>
+            }
             <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-[#003580]" /> {labels?.launchedLabel ?? t('schemes_page.launched_label')}: {new Date(scheme.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
 
           {/* Description */}
           <div className="px-6 py-4">
-            <p className="text-sm text-slate-700 leading-relaxed">{T?.description ?? scheme.description}</p>
-            {(T?.objective ?? scheme.objective) && (
-              <p className="text-xs text-slate-500 mt-2 italic">{T?.objective ?? scheme.objective}</p>
+            {translating && !T ? (
+              <div className="space-y-2">
+                <div className="h-3 bg-slate-100 rounded animate-pulse w-full" />
+                <div className="h-3 bg-slate-100 rounded animate-pulse w-11/12" />
+                <div className="h-3 bg-slate-100 rounded animate-pulse w-4/5" />
+                <div className="h-3 bg-slate-100 rounded animate-pulse w-2/3 mt-3" />
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-slate-700 leading-relaxed">{T?.description ?? scheme.description}</p>
+                {(T?.objective ?? scheme.objective) && (
+                  <p className="text-xs text-slate-500 mt-2 italic">{T?.objective ?? scheme.objective}</p>
+                )}
+              </>
             )}
           </div>
 
           {/* Eligibility */}
           <Section title={labels?.eligibilityTitle ?? t('schemes_page.eligibility_title')} icon="✅">
-            <ul className="space-y-1">
-              {(T?.eligibility ?? scheme.eligibility).map((e, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-green-500 mt-0.5 shrink-0">•</span>{e}</li>
-              ))}
-            </ul>
+            {translating && !T ? (
+              <div className="space-y-2">
+                {[1,2,3,4].map(i => <div key={i} className="h-3 bg-slate-100 rounded animate-pulse" style={{width: `${85 - i*8}%`}} />)}
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {(T?.eligibility ?? scheme.eligibility).map((e, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-green-500 mt-0.5 shrink-0">•</span>{e}</li>
+                ))}
+              </ul>
+            )}
           </Section>
 
           {/* Benefits */}
           <Section title={labels?.benefitsTitle ?? t('schemes_page.benefits_title')} icon="🎁">
-            <ul className="space-y-1">
-              {(T?.benefits ?? scheme.benefits).map((b, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-[#003580] mt-0.5 shrink-0">▸</span>{b}</li>
-              ))}
-            </ul>
+            {translating && !T ? (
+              <div className="space-y-2">
+                {[1,2,3].map(i => <div key={i} className="h-3 bg-slate-100 rounded animate-pulse" style={{width: `${90 - i*10}%`}} />)}
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {(T?.benefits ?? scheme.benefits).map((b, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700"><span className="text-[#003580] mt-0.5 shrink-0">▸</span>{b}</li>
+                ))}
+              </ul>
+            )}
           </Section>
 
           {/* Required Documents */}
           <Section title={labels?.documentsTitle ?? t('schemes_page.documents_title')} icon="📄">
-            <div className="flex flex-wrap gap-1.5">
-              {(T?.requiredDocuments ?? scheme.requiredDocuments).map((d, i) => (
-                <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
-              ))}
-            </div>
+            {translating && !T ? (
+              <div className="flex flex-wrap gap-1.5">
+                {[1,2,3,4].map(i => <div key={i} className="h-6 bg-slate-100 rounded animate-pulse" style={{width: `${60 + i*12}px`}} />)}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {(T?.requiredDocuments ?? scheme.requiredDocuments).map((d, i) => (
+                  <span key={i} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-sm">{d}</span>
+                ))}
+              </div>
+            )}
           </Section>
 
           {/* Application Process */}
           <Section title={labels?.applyTitle ?? t('schemes_page.apply_title')} icon="📝">
-            <ol className="space-y-2">
-              {(T?.applicationProcess ?? scheme.applicationProcess).map((step, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-[#003580] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                  {step}
-                </li>
-              ))}
-            </ol>
+            {translating && !T ? (
+              <div className="space-y-3">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="shrink-0 w-5 h-5 rounded-full bg-slate-200 animate-pulse" />
+                    <div className="h-3 bg-slate-100 rounded animate-pulse flex-1" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ol className="space-y-2">
+                {(T?.applicationProcess ?? scheme.applicationProcess).map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-[#003580] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            )}
           </Section>
 
           {/* Official Link */}
