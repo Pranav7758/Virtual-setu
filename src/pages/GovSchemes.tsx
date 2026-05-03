@@ -74,7 +74,8 @@ interface SchemeDetailProps {
 }
 
 function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translation, translating }: SchemeDetailProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
   const T = translation;
   const labels = T?.labels;
 
@@ -86,7 +87,7 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
         <div className="bg-[#003580] text-white px-6 py-4 flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-              <span className="text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-sm">{CATEGORY_ICONS[scheme.category]} {scheme.category}</span>
+              <span className="text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-sm">{CATEGORY_ICONS[scheme.category]} {t(`schemes_page.${CAT_I18N_KEY[scheme.category]}`)}</span>
               <StatusBadge status={scheme.status} />
               {scheme.isNew && <NewBadge />}
               <LevelBadge level={scheme.level} />
@@ -96,8 +97,8 @@ function SchemeDetail({ scheme, onClose, bookmarked, onToggleBookmark, translati
                 </span>
               )}
             </div>
-            <h2 className="text-lg font-bold leading-tight">{T?.name ?? scheme.name}</h2>
-            <p className="text-blue-200 text-xs mt-0.5">{scheme.nameHindi}</p>
+            <h2 className="text-lg font-bold leading-tight">{T?.name ?? (isEn ? scheme.name : (scheme.nameHindi || scheme.name))}</h2>
+            <p className="text-blue-200 text-xs mt-0.5">{isEn ? scheme.nameHindi : scheme.name}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 mt-1">
             <button onClick={() => onToggleBookmark(scheme.id)} className="p-1.5 rounded-sm bg-white/10 hover:bg-white/20 transition-colors" title="Bookmark">
@@ -199,8 +200,9 @@ interface SchemeCardProps {
 }
 
 function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTranslation, translating }: SchemeCardProps) {
-  const { t } = useTranslation();
-  const displayName = cardTranslation?.name ?? scheme.name;
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
+  const displayName = cardTranslation?.name ?? (isEn ? scheme.name : (scheme.nameHindi || scheme.name));
   const displayDesc = cardTranslation?.description ?? scheme.description;
 
   return (
@@ -230,7 +232,7 @@ function SchemeCard({ scheme, bookmarked, onToggleBookmark, onClick, cardTransla
             <p className="font-bold text-slate-900 text-sm leading-tight group-hover:text-[#003580] transition-colors">{displayName}</p>
           )}
         </div>
-        <p className="text-[11px] text-slate-400 mb-2">{scheme.nameHindi}</p>
+        <p className="text-[11px] text-slate-400 mb-2">{isEn ? scheme.nameHindi : scheme.name}</p>
         {translating && !cardTranslation ? (
           <div className="space-y-1.5">
             <div className="h-3 bg-slate-100 rounded animate-pulse w-full" />
@@ -622,7 +624,8 @@ function FilterGroup({ label, value, onChange, options }: {
 // ── AI Scheme Card ─────────────────────────────────────────────────────────────
 
 function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
   return (
     <div
       className="bg-white border border-violet-200 rounded-sm shadow-sm hover:shadow-md hover:border-violet-400 transition-all group flex flex-col cursor-pointer relative"
@@ -639,15 +642,15 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
             {scheme.status === 'active' ? `● ${t('schemes_page.badge_active')}` : `○ ${t('schemes_page.badge_inactive')}`}
           </span>
           <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 font-semibold px-2 py-0.5 rounded-sm">
-            {scheme.category}
+            {t(`schemes_page.${CAT_I18N_KEY[scheme.category] ?? scheme.category}`)}
           </span>
         </div>
 
         <h3 className="font-bold text-slate-900 text-sm leading-snug mb-0.5 group-hover:text-violet-700 transition-colors pr-6">
-          {scheme.name}
+          {isEn ? scheme.name : (scheme.nameHindi || scheme.name)}
         </h3>
-        {scheme.nameHindi && (
-          <p className="text-[11px] text-slate-500 mb-2">{scheme.nameHindi}</p>
+        {(isEn ? scheme.nameHindi : scheme.name) && (
+          <p className="text-[11px] text-slate-500 mb-2">{isEn ? scheme.nameHindi : scheme.name}</p>
         )}
 
         <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">{scheme.description}</p>
@@ -669,7 +672,8 @@ function AISchemeCard({ scheme, onClick }: { scheme: AISchemeResult; onClick: ()
 // ── AI Scheme Detail Modal ─────────────────────────────────────────────────────
 
 function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-sm shadow-2xl max-w-2xl w-full my-6 flex flex-col max-h-[90vh] overflow-hidden">
@@ -681,10 +685,10 @@ function AISchemeDetail({ scheme, onClose }: { scheme: AISchemeResult; onClose: 
                 <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-sm flex items-center gap-1">
                   <Zap className="h-2.5 w-2.5" /> {t('schemes_page.ai_powered_badge')}
                 </span>
-                <span className="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-sm">{scheme.category}</span>
+                <span className="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-sm">{t(`schemes_page.${CAT_I18N_KEY[scheme.category] ?? scheme.category}`)}</span>
               </div>
-              <h2 className="text-lg font-bold leading-snug">{scheme.name}</h2>
-              {scheme.nameHindi && <p className="text-sm text-white/80 mt-0.5">{scheme.nameHindi}</p>}
+              <h2 className="text-lg font-bold leading-snug">{isEn ? scheme.name : (scheme.nameHindi || scheme.name)}</h2>
+              {(isEn ? scheme.nameHindi : scheme.name) && <p className="text-sm text-white/80 mt-0.5">{isEn ? scheme.nameHindi : scheme.name}</p>}
             </div>
             <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-sm transition-colors flex-shrink-0">
               <X className="h-5 w-5" />
