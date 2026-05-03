@@ -58,11 +58,11 @@ Virtual Setu is an official Indian government-style secure document management p
 - `src/components/GovLayout.tsx` — Official header (Ashoka Chakra, two-tier nav), footer, exports: `GovCard`, `GovPageHeader`, `GovSectionHeader`
 - `src/components/DocumentUpload.tsx` — File upload with AI verify
 - `src/components/DocumentList.tsx` — Document table with QR share, view, download, delete
-- `src/components/ShareDocModal.tsx` — Emergency QR share modal (PIN + duration → token → QR)
+- `src/components/ShareDocModal.tsx` — Emergency QR share modal (PIN + duration + **permission** → token → QR). Permissions: `view` / `download_watermark` / `download_clean`
 - `src/components/QRCode.tsx` — QR code renderer using `qrcode` lib
 - `src/components/AIChatbot.tsx` — Groq-powered chatbot
-- `src/pages/ShareSingle.tsx` — Public per-document share page at `/s/:token` (PIN unlock → secure viewer)
-- `src/pages/Share.tsx` — Public all-documents share at `/i/:uid`
+- `src/pages/ShareSingle.tsx` — Public per-document share page at `/s/:token` (PIN unlock → secure viewer with permission-gated download buttons: watermarked canvas download for images / clean blob download)
+- `src/pages/Share.tsx` — Public all-documents share at `/i/:uid` (QR card scan — always shows both "Download with Watermark" and "Download without Watermark" buttons)
 - `server/index.ts` — Express API server
 - `vite.config.ts` — Vite config with API middleware plugin (mirrors server routes for dev)
 - `src/index.css` — Government design system CSS (flat official, Noto Sans)

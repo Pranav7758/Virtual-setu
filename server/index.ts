@@ -74,6 +74,7 @@ interface ShareEntry {
   documentId: string; userId: string; pinHash: string;
   documentName: string; documentType: string;
   signedUrl: string; expiresAt: number;
+  permission: 'view' | 'download_watermark' | 'download_clean';
 }
 const shareStore = new Map<string, ShareEntry>();
 setInterval(() => {
@@ -282,7 +283,7 @@ async function getDocSignedUrl(userId: string, docId: string) {
 /* ── POST /api/create-doc-share ── */
 app.post('/api/create-doc-share', async (req, res) => {
   try {
-    const { documentId, userId, pin, durationHours } = req.body;
+    const { documentId, userId, pin, durationHours, permission = 'view' } = req.body;
     if (!documentId || !userId || !pin || !durationHours) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -296,6 +297,7 @@ app.post('/api/create-doc-share', async (req, res) => {
       documentName: docInfo.name, documentType: docInfo.type,
       signedUrl: docInfo.url,
       expiresAt: Date.now() + Number(durationHours) * 3_600_000,
+      permission: ['view','download_watermark','download_clean'].includes(permission) ? permission : 'view',
     });
     res.json({ token });
   } catch (err: any) {
@@ -335,6 +337,7 @@ app.post('/api/get-doc-share', async (req, res) => {
       documentType: entry.documentType,
       signedUrl: entry.signedUrl,
       expiresAt: entry.expiresAt,
+      permission: entry.permission || 'view',
     });
   } catch (err: any) {
     console.error('get-doc-share error:', err);

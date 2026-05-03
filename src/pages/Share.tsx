@@ -5,7 +5,61 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Lock, ShieldCheck, ArrowLeft, X, Loader2 } from 'lucide-react';
+import { FileText, Lock, ShieldCheck, ArrowLeft, X, Loader2, Download, Sparkles } from 'lucide-react';
+
+/* ── Canvas watermark download (QR scan always has both options) ── */
+async function downloadImageWithWatermark(url: string, fileName: string) {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 800;
+    canvas.height = img.naturalHeight || 600;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#003580';
+    ctx.font = `bold ${Math.max(20, Math.floor(canvas.width / 22))}px Arial`;
+    ctx.rotate(-Math.PI / 6);
+    const step = Math.floor(canvas.width / 2.5);
+    for (let y = -canvas.height; y < canvas.height * 2; y += 120) {
+      for (let x = -canvas.width; x < canvas.width * 2; x += step) {
+        ctx.fillText('VIRTUAL SETU', x, y);
+        ctx.fillText(new Date().toLocaleDateString('en-IN'), x, y + 36);
+      }
+    }
+    ctx.restore();
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = `${(fileName || 'document').replace(/\.[^.]+$/, '')}_watermarked.jpg`;
+    a.click();
+  } catch {
+    toast.error('Could not apply watermark. Please try again.');
+  }
+}
+
+async function downloadFile(url: string, fileName: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch file');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    toast.error('Download failed. Please try again.');
+  }
+}
 
 interface SharedDoc {
   id: string;
@@ -498,9 +552,32 @@ function SecureViewer({
           )}
         </div>
 
+        {/* Download bar — QR scan always offers both download options */}
+        <div className="mt-3 mx-auto flex flex-wrap justify-center gap-2 px-2" style={{ maxWidth: 900 }}>
+          <button
+            onClick={() => {
+              const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(doc.signed_url);
+              if (isImage) {
+                downloadImageWithWatermark(doc.signed_url, doc.document_name);
+              } else {
+                downloadFile(doc.signed_url, doc.document_name);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#00266e] hover:bg-[#001b52] text-white rounded transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" /> Download with Watermark
+          </button>
+          <button
+            onClick={() => downloadFile(doc.signed_url, doc.document_name)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
+          </button>
+        </div>
+
         <div className="text-center text-[11px] text-blue-200/80 mt-3 space-y-1 px-2">
           <p>
-            View-only mode · Downloading, printing, copying and screen capture are restricted.
+            Documents available for download. Watermarked copy includes "Virtual Setu" overlay.
           </p>
           <p className="text-blue-200/60">
             Screen recording may be restricted depending on device security settings.

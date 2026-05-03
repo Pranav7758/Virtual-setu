@@ -7,8 +7,16 @@ import QRCode from '@/components/QRCode';
 import { toast } from 'sonner';
 import {
   QrCode, Copy, Clock, Lock, ShieldCheck, X, CheckCircle, Share2,
-  StopCircle, AlertTriangle,
+  StopCircle, AlertTriangle, Eye, Download, Sparkles,
 } from 'lucide-react';
+
+type Permission = 'view' | 'download_watermark' | 'download_clean';
+
+const PERMISSIONS: { value: Permission; label: string; sub: string; icon: React.ReactNode }[] = [
+  { value: 'view',               label: 'View Only',                   sub: 'Watermarked · No download',               icon: <Eye className="h-3.5 w-3.5" /> },
+  { value: 'download_watermark', label: 'Download with Watermark',     sub: 'They can download a watermarked copy',    icon: <Download className="h-3.5 w-3.5" /> },
+  { value: 'download_clean',     label: 'Download without Watermark',  sub: 'Full clean copy — use with trust only',   icon: <Sparkles className="h-3.5 w-3.5" /> },
+];
 
 /* ── Persistence helpers ── */
 interface StoredShare {
@@ -16,6 +24,7 @@ interface StoredShare {
   shareUrl: string;
   expiresAt: number;
   pinLength: number;
+  permission: Permission;
 }
 
 function loadShare(documentId: string): StoredShare | null {
@@ -68,6 +77,7 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
   /* ── Form state ── */
   const [pin, setPin] = useState('');
   const [duration, setDuration] = useState(6);
+  const [permission, setPermission] = useState<Permission>('view');
   const [loading, setLoading] = useState(false);
 
   /* ── Active share state (loaded from localStorage on open) ── */
@@ -126,7 +136,7 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
       const res = await fetch('/api/create-doc-share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId, userId, pin, durationHours: duration }),
+        body: JSON.stringify({ documentId, userId, pin, durationHours: duration, permission }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create share');
@@ -136,6 +146,7 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
         shareUrl: `${window.location.origin}/s/${data.token}`,
         expiresAt: Date.now() + duration * 3_600_000,
         pinLength: pin.length,
+        permission,
       };
       saveShare(documentId, share);
       setActiveShare(share);
@@ -260,6 +271,30 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
                 </div>
               </div>
 
+              {/* Permission */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" /> Recipient Permission
+                </Label>
+                <div className="flex flex-col gap-1.5">
+                  {PERMISSIONS.map((p) => (
+                    <button key={p.value} onClick={() => setPermission(p.value)}
+                      className={`flex items-center gap-3 px-3 py-2.5 border rounded-sm text-left transition-colors ${
+                        permission === p.value
+                          ? 'bg-[#003580] text-white border-[#003580]'
+                          : 'bg-white text-slate-700 border-slate-300 hover:border-[#003580]'
+                      }`}
+                    >
+                      <span className={permission === p.value ? 'text-[#FF9933]' : 'text-slate-400'}>{p.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold leading-none">{p.label}</p>
+                        <p className={`text-[10px] mt-0.5 ${permission === p.value ? 'text-blue-200' : 'text-slate-400'}`}>{p.sub}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="p-3 bg-[#fff8e1] border-l-4 border-[#f9a825]">
                 <p className="text-xs text-[#5d4037]">
                   <strong>Note:</strong> The link stays active until it expires or you revoke it.
@@ -322,6 +357,21 @@ export default function ShareDocModal({ open, onClose, documentId, documentName,
                   {copied ? <CheckCircle className="h-4 w-4 text-[#138808]" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
+
+              {/* Permission label */}
+              {!expired && !revoked && activeShare.permission && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-[#f0f4fa] border border-[#c8d4e8] rounded-sm">
+                  {activeShare.permission === 'view' && <Eye className="h-3.5 w-3.5 text-[#003580] shrink-0" />}
+                  {activeShare.permission === 'download_watermark' && <Download className="h-3.5 w-3.5 text-[#003580] shrink-0" />}
+                  {activeShare.permission === 'download_clean' && <Sparkles className="h-3.5 w-3.5 text-[#003580] shrink-0" />}
+                  <p className="text-xs text-slate-700">
+                    <strong>Permission:</strong>{' '}
+                    {activeShare.permission === 'view' && 'View Only (watermarked, no download)'}
+                    {activeShare.permission === 'download_watermark' && 'Download with Watermark allowed'}
+                    {activeShare.permission === 'download_clean' && 'Download without Watermark allowed'}
+                  </p>
+                </div>
+              )}
 
               {/* PIN reminder */}
               {!expired && !revoked && (

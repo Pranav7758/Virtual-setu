@@ -5,16 +5,73 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
-  ShieldCheck, Lock, FileText, Loader2, AlertCircle, X,
+  ShieldCheck, Lock, FileText, Loader2, AlertCircle, X, Download, Eye, Sparkles,
 } from 'lucide-react';
 
 const BLOCKED_MSG = 'Action blocked for security reasons in Virtual Setu.';
+
+type Permission = 'view' | 'download_watermark' | 'download_clean';
 
 interface DocShare {
   documentName: string;
   documentType: string;
   signedUrl: string;
   expiresAt: number;
+  permission: Permission;
+}
+
+/* ── Canvas-based watermark download for images ── */
+async function downloadImageWithWatermark(url: string, fileName: string) {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 800;
+    canvas.height = img.naturalHeight || 600;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#003580';
+    ctx.font = `bold ${Math.max(20, Math.floor(canvas.width / 22))}px Arial`;
+    ctx.rotate(-Math.PI / 6);
+    const step = Math.floor(canvas.width / 2.5);
+    for (let y = -canvas.height; y < canvas.height * 2; y += 120) {
+      for (let x = -canvas.width; x < canvas.width * 2; x += step) {
+        ctx.fillText('VIRTUAL SETU', x, y);
+        ctx.fillText(new Date().toLocaleDateString('en-IN'), x, y + 36);
+      }
+    }
+    ctx.restore();
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = `${fileName.replace(/\.[^.]+$/, '')}_watermarked.jpg`;
+    a.click();
+  } catch {
+    toast.error('Could not apply watermark. Please try again.');
+  }
+}
+
+async function downloadFile(url: string, fileName: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch file');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    toast.error('Download failed. Please try again.');
+  }
 }
 
 export default function ShareSingle() {
@@ -36,7 +93,7 @@ export default function ShareSingle() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid PIN or link expired');
-      setDoc(data);
+      setDoc({ ...data, permission: data.permission || 'view' });
     } catch (e: any) {
       setError(e.message || 'Invalid PIN or link expired');
     } finally {
@@ -288,8 +345,38 @@ function SecureDocViewer({ doc }: { doc: DocShare }) {
           )}
         </div>
 
+        {/* Download bar — shown when permission allows */}
+        {(doc.permission === 'download_watermark' || doc.permission === 'download_clean') && (
+          <div className="mt-3 mx-auto flex flex-wrap justify-center gap-2 px-2" style={{ maxWidth: 900 }}>
+            <button
+              onClick={() => {
+                if (isImage) {
+                  downloadImageWithWatermark(doc.signedUrl, doc.documentName);
+                } else {
+                  downloadFile(doc.signedUrl, doc.documentName);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#003580] hover:bg-[#002060] text-white rounded-sm transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Download with Watermark
+            </button>
+            {doc.permission === 'download_clean' && (
+              <button
+                onClick={() => downloadFile(doc.signedUrl, doc.documentName)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-white hover:bg-slate-50 text-[#003580] border border-[#003580] rounded-sm transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Download without Watermark
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="text-center text-[11px] text-blue-200/70 mt-3 px-2">
-          View-only mode · Downloading, printing, copying and screen capture are restricted.
+          {doc.permission === 'view'
+            ? 'View-only mode · Downloading, printing, copying and screen capture are restricted.'
+            : doc.permission === 'download_watermark'
+              ? 'Watermarked download enabled by the document owner.'
+              : 'Full download enabled by the document owner.'}
         </div>
       </div>
     </div>
